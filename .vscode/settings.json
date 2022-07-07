@@ -1,0 +1,5 @@
+{
+    "esbonio.sphinx.confDir": "",
+    "python.formatting.provider": "black",
+    "editor.formatOnSave": true
+}

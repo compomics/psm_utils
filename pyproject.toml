@@ -1,0 +1,65 @@
+[project]
+name = "psm_utils"
+readme = "README.rst"
+license = {file = "LICENSE"}
+keywords = ["proteomics", "peptide", "spectrum", "identification", "parsing"]
+authors = [
+    {name = "Ralf Gabriels", email = "ralf@gabriels.dev"},
+    {name = "Robbin Bouwmeester", email = "robbin.bouwmeester@ugent.be"},
+    {name = "Arthur Declercq", email = "arthur.declercq@ugent.be"},
+]
+classifiers = [
+    "Intended Audience :: Science/Research",
+    "License :: OSI Approved :: Apache Software License",
+    "Operating System :: OS Independent",
+    "Programming Language :: Python :: 3 :: Only",
+    "Topic :: Scientific/Engineering :: Bio-Informatics",
+    "Development Status :: 4 - Beta",
+]
+dynamic = ["version", "description"]
+requires-python = ">=3.8"
+dependencies = [
+    "pyteomics >= 4",
+    "pandas",
+    "numpy",
+    "click",
+]
+
+[project.optional-dependencies]
+dev = [
+    "black",
+    "pytest",
+    "pytest-cov"
+]
+doc = [
+    "sphinx",
+    "numpydoc>=1,<2",
+    "recommonmark",
+    "sphinx-mdinclude",
+    "toml",
+    "semver>=2",
+    "sphinx_rtd_theme",
+    "sphinx-autobuild",
+]
+
+[project.urls]
+GitHub = "https://github.com/compomics/psm_utils"
+ReadTheDocs = "https://psm_utils.readthedocs.io"
+PyPi = "https://pypi.org/project/psm-utils/"
+CompOmics = "https://www.compomics.com"
+
+#[project.scripts]
+#cli-name = "mypkg.mymodule:some_func"
+
+[build-system]
+requires = ["flit_core >=3.2,<4"]
+build-backend = "flit_core.buildapi"
+
+[tool.setuptools]
+include-package-data = true
+
+[tool.setuptools.packages]
+find = {}
+
+[tool.setuptools.package-data]
+"*" = ["*.ebnf"]

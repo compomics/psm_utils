@@ -11,7 +11,7 @@ import numpy as np
 import pandas as pd
 
 from psm_utils.io.peptide_record import PeptideRecord
-from psm_utils._exceptions import ModificationParsingError
+from psm_utils._exceptions import ModificationParsingException
 
 logger = logging.getLogger(__name__)
 
@@ -19,6 +19,7 @@ logger = logging.getLogger(__name__)
 @pd.api.extensions.register_dataframe_accessor("msms")
 class MSMSAccessor:
     """Pandas extension for MaxQuant msms.txt files."""
+
     default_columns = {
         "Raw file",
         "Scan number",
@@ -126,17 +127,15 @@ class MSMSAccessor:
             "decoy hits."
         )
         if len(duplicate_indices) > 0:
-            logger.warning(
-                "Removed %i non-rank 1 PSMs.", len(duplicate_indices)
-            )
+            logger.warning("Removed %i non-rank 1 PSMs.", len(duplicate_indices))
 
         return self._obj
 
     def remove_invalid_amino_acids(self) -> pd.DataFrame:
         """Remove invalid amino acids from MSMS."""
-        invalid_indices = self._obj[self._obj["Sequence"].str.contains(
-            self.invalid_amino_acids, regex=True
-        )].index
+        invalid_indices = self._obj[
+            self._obj["Sequence"].str.contains(self.invalid_amino_acids, regex=True)
+        ].index
         self._obj = self._obj.drop(index=invalid_indices).reset_index(drop=True)
 
         if len(invalid_indices) > 0:
@@ -173,9 +172,7 @@ class MSMSAccessor:
             return location_1 - location_2
 
     @staticmethod
-    def _find_mods_recursively(
-        mod_seq, pattern_mapping, regex_pattern, mod_list=None
-    ):
+    def _find_mods_recursively(mod_seq, pattern_mapping, regex_pattern, mod_list=None):
         """
         Find modifications in MaxQuant modified sequence recursively.
 
@@ -222,7 +219,7 @@ class MSMSAccessor:
         # Validate that all modifications are found
         else:
             if not re.fullmatch(r"[A-Z]+", mod_seq):
-                raise ModificationParsingError(
+                raise ModificationParsingException(
                     f"Coud not match remaining modification labels in sequence "
                     f"`{mod_seq}`. Ensure that all modifications are "
                     "configured in the MaxQuant `modification_mapping` setting."
@@ -242,8 +239,8 @@ class MSMSAccessor:
         pattern_mapping = {}
         for label, name in modification_mapping.items():
             pattern_mapping[f"({label})"] = name
-        regex_pattern = re.compile("|".join(
-            [re.escape(p) for p in pattern_mapping.keys()])
+        regex_pattern = re.compile(
+            "|".join([re.escape(p) for p in pattern_mapping.keys()])
         )
 
         # Find variable modifications
@@ -253,18 +250,17 @@ class MSMSAccessor:
 
         # Add fixed modifications
         for aa, name in fixed_modifications.items():
-            mod_list.extend(
-                [(m.start() + 1, name) for m in re.finditer(aa, sequence)]
-            )
+            mod_list.extend([(m.start() + 1, name) for m in re.finditer(aa, sequence)])
 
         # Sort and format mod_list
         if mod_list:
             mod_string = "|".join(
-                ["|".join([str(x) for x in mod])
-                for mod
-                in sorted(
-                    mod_list, key=cmp_to_key(MSMSAccessor._minus_one_compare_fn)
-                )]
+                [
+                    "|".join([str(x) for x in mod])
+                    for mod in sorted(
+                        mod_list, key=cmp_to_key(MSMSAccessor._minus_one_compare_fn)
+                    )
+                ]
             )
         else:
             mod_string = "-"
@@ -300,8 +296,7 @@ class MSMSAccessor:
         # Remove surrounding underscores
         if "_" in self._obj["Modified sequence"].iloc[0]:
             mod_sequences = self._obj["Modified sequence"].str.extract(
-                "_(.*)_",
-                expand=False
+                "_(.*)_", expand=False
             )
         else:
             mod_sequences = self._obj["Modified sequence"]
@@ -311,15 +306,16 @@ class MSMSAccessor:
         for seq, mod_seq in zip(
             self._obj["Sequence"].to_list(), mod_sequences.to_list()
         ):
-            peprec_mods.append(self._get_single_peprec_modification(
-                seq, mod_seq, modification_mapping, fixed_modifications
-            ))
+            peprec_mods.append(
+                self._get_single_peprec_modification(
+                    seq, mod_seq, modification_mapping, fixed_modifications
+                )
+            )
         return peprec_mods
 
     @staticmethod
     def _calculate_top7_peak_features(
-        intensities: List,
-        mass_errors: List
+        intensities: List, mass_errors: List
     ) -> Tuple[np.ndarray]:
         """
         Calculate "top 7 peak"-related search engine features.
@@ -342,16 +338,14 @@ class MSMSAccessor:
             indices_most_intens = np.array(intensities).argsort()[-1:-8:-1]
             mass_errors_top7 = [(mass_errors[i]) for i in indices_most_intens]
             mean_error_top7 = np.mean(mass_errors_top7)
-            sq_mean_error_top7 = mean_error_top7 ** 2
+            sq_mean_error_top7 = mean_error_top7**2
             stdev_error_top7 = np.std(mass_errors_top7)
 
             return mean_error_top7, sq_mean_error_top7, stdev_error_top7
 
     @staticmethod
     def _calculate_ion_current_features(
-        matches: List,
-        intensities: List,
-        intensity_coverage: List
+        matches: List, intensities: List, intensity_coverage: List
     ) -> Tuple[np.ndarray]:
         """
         Calculate ion current related search engine features.
@@ -374,15 +368,21 @@ class MSMSAccessor:
             summed_intensities = sum([float(i) for i in intensities])
 
             # Calculate ratio between matched b- and y-ion intensities
-            y_ion_int = sum([
-                float(intensities[i])
-                for i, m
-                in enumerate(matches) if m.startswith("y")
-            ])
+            y_ion_int = sum(
+                [
+                    float(intensities[i])
+                    for i, m in enumerate(matches)
+                    if m.startswith("y")
+                ]
+            )
             y_int_ratio = y_ion_int / summed_intensities
 
-            ln_nterm_ion_current_ratio = (y_int_ratio + pseudo_count) * ln_explained_ion_current
-            ln_cterm_ion_current_ratio = (1 - y_int_ratio + pseudo_count) * ln_explained_ion_current
+            ln_nterm_ion_current_ratio = (
+                y_int_ratio + pseudo_count
+            ) * ln_explained_ion_current
+            ln_cterm_ion_current_ratio = (
+                1 - y_int_ratio + pseudo_count
+            ) * ln_explained_ion_current
             ln_ms2_ion_current = summed_intensities / ln_explained_ion_current
 
             out = [
@@ -426,7 +426,7 @@ class MSMSAccessor:
                 "psm_score",
                 "observed_retention_time",
                 "Label",
-                "Raw file"
+                "Raw file",
             ]
         )
         peprec["spec_id"] = self._get_spec_id()
@@ -441,13 +441,17 @@ class MSMSAccessor:
         # fill these without the "REV_"
         peprec["protein_list"] = self._obj["Proteins"].str.split(";")
         if (peprec["protein_list"].isna() & self._obj["Reverse"].isna()).any():
-            req_cols = zip(self._obj["Proteins"], self._obj["Reverse"], self._obj["Modified sequence"])
+            req_cols = zip(
+                self._obj["Proteins"],
+                self._obj["Reverse"],
+                self._obj["Modified sequence"],
+            )
             peprec["protein_list"] = [
                 [modseq] if (type(rev) == float) & (type(prot) == float) else prot
                 for prot, rev, modseq in req_cols
             ]
         peprec["protein_list"] = peprec["protein_list"].fillna(
-           "REV_" + self._obj["Modified sequence"]
+            "REV_" + self._obj["Modified sequence"]
         )
 
         peprec["psm_score"] = self._obj["Score"]
@@ -471,45 +475,55 @@ class MSMSAccessor:
         spec_id = self._get_spec_id()
         charge = self._obj["Charge"].rename("charge")
 
-        directly_copied = self._obj[[
-            "Score",
-            "Delta score",
-            "Localization prob",
-            "Charge",
-            "Mass",
-            "Length",
-            f"Mass error [{self._mass_error_unit}]",
-            "Missed cleavages",
-        ]].rename(columns={
-            "Score": "RawScore",
-            "Delta score": "RawDeltaScore",
-            "Localization prob": "RawModLocProb",
-            "Length": "PepLen",
-            f"Mass error [{self._mass_error_unit}]": "dM",
-            "Charge": "ChargeN",
-            "Missed cleavages": "enzInt",
-        })
+        directly_copied = self._obj[
+            [
+                "Score",
+                "Delta score",
+                "Localization prob",
+                "Charge",
+                "Mass",
+                "Length",
+                f"Mass error [{self._mass_error_unit}]",
+                "Missed cleavages",
+            ]
+        ].rename(
+            columns={
+                "Score": "RawScore",
+                "Delta score": "RawDeltaScore",
+                "Localization prob": "RawModLocProb",
+                "Length": "PepLen",
+                f"Mass error [{self._mass_error_unit}]": "dM",
+                "Charge": "ChargeN",
+                "Missed cleavages": "enzInt",
+            }
+        )
 
         absdM = self._obj[f"Mass error [{self._mass_error_unit}]"].abs().rename("absdM")
 
-        charges_encoded = pd.get_dummies(self._obj["Charge"], prefix="Charge", prefix_sep='')
+        charges_encoded = pd.get_dummies(
+            self._obj["Charge"], prefix="Charge", prefix_sep=""
+        )
 
-        top7_features = pd.DataFrame([
-            self._calculate_top7_peak_features(i, md)
-            for i, md in zip(
-                self._obj["Intensities"].str.split(";"),
-                self._obj["Mass Deviations [Da]"].str.split(";"),
-            )],
+        top7_features = pd.DataFrame(
+            [
+                self._calculate_top7_peak_features(i, md)
+                for i, md in zip(
+                    self._obj["Intensities"].str.split(";"),
+                    self._obj["Mass Deviations [Da]"].str.split(";"),
+                )
+            ],
             columns=["MeanErrorTop7", "sqMeanErrorTop7", "StdevErrorTop7"],
         )
 
-        ion_current_features = pd.DataFrame([
-            self._calculate_ion_current_features(m, i, ic)
-            for m, i, ic in zip(
-                self._obj["Matches"].str.split(";"),
-                self._obj["Intensities"].str.split(";"),
-                self._obj["Intensity coverage"],
-            )],
+        ion_current_features = pd.DataFrame(
+            [
+                self._calculate_ion_current_features(m, i, ic)
+                for m, i, ic in zip(
+                    self._obj["Matches"].str.split(";"),
+                    self._obj["Intensities"].str.split(";"),
+                    self._obj["Intensity coverage"],
+                )
+            ],
             columns=[
                 "lnExplainedIonCurrent",
                 "lnNTermIonCurrentRatio",
@@ -518,15 +532,22 @@ class MSMSAccessor:
             ],
         )
 
-        features = pd.concat([
-            spec_id,
-            charge,
-            directly_copied,
-            absdM,
-            charges_encoded,
-            top7_features,
-            ion_current_features,
-        ], axis=1).sort_values("spec_id").reset_index(drop=True)
+        features = (
+            pd.concat(
+                [
+                    spec_id,
+                    charge,
+                    directly_copied,
+                    absdM,
+                    charges_encoded,
+                    top7_features,
+                    ion_current_features,
+                ],
+                axis=1,
+            )
+            .sort_values("spec_id")
+            .reset_index(drop=True)
+        )
 
         return features
 

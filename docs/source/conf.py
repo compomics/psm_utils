@@ -3,9 +3,9 @@
 import os
 import sys
 
-import psm_utils
-
 sys.path.insert(0, os.path.abspath("../../"))
+
+from psm_utils import __version__
 
 # Project information
 project = "psm_utils"
@@ -14,7 +14,7 @@ github_project_url = "https://github.com/compomics/psm_utils/"
 github_doc_root = "https://github.com/compomics/psm_utils/tree/main/docs/"
 
 # Version
-release = psm_utils.__version__
+release = __version__
 
 # General configuration
 extensions = [

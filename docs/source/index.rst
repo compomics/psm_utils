@@ -1,9 +1,17 @@
 .. include:: ../../README.rst
 
 .. toctree::
-   :maxdepth: 3
+   :caption: About
    :hidden:
+   :includehidden:
 
-   self
-   api
- 
+   Readme <self>
+   changelog
+
+.. toctree::
+   :caption: API reference
+   :hidden:
+   :includehidden:
+
+   api/psm_utils
+   api/psm_utils.io

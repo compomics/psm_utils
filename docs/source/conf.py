@@ -41,6 +41,6 @@ autoclass_content = "init"
 
 def setup(app):
     config = {
-        "auto_toc_tree_section": "Contents",
+        # "auto_toc_tree_section": "Contents",
         "enable_eval_rst": True,
     }

@@ -11,9 +11,14 @@ import numpy as np
 import pandas as pd
 
 from psm_utils.io.peptide_record import PeptideRecord
-from psm_utils._exceptions import ModificationParsingException
+from psm_utils._exceptions import PSMUtilsException
 
 logger = logging.getLogger(__name__)
+
+
+
+class ModificationParsingException(PSMUtilsException):
+    """Identification file parsing error."""
 
 
 @pd.api.extensions.register_dataframe_accessor("msms")

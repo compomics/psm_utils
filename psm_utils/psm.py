@@ -1,8 +1,8 @@
 from dataclasses import dataclass, field
 from typing import Optional, Union
 
-from psm_utils._exceptions import PeptidoformError
-from psm_utils.peptidoform import Peptidoform
+from psm_utils.peptidoform import Peptidoform, PeptidoformException
+
 
 @dataclass
 class PeptideSpectrumMatch:
@@ -33,14 +33,15 @@ class PeptideSpectrumMatch:
         More data about PSM, e.g., search engine score.
 
     """
-    peptide : Union[Peptidoform, str]
-    spectrum_id : str
-    run : str
-    is_decoy : Optional[bool] = None
-    precursor_charge : Optional[int] = field(default=None, repr=False)
-    precursor_mz : Optional[float] = field(default=None, repr=False)
-    retention_time : Optional[float] = field(default=None, repr=False)
-    metadata : Optional[dict] = field(default=None, repr=False)
+
+    peptide: Union[Peptidoform, str]
+    spectrum_id: str
+    run: str
+    is_decoy: Optional[bool] = None
+    precursor_charge: Optional[int] = field(default=None, repr=False)
+    precursor_mz: Optional[float] = field(default=None, repr=False)
+    retention_time: Optional[float] = field(default=None, repr=False)
+    metadata: Optional[dict] = field(default=None, repr=False)
 
     def __post_init__(self):
         # Parse peptidoform
@@ -49,8 +50,8 @@ class PeptideSpectrumMatch:
         # Parse charge state
         if isinstance(self.precursor_charge, str):
             self.precursor_charge = int(self.precursor_charge.strip("+"))
-        elif self.peptide.modifiers["charge_state"]:
-            self.precursor_charge = self.peptide.modifiers["charge_state"].charge
+        elif self.peptide.properties["charge_state"]:
+            self.precursor_charge = self.peptide.properties["charge_state"].charge
 
     def to_peprec_entry(self) -> dict:
         entry = {

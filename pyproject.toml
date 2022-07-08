@@ -1,5 +1,6 @@
 [project]
 name = "psm_utils"
+description = "Common utilities for parsing and handling peptide-spectrum matches and search engine results."
 readme = "README.rst"
 license = {file = "LICENSE"}
 keywords = ["proteomics", "peptide", "spectrum", "identification", "parsing"]
@@ -16,10 +17,12 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Bio-Informatics",
     "Development Status :: 4 - Beta",
 ]
-dynamic = ["version", "description"]
+dynamic = ["version"]
 requires-python = ">=3.8"
 dependencies = [
     "pyteomics >= 4",
+    "lxml",
+    "psims",
     "pandas",
     "numpy",
     "click",

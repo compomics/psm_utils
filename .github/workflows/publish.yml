@@ -24,7 +24,7 @@ jobs:
       run: |
         pytest
 
-    - uses: Build and publish to PyPI
+    - name: Build and publish to PyPI
       env:
         FLIT_USERNAME: ${{ secrets.PYPI_USERNAME }}
         FLIT_PASSWORD: ${{ secrets.PYPI_PASSWORD }}

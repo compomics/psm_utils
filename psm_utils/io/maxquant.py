@@ -1,20 +1,51 @@
-"""Interface to MaxQuant msms.txt files."""
+"""Interface to MaxQuant msms.txt PSM files."""
 
 import logging
 import os
 import re
 from functools import cmp_to_key
-from typing import Dict, List, Optional, Tuple, Type, Union
+from typing import Dict, List, Tuple,Union
 
 import click
 import numpy as np
 import pandas as pd
 
-from psm_utils.io.peptide_record import PeptideRecord
 from psm_utils._exceptions import PSMUtilsException
+from psm_utils.psm import PeptideSpectrumMatch
+from psm_utils.psm_list import PSMList
+from psm_utils.io._base_classes import ReaderBase, WriterBase
+
 
 logger = logging.getLogger(__name__)
 
+
+class MaxquantReader(ReaderBase):
+    """Reader for MaxQuant msms.txt PSM files."""
+
+    def __iter__(self):
+        return self
+
+    def __next__(self) -> PeptideSpectrumMatch:
+        raise NotImplementedError()
+
+    def read_file() -> PSMList:
+        """Read full MaxQuant msms.txt PSM file into a PSMList object."""
+        raise NotImplementedError()
+
+
+class MaxquantWriter(WriterBase):
+    """Writer for MaxQuant msms.txt files (not implemented)."""
+
+    def __init__(self, filename):
+        raise NotImplementedError()
+
+    def write_psm(self, psm: PeptideSpectrumMatch):
+        """Write a single PSM to the MaxQuant msms.txt PSM file."""
+        raise NotImplementedError()
+
+    def write_file(self, psm_list: PSMList):
+        """Write entire PSMList to the MaxQuant msms.txt PSM file."""
+        raise NotImplementedError()
 
 
 class ModificationParsingException(PSMUtilsException):
@@ -403,7 +434,7 @@ class MSMSAccessor:
         self,
         modification_mapping=None,
         fixed_modifications=None,
-    ) -> PeptideRecord:
+    ) -> pd.DataFrame:
         """
         Get PeptideRecord from MaxQuant msms.txt file.
 
@@ -466,7 +497,7 @@ class MSMSAccessor:
         peprec.sort_values("spec_id", inplace=True)
         peprec.reset_index(drop=True, inplace=True)
 
-        return PeptideRecord.from_dataframe(peprec)
+        return peprec
 
     def get_search_engine_features(self):
         """

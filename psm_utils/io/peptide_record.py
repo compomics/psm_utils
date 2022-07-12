@@ -1,12 +1,23 @@
 """
 Peptide record (PEPREC).
 
-TODO: Move module to ms2pip
 """
 
 from typing import List, Optional
 
 import pandas as pd
+
+from psm_utils.io._base_classes import ReaderBase, WriterBase
+
+
+class PeptideRecordReader(ReaderBase):
+    # TODO Implement
+    pass
+
+
+class PeptideRecordWriter(WriterBase):
+    # TODO Implement
+    pass
 
 
 class InvalidPeprecError(Exception):
@@ -111,7 +122,10 @@ class PeptideRecord:
         ]
         if self.context == "ms2rescore":
             required_columns.extend(
-                ["psm_score", "observed_retention_time",]
+                [
+                    "psm_score",
+                    "observed_retention_time",
+                ]
             )
         elif self.context == "retention_time":
             required_columns.remove("modifications")
@@ -159,6 +173,8 @@ class PeptideRecord:
         "check whether decoys are present in peprec file"
 
         if sum(self.df["Label"] == -1) == 0:
-            raise InvalidPeprecError("No decoys present, make sure to provide decoys along targets")
+            raise InvalidPeprecError(
+                "No decoys present, make sure to provide decoys along targets"
+            )
         else:
             pass

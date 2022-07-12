@@ -86,4 +86,4 @@ and run ``sphinx-autobuild``:
 .. code-block:: sh
 
     pip install .[doc]
-    sphinx-autobuild docs docs/_build/html
+    sphinx-autobuild  --watch ./psm_utils ./docs/source/ ./docs/_build/html/

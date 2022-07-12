@@ -18,7 +18,7 @@ classifiers = [
     "Development Status :: 4 - Beta",
 ]
 dynamic = ["version"]
-requires-python = ">=3.8"
+requires-python = ">=3.7"
 dependencies = [
     "pyteomics >= 4",
     "lxml",
@@ -26,6 +26,7 @@ dependencies = [
     "pandas",
     "numpy",
     "click",
+    "tqdm"
 ]
 
 [project.optional-dependencies]
@@ -63,6 +64,3 @@ include-package-data = true
 
 [tool.setuptools.packages]
 find = {}
-
-[tool.setuptools.package-data]
-"*" = ["*.ebnf"]

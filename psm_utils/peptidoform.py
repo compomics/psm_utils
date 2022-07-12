@@ -105,11 +105,10 @@ class Peptidoform:
         comp_list.append(n_term)
 
         # Sequence
-        for position in self.parsed_sequence:
+        for aa, tags in self.parsed_sequence:
             # Amino acid
-            aa = position[0]
             try:
-                position_comp = mass.std_aa_comp[aa]
+                position_comp = mass.std_aa_comp[aa].copy()
             except (AttributeError, KeyError):
                 raise AmbiguousResidueException(
                     f"Cannot resolve composition for amino acid {aa}."
@@ -118,7 +117,6 @@ class Peptidoform:
             if aa in fixed_rules:
                 position_comp += fixed_rules[aa]
             # Localized modifications
-            tags = position[1]
             if tags:
                 for tag in tags:
                     try:
@@ -169,7 +167,7 @@ class Peptidoform:
     @property
     def sequential_theoretical_mass(self) -> float:
         """Monoisotopic mass of both termini and each (modified) residue."""
-        return [comp.mass for comp in self.sequential_composition]
+        return [comp.mass() for comp in self.sequential_composition]
 
     @property
     def theoretical_mass(self) -> float:

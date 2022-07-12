@@ -34,7 +34,7 @@ jobs:
 
     - name: Test with pytest and codecov
       run: |
-        pytest --cov=cascade_config tests
+        pytest --cov=psm_utils tests
 
     - name: Upload coverage reports to Codecov
       uses: codecov/codecov-action@v3

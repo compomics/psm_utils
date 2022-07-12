@@ -1,5 +1,5 @@
 from dataclasses import dataclass, field
-from typing import Optional, Union
+from typing import Any, Optional, Union
 
 from psm_utils.peptidoform import Peptidoform, PeptidoformException
 
@@ -28,8 +28,9 @@ class PeptideSpectrumMatch:
     collection : str, optional
         Identifier of the collection of spectrum files. Usually, the
         ProteomeXchange identifier, e.g. ``PXD028735``.
-    spectrum : spectrum_utils.spectrum.MsmsSpectrum, optional
-        Observed spectrum.
+    spectrum : any, optional
+        Observed spectrum. Can be freely used, for instance as a
+        ``spectrum_utils.spectrum.MsmsSpectrum`` object.
     is_decoy : bool, optional
         Boolean specifying if the PSM is a decoy (``True``) or target hit
         (``False``).
@@ -51,7 +52,7 @@ class PeptideSpectrumMatch:
     run: Optional[str] = None
     collection: Optional[str] = None
     # TODO: Not yet sure if `spectrum` should be included...
-    spectrum: Optional["spectrum_utils.spectrum.MsmsSpectrum"] = None
+    spectrum: Optional[Any] = None
     is_decoy: Optional[bool] = None
     score: Optional[float] = None
     precursor_charge: Optional[int] = field(default=None, repr=False)

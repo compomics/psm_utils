@@ -4,10 +4,15 @@ from typing import Optional, Union
 from psm_utils.peptidoform import Peptidoform, PeptidoformException
 
 
+# TODO: Rename `PeptideSpectrumMatch` to `PSM`?
 @dataclass
 class PeptideSpectrumMatch:
     """
-    Data Class representing a PeptideSpectrumMatch (PSM).
+    Data class representing a peptide-spectrum match (PSM).
+
+    Links a :class:`psm_utils.peptidoform.Peptidoform` to an observed spectrum
+    and holds relevant the metadata.
+
 
     Parameters
     ----------
@@ -16,28 +21,39 @@ class PeptideSpectrumMatch:
     spectrum_id : str
         Spectrum identifier as used in spectrum file (e.g., mzML or MGF),
         usually in HUPO-PSI nativeID format (MS:1000767), e.g.,
-        ``controllerType=0 controllerNumber=0 scan=423``
-    run : str
+        ``controllerType=0 controllerNumber=0 scan=423``.
+    run : str, optional
         Name of the MS run. Usually the spectrum file filename without
         extension.
+    collection : str, optional
+        Identifier of the collection of spectrum files. Usually, the
+        ProteomeXchange identifier, e.g. ``PXD028735``.
+    spectrum : spectrum_utils.spectrum.MsmsSpectrum, optional
+        Observed spectrum.
     is_decoy : bool, optional
         Boolean specifying if the PSM is a decoy (``True``) or target hit
         (``False``).
+    score : float, optional
+        Search engine score.
     precursor_charge : int, optional
-        PSM precursor charge.
+        Precursor charge.
     precursor_mz : float, optional
-        PSM precursor m/z.
+        Precursor m/z.
     retention_time : float, optional
-        PSM retention time.
+        Retention time.
     metadata : dict, optional
-        More data about PSM, e.g., search engine score.
+        More data about PSM.
 
     """
 
     peptide: Union[Peptidoform, str]
     spectrum_id: str
-    run: str
+    run: Optional[str] = None
+    collection: Optional[str] = None
+    # TODO: Not yet sure if `spectrum` should be included...
+    spectrum: Optional["spectrum_utils.spectrum.MsmsSpectrum"] = None
     is_decoy: Optional[bool] = None
+    score: Optional[float] = None
     precursor_charge: Optional[int] = field(default=None, repr=False)
     precursor_mz: Optional[float] = field(default=None, repr=False)
     retention_time: Optional[float] = field(default=None, repr=False)
@@ -52,6 +68,11 @@ class PeptideSpectrumMatch:
             self.precursor_charge = int(self.precursor_charge.strip("+"))
         elif self.peptide.properties["charge_state"]:
             self.precursor_charge = self.peptide.properties["charge_state"].charge
+
+    @property
+    def universal_spectrum_identifier(self) -> str:
+        """"""
+        raise NotImplementedError
 
     def to_peprec_entry(self) -> dict:
         entry = {

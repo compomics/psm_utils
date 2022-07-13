@@ -1,26 +1,63 @@
 """Interface to MaxQuant msms.txt PSM files."""
 
+import csv
 import logging
 import os
 import re
 from functools import cmp_to_key
-from typing import Dict, List, Tuple,Union
+from itertools import compress
+from pathlib import Path
+from typing import Dict, List, Tuple, Union
 
 import click
 import numpy as np
 import pandas as pd
+from sqlalchemy import true
 
 from psm_utils._exceptions import PSMUtilsException
+from psm_utils.io._base_classes import ReaderBase, WriterBase
 from psm_utils.psm import PeptideSpectrumMatch
 from psm_utils.psm_list import PSMList
-from psm_utils.io._base_classes import ReaderBase, WriterBase
-
 
 logger = logging.getLogger(__name__)
+
+MSMS_default_columns = {
+    "Raw file",
+    "Scan number",
+    "Charge",
+    "Length",
+    "Sequence",
+    "Modified sequence",
+    "Proteins",
+    "Missed cleavages",
+    "Mass",
+    "Mass error [Da]",
+    "Mass error [ppm]",
+    "Reverse",
+    "Retention time",
+    "PEP",
+    "Score",
+    "Delta score",
+    "Localization prob",
+    "Matches",
+    "Intensities",
+    "Mass Deviations [Da]",
+    "Mass Deviations [ppm]",
+    "Intensity coverage",
+    "id",
+}
 
 
 class MaxquantReader(ReaderBase):
     """Reader for MaxQuant msms.txt PSM files."""
+
+    def __init__(self, filename: Union[str, Path]) -> None:
+        super().__init__(filename)
+
+        self.rename_mapping = None
+        self._mass_error_unit = None
+
+        self._validate_msms()
 
     def __iter__(self):
         return self
@@ -30,7 +67,58 @@ class MaxquantReader(ReaderBase):
 
     def read_file() -> PSMList:
         """Read full MaxQuant msms.txt PSM file into a PSMList object."""
+
+        """
+        Read line by line the msms.txt file:    
+                                                -get header order + fix column case
+                                                -set spectrum id
+                                                -get the additional features
+        """
+
         raise NotImplementedError()
+
+    def _validate_msms(self) -> None:
+        with open(self.filename, "r") as msms_file:
+            msms_reader = csv.DictReader(msms_file)
+
+            self._evaluate_columns(msms_reader.fieldnames)
+            self._mass_error_unit = self.__set_mass_error_unit(msms_reader.fieldnames)
+
+    @staticmethod
+    def _evaluate_columns(columns) -> bool:
+        """Case insensitive column evaluation msms file."""
+
+        columns = list(map(lambda x: x.lower(), columns))
+        column_check = [
+            True if x.lower() in columns else False for x in MSMS_default_columns
+        ]
+        if all(column_check):
+            return True
+        else:
+            raise MsmsParsingError(
+                f"Missing columns: {list(compress(columns, column_check))}"
+            )
+
+    @staticmethod
+    def _fix_column_case(columns: List[str]) -> Dict[str, str]:
+        """
+        Create mapping for column names with the correct case.
+
+        Using `_evaluate_columns`, we can load required columns in a case-insensitive
+        manner. As a result, the column name case must be fixed for downstream usage.
+        """
+        case_mapping = {col.lower(): col for col in MSMS_default_columns}
+        rename_mapping = {col: case_mapping[col.lower()] for col in columns}
+        return rename_mapping
+
+    def _set_mass_error_unit(self, columns) -> None:
+        """Get mass error unit from DataFrame columns."""
+        if "Mass error [Da]" in columns:
+            self._mass_error_unit = "Da"
+        elif "Mass error [ppm]" in columns:
+            self._mass_error_unit = "ppm"
+        else:
+            raise NotImplementedError(f"MSMS.txt mass error unit not supported.")
 
 
 class MaxquantWriter(WriterBase):
@@ -49,38 +137,17 @@ class MaxquantWriter(WriterBase):
 
 
 class ModificationParsingException(PSMUtilsException):
-    """Identification file parsing error."""
+    """Modification parsing error."""
+
+
+class MsmsParsingError(PSMUtilsException):
+    """Msms parsing error"""
 
 
 @pd.api.extensions.register_dataframe_accessor("msms")
 class MSMSAccessor:
     """Pandas extension for MaxQuant msms.txt files."""
 
-    default_columns = {
-        "Raw file",
-        "Scan number",
-        "Charge",
-        "Length",
-        "Sequence",
-        "Modified sequence",
-        "Proteins",
-        "Missed cleavages",
-        "Mass",
-        "Mass error [Da]",
-        "Mass error [ppm]",
-        "Reverse",
-        "Retention time",
-        "PEP",
-        "Score",
-        "Delta score",
-        "Localization prob",
-        "Matches",
-        "Intensities",
-        "Mass Deviations [Da]",
-        "Mass Deviations [ppm]",
-        "Intensity coverage",
-        "id",
-    }
     _mass_error_unit = None
 
     def __init__(self, pandas_obj) -> None:
@@ -374,7 +441,7 @@ class MSMSAccessor:
             indices_most_intens = np.array(intensities).argsort()[-1:-8:-1]
             mass_errors_top7 = [(mass_errors[i]) for i in indices_most_intens]
             mean_error_top7 = np.mean(mass_errors_top7)
-            sq_mean_error_top7 = mean_error_top7**2
+            sq_mean_error_top7 = mean_error_top7 ** 2
             stdev_error_top7 = np.std(mass_errors_top7)
 
             return mean_error_top7, sq_mean_error_top7, stdev_error_top7
@@ -431,9 +498,7 @@ class MSMSAccessor:
         return tuple([np.log(x) for x in out])
 
     def to_peprec(
-        self,
-        modification_mapping=None,
-        fixed_modifications=None,
+        self, modification_mapping=None, fixed_modifications=None,
     ) -> pd.DataFrame:
         """
         Get PeptideRecord from MaxQuant msms.txt file.
@@ -586,17 +651,3 @@ class MSMSAccessor:
         )
 
         return features
-
-
-@click.command()
-@click.argument("input-msms")
-@click.argument("output-peprec")
-def main(**kwargs):
-    """Convert msms.txt to PEPREC."""
-    msms_df = pd.DataFrame.msms.from_file(kwargs["input_psm_report"])
-    peprec = msms_df.msms.to_peprec()
-    peprec.to_csv(kwargs["output_peprec"])
-
-
-if __name__ == "__main__":
-    main()

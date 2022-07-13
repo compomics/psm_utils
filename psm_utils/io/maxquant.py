@@ -54,7 +54,7 @@ class MaxquantReader(ReaderBase):
     def __init__(self, filename: Union[str, Path]) -> None:
         super().__init__(filename)
 
-        self.rename_mapping = None
+        self._rename_mapping = None
         self._mass_error_unit = None
 
         self._validate_msms()
@@ -79,18 +79,18 @@ class MaxquantReader(ReaderBase):
 
     def _validate_msms(self) -> None:
         with open(self.filename, "r") as msms_file:
-            msms_reader = csv.DictReader(msms_file)
-
+            msms_reader = csv.DictReader(msms_file, delimiter="\t")
             self._evaluate_columns(msms_reader.fieldnames)
-            self._mass_error_unit = self.__set_mass_error_unit(msms_reader.fieldnames)
+            self._set_mass_error_unit(msms_reader.fieldnames)
+            self._rename_mapping = self._fix_column_case(msms_reader.fieldnames)
 
     @staticmethod
     def _evaluate_columns(columns) -> bool:
         """Case insensitive column evaluation msms file."""
 
-        columns = list(map(lambda x: x.lower(), columns))
+        columns = list(map(lambda col: col.lower(), columns))
         column_check = [
-            True if x.lower() in columns else False for x in MSMS_default_columns
+            True if col.lower() in columns else False for col in MSMS_default_columns
         ]
         if all(column_check):
             return True
@@ -108,7 +108,12 @@ class MaxquantReader(ReaderBase):
         manner. As a result, the column name case must be fixed for downstream usage.
         """
         case_mapping = {col.lower(): col for col in MSMS_default_columns}
-        rename_mapping = {col: case_mapping[col.lower()] for col in columns}
+
+        rename_mapping = {
+            col: case_mapping[col.lower()]
+            for col in columns
+            if col in MSMS_default_columns
+        }
         return rename_mapping
 
     def _set_mass_error_unit(self, columns) -> None:
@@ -441,7 +446,7 @@ class MSMSAccessor:
             indices_most_intens = np.array(intensities).argsort()[-1:-8:-1]
             mass_errors_top7 = [(mass_errors[i]) for i in indices_most_intens]
             mean_error_top7 = np.mean(mass_errors_top7)
-            sq_mean_error_top7 = mean_error_top7 ** 2
+            sq_mean_error_top7 = mean_error_top7**2
             stdev_error_top7 = np.std(mass_errors_top7)
 
             return mean_error_top7, sq_mean_error_top7, stdev_error_top7
@@ -498,7 +503,9 @@ class MSMSAccessor:
         return tuple([np.log(x) for x in out])
 
     def to_peprec(
-        self, modification_mapping=None, fixed_modifications=None,
+        self,
+        modification_mapping=None,
+        fixed_modifications=None,
     ) -> pd.DataFrame:
         """
         Get PeptideRecord from MaxQuant msms.txt file.

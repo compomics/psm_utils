@@ -64,7 +64,7 @@ Or with Flit:
 
 .. code-block:: sh
 
-    flit install
+    flit install --symlink
 
 
 Unit tests

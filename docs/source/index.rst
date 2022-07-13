@@ -1,5 +1,6 @@
 .. include:: ../../README.rst
 
+
 .. toctree::
    :caption: About
    :hidden:
@@ -8,10 +9,19 @@
    Readme <self>
    changelog
 
+
 .. toctree::
-   :caption: API reference
+   :caption: Python API reference
+   :hidden:
+   :includehidden:
+   :glob:
+
+   api/*
+
+
+.. toctree::
+   :caption: Command line interface
    :hidden:
    :includehidden:
 
-   api/psm_utils
-   api/psm_utils.io
+   cli/cli

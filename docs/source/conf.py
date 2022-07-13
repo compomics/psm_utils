@@ -32,7 +32,7 @@ exclude_patterns = ["_build"]
 
 # Options for HTML output
 html_theme = "sphinx_rtd_theme"
-html_static_path = ["_static"]
+# html_static_path = ["_static"]
 
 # Autodoc options
 autodoc_member_order = "bysource"

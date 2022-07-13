@@ -2,7 +2,9 @@
 Parsers for proteomics search results from various search engines.
 """
 
-from tqdm.auto import tqdm
+from pathlib import Path
+from typing import Union
+from rich.progress import track
 
 import psm_utils.io.maxquant as maxquant
 import psm_utils.io.peptide_record as peptide_record
@@ -25,8 +27,8 @@ def _infer_filetype(filename: str):
 
 
 def convert(
-    input_filename: str,
-    output_filename: str,
+    input_filename: Union[str, Path],
+    output_filename: Union[str, Path],
     input_filetype: str = "infer",
     output_filetype: str = "infer",
     show_progressbar: bool = False,
@@ -84,7 +86,7 @@ def convert(
     reader = reader_cls(input_filename)
     writer = writer_cls(output_filename)
 
-    iterator = tqdm(reader) if show_progressbar else reader
+    iterator = track(reader) if show_progressbar else reader
 
     for psm in iterator:
         writer.write(psm)

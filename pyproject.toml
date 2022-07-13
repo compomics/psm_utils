@@ -32,6 +32,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "black",
+    "isort>5",
     "pytest",
     "pytest-cov"
 ]
@@ -61,3 +62,6 @@ build-backend = "flit_core.buildapi"
 
 [tool.flit.module]
 name = "psm_utils"
+
+[tool.isort]
+profile = "black"

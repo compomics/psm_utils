@@ -27,6 +27,9 @@ from rich.logging import RichHandler
 import psm_utils.io
 
 
+logger = logging.getLogger(__name__)
+
+
 def main():
     logging.basicConfig(
         level="NOTSET",
@@ -34,7 +37,6 @@ def main():
         datefmt="[%X]",
         handlers=[RichHandler(rich_tracebacks=True, tracebacks_suppress=[click])],
     )
-    logger = logging.getLogger(__name__)
 
     try:
         cli()

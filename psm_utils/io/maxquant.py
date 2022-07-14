@@ -71,7 +71,6 @@ class MaxquantReader(ReaderBase):
         """
         Read line by line the msms.txt file:    
                                                 -get header order + fix column case
-                                                -set spectrum id
                                                 -get the additional features
         """
 
@@ -124,6 +123,19 @@ class MaxquantReader(ReaderBase):
             self._mass_error_unit = "ppm"
         else:
             raise NotImplementedError(f"MSMS.txt mass error unit not supported.")
+
+    @staticmethod
+    def _get_spec_id(raw_file_name, scan_number) -> str:
+        """Get unique maxquant spec_id."""
+        return raw_file_name + "." + scan_number + "." + scan_number
+
+    @staticmethod
+    def _get_peptide_spectrum_match(dictreader) -> PeptideSpectrumMatch:
+        """Return a PeptideSpectrumMatch object from maxquat msms PSM"""
+        pass
+
+    def _get_peptidoform(modified_peptideseq):
+        """Return a peptido form"""
 
 
 class MaxquantWriter(WriterBase):

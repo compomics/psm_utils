@@ -58,6 +58,8 @@ class PeptideSpectrumMatch:
     precursor_charge: Optional[int] = field(default=None, repr=False)
     precursor_mz: Optional[float] = field(default=None, repr=False)
     retention_time: Optional[float] = field(default=None, repr=False)
+    source: Optional[str] = field(default=None, repr=False)
+    provenance_data: Optional[dict] = field(default=None, repr=False)
     metadata: Optional[dict] = field(default=None, repr=False)
 
     def __post_init__(self):

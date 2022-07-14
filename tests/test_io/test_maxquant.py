@@ -81,7 +81,7 @@ class TestMaxquantReader:
 
     def test_set_mass_error_unit(self):
         msms_reader = maxquant.MaxquantReader(
-            "C:\\Users\\decle\\Projects\\psm_utils\\tests\\test_data\\test_msms.txt"
+            "./tests/test_data/test_msms.txt"
         )
         # Test dalton mass error case
         assert msms_reader._mass_error_unit == "Da"

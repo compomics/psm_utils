@@ -107,11 +107,11 @@ class MaxquantReader(ReaderBase):
         manner. As a result, the column name case must be fixed for downstream usage.
         """
         case_mapping = {col.lower(): col for col in MSMS_default_columns}
-
+        required_col = list(map(lambda col: col.lower(), MSMS_default_columns))
         rename_mapping = {
             col: case_mapping[col.lower()]
             for col in columns
-            if col in MSMS_default_columns
+            if col.lower() in required_col
         }
         return rename_mapping
 

@@ -1,5 +1,3 @@
-from cgi import test
-
 import pytest
 
 import psm_utils.io.maxquant as maxquant

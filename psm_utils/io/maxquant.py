@@ -1,12 +1,14 @@
 """Interface to MaxQuant msms.txt PSM files."""
 
+import csv
 import logging
 import os
 import re
 from functools import cmp_to_key
+from itertools import compress
+from pathlib import Path
 from typing import Dict, List, Tuple, Union
 
-import click
 import numpy as np
 import pandas as pd
 
@@ -17,9 +19,43 @@ from psm_utils.psm_list import PSMList
 
 logger = logging.getLogger(__name__)
 
+MSMS_default_columns = {
+    "Raw file",
+    "Scan number",
+    "Charge",
+    "Length",
+    "Sequence",
+    "Modified sequence",
+    "Proteins",
+    "Missed cleavages",
+    "Mass",
+    "Mass error [Da]",
+    "Mass error [ppm]",
+    "Reverse",
+    "Retention time",
+    "PEP",
+    "Score",
+    "Delta score",
+    "Localization prob",
+    "Matches",
+    "Intensities",
+    "Mass Deviations [Da]",
+    "Mass Deviations [ppm]",
+    "Intensity coverage",
+    "id",
+}
+
 
 class MaxquantReader(ReaderBase):
     """Reader for MaxQuant msms.txt PSM files."""
+
+    def __init__(self, filename: Union[str, Path]) -> None:
+        super().__init__(filename)
+
+        self._rename_mapping = None
+        self._mass_error_unit = None
+
+        self._validate_msms()
 
     def __iter__(self):
         return self
@@ -29,7 +65,75 @@ class MaxquantReader(ReaderBase):
 
     def read_file() -> PSMList:
         """Read full MaxQuant msms.txt PSM file into a PSMList object."""
+
+        """
+        Read line by line the msms.txt file:
+                                                -get header order + fix column case
+                                                -get the additional features
+        """
+
         raise NotImplementedError()
+
+    def _validate_msms(self) -> None:
+        with open(self.filename, "r") as msms_file:
+            msms_reader = csv.DictReader(msms_file, delimiter="\t")
+            self._evaluate_columns(msms_reader.fieldnames)
+            self._set_mass_error_unit(msms_reader.fieldnames)
+            self._rename_mapping = self._fix_column_case(msms_reader.fieldnames)
+
+    @staticmethod
+    def _evaluate_columns(columns) -> bool:
+        """Case insensitive column evaluation msms file."""
+
+        columns = list(map(lambda col: col.lower(), columns))
+        column_check = [
+            True if col.lower() in columns else False for col in MSMS_default_columns
+        ]
+        if all(column_check):
+            return True
+        else:
+            raise MsmsParsingError(
+                f"Missing columns: {list(compress(columns, column_check))}"
+            )
+
+    @staticmethod
+    def _fix_column_case(columns: List[str]) -> Dict[str, str]:
+        """
+        Create mapping for column names with the correct case.
+
+        Using `_evaluate_columns`, we can load required columns in a case-insensitive
+        manner. As a result, the column name case must be fixed for downstream usage.
+        """
+        case_mapping = {col.lower(): col for col in MSMS_default_columns}
+        required_col = list(map(lambda col: col.lower(), MSMS_default_columns))
+        rename_mapping = {
+            col: case_mapping[col.lower()]
+            for col in columns
+            if col.lower() in required_col
+        }
+        return rename_mapping
+
+    def _set_mass_error_unit(self, columns) -> None:
+        """Get mass error unit from DataFrame columns."""
+        if "Mass error [Da]" in columns:
+            self._mass_error_unit = "Da"
+        elif "Mass error [ppm]" in columns:
+            self._mass_error_unit = "ppm"
+        else:
+            raise NotImplementedError(f"MSMS.txt mass error unit not supported.")
+
+    @staticmethod
+    def _get_spec_id(raw_file_name, scan_number) -> str:
+        """Get unique maxquant spec_id."""
+        return raw_file_name + "." + scan_number + "." + scan_number
+
+    @staticmethod
+    def _get_peptide_spectrum_match(dictreader) -> PeptideSpectrumMatch:
+        """Return a PeptideSpectrumMatch object from maxquat msms PSM"""
+        pass
+
+    def _get_peptidoform(modified_peptideseq):
+        """Return a peptido form"""
 
 
 class MaxquantWriter(WriterBase):
@@ -48,38 +152,17 @@ class MaxquantWriter(WriterBase):
 
 
 class ModificationParsingException(PSMUtilsException):
-    """Identification file parsing error."""
+    """Modification parsing error."""
+
+
+class MsmsParsingError(PSMUtilsException):
+    """Msms parsing error"""
 
 
 @pd.api.extensions.register_dataframe_accessor("msms")
 class MSMSAccessor:
     """Pandas extension for MaxQuant msms.txt files."""
 
-    default_columns = {
-        "Raw file",
-        "Scan number",
-        "Charge",
-        "Length",
-        "Sequence",
-        "Modified sequence",
-        "Proteins",
-        "Missed cleavages",
-        "Mass",
-        "Mass error [Da]",
-        "Mass error [ppm]",
-        "Reverse",
-        "Retention time",
-        "PEP",
-        "Score",
-        "Delta score",
-        "Localization prob",
-        "Matches",
-        "Intensities",
-        "Mass Deviations [Da]",
-        "Mass Deviations [ppm]",
-        "Intensity coverage",
-        "id",
-    }
     _mass_error_unit = None
 
     def __init__(self, pandas_obj) -> None:
@@ -585,17 +668,3 @@ class MSMSAccessor:
         )
 
         return features
-
-
-@click.command()
-@click.argument("input-msms")
-@click.argument("output-peprec")
-def main(**kwargs):
-    """Convert msms.txt to PEPREC."""
-    msms_df = pd.DataFrame.msms.from_file(kwargs["input_psm_report"])
-    peprec = msms_df.msms.to_peprec()
-    peprec.to_csv(kwargs["output_peprec"])
-
-
-if __name__ == "__main__":
-    main()

@@ -39,7 +39,7 @@ class PSMList:
     """
 
     # TODO
-    __slots__ = ()
+    # __slots__ = ()
 
     psm_list: List[PeptideSpectrumMatch]
 

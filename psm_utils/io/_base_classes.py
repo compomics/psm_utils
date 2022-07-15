@@ -45,7 +45,7 @@ class ReaderBase(ABC):
             self.modification_definitions = modification_definitions
         else:
             self.modification_definitions = {}
-        self.validate_modification_definitions(modification_definitions)
+        self.validate_modification_definitions(self.modification_definitions)
 
     def __iter__(self):
         return self

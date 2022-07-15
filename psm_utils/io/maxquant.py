@@ -14,6 +14,7 @@ import pandas as pd
 
 from psm_utils.exceptions import PSMUtilsException
 from psm_utils.io._base_classes import ReaderBase, WriterBase
+from psm_utils.peptidoform import Peptidoform
 from psm_utils.psm import PeptideSpectrumMatch
 from psm_utils.psm_list import PSMList
 
@@ -49,13 +50,18 @@ MSMS_DEFAULT_COLUMNS = {
 class MaxquantReader(ReaderBase):
     """Reader for MaxQuant msms.txt PSM files."""
 
-    def __init__(self, filename: Union[str, Path]) -> None:
-        super().__init__(filename)
+    def __init__(
+        self,
+        filename: Union[str, Path],
+        modifications_definitions: list[dict[str, str]],
+    ) -> None:
+        super().__init__(filename, modifications_definitions)
 
         self._rename_mapping = None
         self._mass_error_unit = None
 
         self._validate_msms()
+        self.modifications_definitions = modifications_definitions
 
     def __iter__(self):
         return self
@@ -123,17 +129,66 @@ class MaxquantReader(ReaderBase):
             raise NotImplementedError(f"MSMS.txt mass error unit not supported.")
 
     @staticmethod
-    def _get_spec_id(raw_file_name, scan_number) -> str:
-        """Get unique maxquant spec_id."""
-        return raw_file_name + "." + scan_number + "." + scan_number
-
-    @staticmethod
-    def _get_peptide_spectrum_match(dictreader) -> PeptideSpectrumMatch:
+    def _get_peptide_spectrum_match(dict) -> PeptideSpectrumMatch:
         """Return a PeptideSpectrumMatch object from maxquat msms PSM"""
         pass
 
-    def _get_peptidoform(modified_peptideseq):
+    def _get_peptidoform(
+        modified_peptideseq: str,
+    ) -> Peptidoform:
         """Return a peptido form"""
+
+    def parse_maxquant_modification(self, modified_seq):
+        """Parse modified maxquatn seq to proforma sequence"""
+
+        # pattern to match open and closed round brackets
+        pattern = re.compile(r"\(((?:[^)(]+|\((?:[^)(]+|\([^)(]*\))*\))*)\)")
+        modification_def_map = self.map_modification_definitions
+        proforma_seq = modified_seq.strip("_")
+        seq_length = len(proforma_seq) + 1
+
+        for match in pattern.finditer(modified_seq):
+            # take match object string, remove leading and trailing bracket
+            # and escape remaining brackets
+            se_mod_string = match[0][1:-1].replace("(", "\(").replace(")", "\)")
+
+            # if N-term mod
+            if match.start() == 1:
+                print("found N-term mod")
+                if "N-term" in modification_def_map[match[0][1:-1]].site:
+                    proforma_seq = re.sub(
+                        f"\({se_mod_string}\)",
+                        f"[{modification_def_map[match[0][1:-1]].proforma_label}]-",
+                        proforma_seq,
+                    )
+                else:
+                    raise ModificationParsingException(
+                        "non N-terminal modification cannot be in front of a sequence"
+                    )
+
+            # if C-term mod
+            elif match.end() == seq_length:
+                print("found C-term mod")
+                if "C-term" in modification_def_map[match[0][1:-1]].site:
+                    proforma_seq = re.sub(
+                        f"\({se_mod_string}\)",
+                        f"-[{modification_def_map[match[0][1:-1]].proforma_label}]",
+                        proforma_seq,
+                    )
+                else:
+                    raise ModificationParsingException(
+                        "non C-terminal modification cannot be at the end of a sequence"
+                    )
+
+            # if modification on amino acid
+            else:
+                proforma_seq = re.sub(
+                    f"\({se_mod_string}\)",
+                    f"[{modification_def_map[match[0][1:-1]].proforma_label}]",
+                    proforma_seq,
+                )
+
+        return proforma_seq
 
 
 class MaxquantWriter(WriterBase):

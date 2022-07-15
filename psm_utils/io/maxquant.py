@@ -154,7 +154,6 @@ class MaxquantReader(ReaderBase):
 
             # if N-term mod
             if match.start() == 1:
-                print("found N-term mod")
                 if "N-term" in modification_def_map[match[0][1:-1]].site:
                     proforma_seq = re.sub(
                         f"\({se_mod_string}\)",
@@ -168,7 +167,6 @@ class MaxquantReader(ReaderBase):
 
             # if C-term mod
             elif match.end() == seq_length:
-                print("found C-term mod")
                 if "C-term" in modification_def_map[match[0][1:-1]].site:
                     proforma_seq = re.sub(
                         f"\({se_mod_string}\)",

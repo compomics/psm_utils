@@ -5,7 +5,6 @@ from __future__ import annotations
 import warnings
 from abc import ABC, abstractmethod
 from collections import namedtuple
-from msilib.schema import Property
 from pathlib import Path
 from typing import Union
 
@@ -142,7 +141,7 @@ class ReaderBase(ABC):
         """Read full PSM file into a PSMList object."""
         raise NotImplementedError()
 
-    @Property
+    @property
     def map_modification_definitions(self):
         """Map modification definitions from searchengine lable to site and unimod label"""
 

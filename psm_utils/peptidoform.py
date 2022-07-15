@@ -1,28 +1,11 @@
 from __future__ import annotations
+
 from dataclasses import dataclass, field
 from typing import Any
 
-from pyteomics import proforma, mass
+from pyteomics import mass, proforma
 
-from psm_utils._exceptions import PSMUtilsException
-
-
-class PeptidoformException(PSMUtilsException):
-    """Error while handling :py:class:`Peptidoform`."""
-
-    pass
-
-
-class AmbiguousResidueException(PeptidoformException):
-    """Error while handling ambiguous residue."""
-
-    pass
-
-
-class ModificationException(PeptidoformException):
-    """Error while handling amino acid modification."""
-
-    pass
+from psm_utils.exceptions import PSMUtilsException
 
 
 @dataclass
@@ -173,3 +156,21 @@ class Peptidoform:
     def theoretical_mass(self) -> float:
         """Monoisotopic mass of the full uncharged (modified) peptide."""
         return sum(self.sequential_theoretical_mass)
+
+
+class PeptidoformException(PSMUtilsException):
+    """Error while handling :py:class:`Peptidoform`."""
+
+    pass
+
+
+class AmbiguousResidueException(PeptidoformException):
+    """Error while handling ambiguous residue."""
+
+    pass
+
+
+class ModificationException(PeptidoformException):
+    """Error while handling amino acid modification."""
+
+    pass

@@ -7,15 +7,15 @@ on:
   pull_request:
 
 jobs:
-  full-test:
+  test-with-codecov:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v3
 
-    - name: Set up Python 3.8
+    - name: Set up Python 3.7
       uses: actions/setup-python@v4
       with:
-        python-version: '3.8'
+        python-version: '3.7'
 
     - name: Install dependencies
       run: |
@@ -38,6 +38,7 @@ jobs:
 
     - name: Upload coverage reports to Codecov
       uses: codecov/codecov-action@v3
+
 
   test-platforms:
     runs-on: ${{ matrix.os }}

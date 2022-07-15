@@ -1,9 +1,8 @@
-"""
-Parsers for proteomics search results from various search engines.
-"""
+"""Parsers for proteomics search results from various search engines."""
 
 from pathlib import Path
 from typing import Union
+
 from rich.progress import track
 
 import psm_utils.io.maxquant as maxquant

@@ -4,17 +4,16 @@ import logging
 import os
 import re
 from functools import cmp_to_key
-from typing import Dict, List, Tuple,Union
+from typing import Dict, List, Tuple, Union
 
 import click
 import numpy as np
 import pandas as pd
 
-from psm_utils._exceptions import PSMUtilsException
+from psm_utils.exceptions import PSMUtilsException
+from psm_utils.io._base_classes import ReaderBase, WriterBase
 from psm_utils.psm import PeptideSpectrumMatch
 from psm_utils.psm_list import PSMList
-from psm_utils.io._base_classes import ReaderBase, WriterBase
-
 
 logger = logging.getLogger(__name__)
 

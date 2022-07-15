@@ -19,7 +19,7 @@ from psm_utils.psm_list import PSMList
 
 logger = logging.getLogger(__name__)
 
-MSMS_default_columns = {
+MSMS_DEFAULT_COLUMNS = {
     "Raw file",
     "Scan number",
     "Charge",
@@ -87,7 +87,7 @@ class MaxquantReader(ReaderBase):
 
         columns = list(map(lambda col: col.lower(), columns))
         column_check = [
-            True if col.lower() in columns else False for col in MSMS_default_columns
+            True if col.lower() in columns else False for col in MSMS_DEFAULT_COLUMNS
         ]
         if all(column_check):
             return True
@@ -104,8 +104,8 @@ class MaxquantReader(ReaderBase):
         Using `_evaluate_columns`, we can load required columns in a case-insensitive
         manner. As a result, the column name case must be fixed for downstream usage.
         """
-        case_mapping = {col.lower(): col for col in MSMS_default_columns}
-        required_col = list(map(lambda col: col.lower(), MSMS_default_columns))
+        case_mapping = {col.lower(): col for col in MSMS_DEFAULT_COLUMNS}
+        required_col = list(map(lambda col: col.lower(), MSMS_DEFAULT_COLUMNS))
         rename_mapping = {
             col: case_mapping[col.lower()]
             for col in columns

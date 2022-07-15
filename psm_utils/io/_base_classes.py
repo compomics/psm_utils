@@ -5,6 +5,7 @@ from __future__ import annotations
 import warnings
 from abc import ABC, abstractmethod
 from pathlib import Path
+from typing import Union
 
 from pyteomics import proforma
 
@@ -20,22 +21,37 @@ from psm_utils.psm_list import PSMList
 class ReaderBase(ABC):
     """Abstract base class for PSM file readers."""
 
-    def __init__(self, filename) -> None:
+    def __init__(self,
+        filename: Union[str, Path],
+        modification_definitions: list[dict[str, str]] = None,
+    ) -> None:
+        """
+        Reader for PSM file.
+
+        Parameters
+        ----------
+        filename: str, pathlib.Path
+            Path to PSM file.
+        modification_definitions: list[dict[str, str]]
+            List of modification definition dictionaries. See
+            `Parsing of modification labels`_ for more information.
+
+        """
         super().__init__()
 
         self.filename = Path(filename)
-        self._validate_filepath()
+
+        if modification_definitions:
+            self.modification_definitions = modification_definitions
+        else:
+            self.modification_definitions = {}
+        self.validate_modification_definitions(modification_definitions)
 
     def __iter__(self):
         return self
 
     @abstractmethod
     def __next__(self) -> PeptideSpectrumMatch:
-        raise NotImplementedError()
-
-    @abstractmethod
-    def read_file() -> PSMList:
-        """Read full PSM file into a PSMList object."""
         raise NotImplementedError()
 
     @staticmethod
@@ -114,11 +130,11 @@ class ReaderBase(ABC):
                         "not be resolved.",
                         UserWarning,
                     )
-    def _validate_filepath(self):
-        """Check if given filepath exists"""
 
-        if not self.filename.exists():
-            raise FileNotFoundError("Please give a valid filepath")
+    @abstractmethod
+    def read_file() -> PSMList:
+        """Read full PSM file into a PSMList object."""
+        raise NotImplementedError()
 
 
 class WriterBase(ABC):

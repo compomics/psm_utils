@@ -4,6 +4,8 @@ from __future__ import annotations
 
 import warnings
 from abc import ABC, abstractmethod
+from collections import namedtuple
+from msilib.schema import Property
 from pathlib import Path
 from typing import Union
 
@@ -21,7 +23,8 @@ from psm_utils.psm_list import PSMList
 class ReaderBase(ABC):
     """Abstract base class for PSM file readers."""
 
-    def __init__(self,
+    def __init__(
+        self,
         filename: Union[str, Path],
         modification_definitions: list[dict[str, str]] = None,
     ) -> None:
@@ -131,10 +134,25 @@ class ReaderBase(ABC):
                         UserWarning,
                     )
 
+    def _validate_filepath(self):
+        """Check if given filepath exists"""
+
     @abstractmethod
     def read_file() -> PSMList:
         """Read full PSM file into a PSMList object."""
         raise NotImplementedError()
+
+    @Property
+    def map_modification_definitions(self):
+        """Map modification definitions from searchengine lable to site and unimod label"""
+
+        named_se_unimod_map = namedtuple("Searchengine_label", "site proforma_label")
+        return {
+            mod_def["search_engine_label"]: named_se_unimod_map(
+                mod_def["site"], mod_def["proforma_label"]
+            )
+            for mod_def in self.modification_definitions
+        }
 
 
 class WriterBase(ABC):

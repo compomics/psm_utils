@@ -1,6 +1,7 @@
 """Abstract base classes for psm_utils.io."""
 
 from abc import ABC, abstractmethod
+from pathlib import Path
 
 from psm_utils.psm import PeptideSpectrumMatch
 from psm_utils.psm_list import PSMList
@@ -8,6 +9,12 @@ from psm_utils.psm_list import PSMList
 
 class ReaderBase(ABC):
     """Abstract base class for PSM file readers."""
+
+    def __init__(self, filename) -> None:
+        super().__init__()
+
+        self.filename = Path(filename)
+        self._validate_filepath()
 
     def __iter__(self):
         return self
@@ -20,6 +27,12 @@ class ReaderBase(ABC):
     def read_file() -> PSMList:
         """Read full PSM file into a PSMList object."""
         raise NotImplementedError()
+
+    def _validate_filepath(self):
+        """Check if given filepath exists"""
+
+        if not self.filename.exists():
+            raise FileNotFoundError("Please give a valid filepath")
 
 
 class WriterBase(ABC):

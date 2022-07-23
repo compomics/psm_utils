@@ -1,4 +1,4 @@
-"""Interface with MS²PIP Peptide Record PSM files."""
+"""Interface with Peptide Record PSM files."""
 
 from __future__ import annotations
 
@@ -19,12 +19,10 @@ class PeptideRecord:
     """Peptide Record (PEPREC) file."""
 
     required_columns = [
-        "spec_id",
         "peptide",
-        "modifications",
-        "charge",
+        "modifications"
     ]
-    optional_columns = ["observed_retention_time", "label", "score"]
+    optional_columns = ["spec_id","charge","observed_retention_time", "label", "score"]
 
     def __init__(
         self,
@@ -121,15 +119,16 @@ class PeptideRecord:
         """Validate PEPREC header."""
         with open(filename, "rt") as f:
             line = f.readline()
-            if line[:7] != "spec_id":
-                raise InvalidPeprecError("PEPREC header should start with `spec_id`.")
 
     @staticmethod
     def _infer_separator(filename: Union[str, Path]) -> str:
         """Infer separator in PEPREC file."""
         with open(filename, "rt") as f:
             line = f.readline()
-            separator = line[7]
+            if "\t" in line:
+                separator = "\t"
+            else:
+                separator = ","
         return separator
 
     def _validate_required_columns(self) -> None:

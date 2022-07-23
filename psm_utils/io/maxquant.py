@@ -14,6 +14,7 @@ import pandas as pd
 
 from psm_utils.exceptions import PSMUtilsException
 from psm_utils.io._base_classes import ReaderBase, WriterBase
+from psm_utils.peptidoform import Peptidoform
 from psm_utils.psm import PeptideSpectrumMatch
 from psm_utils.psm_list import PSMList
 
@@ -49,30 +50,36 @@ MSMS_DEFAULT_COLUMNS = {
 class MaxquantReader(ReaderBase):
     """Reader for MaxQuant msms.txt PSM files."""
 
-    def __init__(self, filename: Union[str, Path]) -> None:
-        super().__init__(filename)
+    def __init__(
+        self,
+        filename: Union[str, Path],
+        modifications_definitions: list[dict[str, str]],
+    ) -> None:
+        super().__init__(filename, modifications_definitions)
 
         self._rename_mapping = None
         self._mass_error_unit = None
 
         self._validate_msms()
+        self.modifications_definitions = modifications_definitions
+        self._reader = csv.DictReader(self.filename, delimiter="\t")
 
     def __iter__(self):
         return self
 
     def __next__(self) -> PeptideSpectrumMatch:
-        raise NotImplementedError()
+        return PeptideSpectrumMatch(next(self._reader))
 
-    def read_file() -> PSMList:
+    def read_file(self) -> PSMList:
         """Read full MaxQuant msms.txt PSM file into a PSMList object."""
+        msms_psms = []
+        with open(self.filename, "r") as msms_file:
+            msms_reader = csv.DictReader(msms_file, delimiter="\t")
 
-        """
-        Read line by line the msms.txt file:
-                                                -get header order + fix column case
-                                                -get the additional features
-        """
+            for psm_dict in msms_reader:
+                msms_psms.append(self._get_peptide_spectrum_match(psm_dict))
 
-        raise NotImplementedError()
+        return PSMList(msms_psms)
 
     def _validate_msms(self) -> None:
         with open(self.filename, "r") as msms_file:
@@ -122,18 +129,99 @@ class MaxquantReader(ReaderBase):
         else:
             raise NotImplementedError(f"MSMS.txt mass error unit not supported.")
 
-    @staticmethod
-    def _get_spec_id(raw_file_name, scan_number) -> str:
-        """Get unique maxquant spec_id."""
-        return raw_file_name + "." + scan_number + "." + scan_number
-
-    @staticmethod
-    def _get_peptide_spectrum_match(dictreader) -> PeptideSpectrumMatch:
+    def _get_peptide_spectrum_match(
+        self, psm_dict: Dict[str : Union[str, float]]
+    ) -> PeptideSpectrumMatch:
         """Return a PeptideSpectrumMatch object from maxquat msms PSM"""
-        pass
 
-    def _get_peptidoform(modified_peptideseq):
+        peptide = self._get_peptidoform(psm_dict["Modified sequence"])
+        spectrum_id = psm_dict["Scan number"]
+        run = psm_dict["Raw file"]
+        is_decoy = psm_dict["Reverse"] == "+"
+        score = float(psm_dict["Score"])
+        precursor_charge = int(psm_dict["Charge"])
+        precursor_mz = float(psm_dict["m/z"])
+        retention_time = float(psm_dict["Retention time"])
+        protein_list = psm_dict["Proteins"]
+        source = "maxquant"
+        metadata = {
+            "Delta Score": psm_dict["Delta score"],
+            "Missed cleavages": psm_dict["enzInt"],
+            "Localization prob": psm_dict["Localization prob"],
+            "Length": psm_dict["Length"],
+            "Precursor Intensity": psm_dict["Precursor Intensity"],
+        }
+        return PeptideSpectrumMatch(
+            peptide=peptide,
+            spectrum_id=spectrum_id,
+            run=run,
+            is_decoy=is_decoy,
+            score=score,
+            precursor_charge=precursor_charge,
+            precursor_mz=precursor_mz,
+            retention_time=retention_time,
+            protein_list=protein_list,
+            source=source,
+            metadata=metadata,
+        )
+
+    def _get_peptidoform(
+        self,
+        modified_peptideseq: str,
+    ) -> Peptidoform:
         """Return a peptido form"""
+
+        return Peptidoform(self._parse_maxquant_modification(modified_peptideseq))
+
+    def _parse_maxquant_modification(self, modified_seq):
+        """Parse modified maxquant seq to proforma sequence"""
+
+        # pattern to match open and closed round brackets
+        pattern = re.compile(r"\(((?:[^)(]+|\((?:[^)(]+|\([^)(]*\))*\))*)\)")
+        modification_def_map = self.map_modification_definitions
+        proforma_seq = modified_seq.strip("_")
+        seq_length = len(proforma_seq) + 1
+
+        for match in pattern.finditer(modified_seq):
+            # take match object string, remove leading and trailing bracket
+            # and escape remaining brackets
+            se_mod_string = match[0][1:-1].replace("(", "\(").replace(")", "\)")
+
+            # if N-term mod
+            if match.start() == 1:
+                if "N-term" in modification_def_map[match[0][1:-1]].site:
+                    proforma_seq = re.sub(
+                        f"\({se_mod_string}\)",
+                        f"[{modification_def_map[match[0][1:-1]].proforma_label}]-",
+                        proforma_seq,
+                    )
+                else:
+                    raise ModificationParsingException(
+                        "non N-terminal modification cannot be in front of a sequence"
+                    )
+
+            # if C-term mod
+            elif match.end() == seq_length:
+                if "C-term" in modification_def_map[match[0][1:-1]].site:
+                    proforma_seq = re.sub(
+                        f"\({se_mod_string}\)",
+                        f"-[{modification_def_map[match[0][1:-1]].proforma_label}]",
+                        proforma_seq,
+                    )
+                else:
+                    raise ModificationParsingException(
+                        "non C-terminal modification cannot be at the end of a sequence"
+                    )
+
+            # if modification on amino acid
+            else:
+                proforma_seq = re.sub(
+                    f"\({se_mod_string}\)",
+                    f"[{modification_def_map[match[0][1:-1]].proforma_label}]",
+                    proforma_seq,
+                )
+
+        return proforma_seq
 
 
 class MaxquantWriter(WriterBase):

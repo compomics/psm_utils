@@ -28,9 +28,63 @@ TEST_COL = [
     "id",
 ]
 
+MODIFICATION_DEFINITIONS = [
+    {
+        "site": "S|T|Y",
+        "search_engine_label": "Phospho",
+        "proforma_label": "U:21",
+    },
+    {
+        "site": "M",
+        "search_engine_label": "Oxidation (M)",
+        "proforma_label": "U:35",
+    },
+    {
+        "site": "M",
+        "search_engine_label": "ox",
+        "proforma_label": "U:35",
+    },
+    {
+        "site": "M",
+        "search_engine_label": "Ox",
+        "proforma_label": "U:35",
+    },
+    {
+        "site": "N-term",
+        "search_engine_label": "Acetyl (Protein N-term)",
+        "proforma_label": "U:1",
+    },
+    {
+        "site": "N-term",
+        "search_engine_label": "ac",
+        "proforma_label": "U:1",
+    },
+    {
+        "site": "N-term",
+        "search_engine_label": "gl",
+        "proforma_label": "U:28",
+    },
+    {
+        "site": "N",
+        "search_engine_label": "de",
+        "proforma_label": "U:7",
+    },
+    {
+        "site": "C-term",
+        "search_engine_label": "Amidated (Peptide C-term)",
+        "proforma_label": "U:2",
+    },
+    {
+        "site": "K",
+        "search_engine_label": "Delta:H(4)C(3)",
+        "proforma_label": "U:256",
+    },
+]
+
+
 class TestMaxquantReader:
     def test_evaluate_columns(self):
-        
+
         columns = TEST_COL.copy()
         # Test with the right column names
         assert maxquant.MaxquantReader._evaluate_columns(columns) == True
@@ -79,7 +133,7 @@ class TestMaxquantReader:
 
     def test_set_mass_error_unit(self):
         msms_reader = maxquant.MaxquantReader(
-            "./tests/test_data/test_msms.txt"
+            "./tests/test_data/test_msms.txt", MODIFICATION_DEFINITIONS
         )
         # Test dalton mass error case
         assert msms_reader._mass_error_unit == "Da"
@@ -94,4 +148,53 @@ class TestMaxquantReader:
         columns.remove("Mass error [ppm]")
         with pytest.raises(NotImplementedError):
             msms_reader._set_mass_error_unit(columns)
-        
+
+    def test_parse_maxquant_modification(self):
+
+        test_cases = {
+            "input_modified_sequence": [
+                "_VGVGFGR_",
+                "_MCK_",
+                "_(ac)EEEIAALVIDNGSGMCK_",
+                "_(gl)QYDADLEQILIQWITTQCRK_",
+                "_LAM(ox)QEFMILPVGAANFR_",
+                "_VGVN(de)GFGR_",
+                "_(ac)EEEIAALVIDNGSGM(ox)CK_",
+                "_(ac)SDKPDM(ox)AEIEK_",
+                "_YYWGGHYSWDM(Ox)AK_",
+                "_YYWGGHYSWDM(Oxidation (M))AK_",
+                "_YYWGGHYM(ox)WDM(ox)AK_",
+                "_DFK(Delta:H(4)C(3))SK_",
+                "_(Acetyl (Protein N-term))ATGPM(ox)SFLK_",
+                "_ACDE(Amidated (Peptide C-term))_",
+                "_ACM(Ox)DE(Amidated (Peptide C-term))_",
+                "_(Acetyl (Protein N-term))M(Ox)ACM(Ox)DEM(Ox)(Amidated (Peptide C-term))_",
+            ],
+            "expected_output": [
+                "VGVGFGR",
+                "MCK",
+                "[U:1]-EEEIAALVIDNGSGMCK",
+                "[U:28]-QYDADLEQILIQWITTQCRK",
+                "LAM[U:35]QEFMILPVGAANFR",
+                "VGVN[U:7]GFGR",
+                "[U:1]-EEEIAALVIDNGSGM[U:35]CK",
+                "[U:1]-SDKPDM[U:35]AEIEK",
+                "YYWGGHYSWDM[U:35]AK",
+                "YYWGGHYSWDM[U:35]AK",
+                "YYWGGHYM[U:35]WDM[U:35]AK",
+                "DFK[U:256]SK",
+                "[U:1]-ATGPM[U:35]SFLK",
+                "ACDE-[U:2]",
+                "ACM[U:35]DE-[U:2]",
+                "[U:1]-M[U:35]ACM[U:35]DEM[U:35]-[U:2]",
+            ],
+        }
+
+        msms_reader = maxquant.MaxquantReader(
+            "./tests/test_data/test_msms.txt", MODIFICATION_DEFINITIONS
+        )
+        output = [
+            msms_reader.parse_maxquant_modification(x)
+            for x in test_cases["input_modified_sequence"]
+        ]
+        assert output == test_cases["expected_output"]

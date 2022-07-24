@@ -21,7 +21,8 @@ from psm_utils.psm_list import PSMList
 class ReaderBase(ABC):
     """Abstract base class for PSM file readers."""
 
-    def __init__(self,
+    def __init__(
+        self,
         filename: Union[str, Path],
         modification_definitions: list[dict[str, str]] = None,
     ) -> None:
@@ -47,11 +48,15 @@ class ReaderBase(ABC):
             self.modification_definitions = {}
         self.validate_modification_definitions(self.modification_definitions)
 
-    def __iter__(self):
-        return self
+        # Create easy-to-use mapping of modification SE label to ProForma label
+        self._label_mapping = {
+            mod_def["search_engine_label"]: mod_def["proforma_label"]
+            for mod_def
+            in self.modification_definitions
+        }
 
     @abstractmethod
-    def __next__(self) -> PeptideSpectrumMatch:
+    def __iter__(self):
         raise NotImplementedError()
 
     @staticmethod
@@ -80,7 +85,7 @@ class ReaderBase(ABC):
 
         Warns
         -----
-        `Atomic composition for modification could not be resolved.`
+        Atomic composition for modification could not be resolved.
             If the mass of the modification could be resolved, but not its atomic
             composition.
         """

@@ -2,10 +2,31 @@
 
 import pytest
 
-from psm_utils.io.peptide_record import InvalidPeprecModificationError, PeptideRecord
+from psm_utils.io.peptide_record import (
+    InvalidPeprecError,
+    InvalidPeprecModificationError,
+    PeptideRecord,
+)
 
 
 class TestPeptideRecord:
+    def test__infer_separator(self):
+        # Tab
+        p = PeptideRecord("./tests/test_data/peprec.tsv")
+        assert p.separator == "\t"
+
+        # Comma
+        p = PeptideRecord("./tests/test_data/peprec.csv")
+        assert p.separator == ","
+
+        # Space
+        p = PeptideRecord("./tests/test_data/peprec.txt")
+        assert p.separator == " "
+
+        # Invalid: Mixed use of separators
+        with pytest.raises(InvalidPeprecError):
+            p = PeptideRecord("./tests/test_data/peprec_invalid.csv")
+
     def test_peprec_to_proforma(self):
         # Valid cases
         valid_test_cases = [
@@ -26,6 +47,7 @@ class TestPeptideRecord:
         # Invalid case
         with pytest.raises(InvalidPeprecModificationError):
             PeptideRecord.peprec_to_proforma("ACDE", "|")
+
 
 class TestPeptideRecordReader:
     # TODO!!!

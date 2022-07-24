@@ -1,0 +1,4 @@
+spec_id,modifications,peptide,charge
+peptide1,-,ACDEK,2
+peptide2,2|Carbamidomethyl,ACDEFGR,3
+peptide3,0|Acetyl|2|Carbamidomethyl,ACDEFGHIK,2

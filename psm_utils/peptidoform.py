@@ -113,7 +113,7 @@ class Peptidoform:
 
         # C-terminus
         c_term = mass.Composition({"H": 1, "O": 1})
-        if self.properties["n_term"]:
+        if self.properties["c_term"]:
             for tag in self.properties["c_term"]:
                 try:
                     c_term += tag.composition

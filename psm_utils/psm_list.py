@@ -1,8 +1,7 @@
 from __future__ import annotations
-from dataclasses import dataclass
-from typing import Iterable, List
 
-import pandas as pd
+from dataclasses import dataclass
+from typing import Iterable, Union
 
 from psm_utils.psm import PeptideSpectrumMatch
 
@@ -41,10 +40,14 @@ class PSMList:
     # TODO
     # __slots__ = ()
 
-    psm_list: List[PeptideSpectrumMatch]
+    psm_list: list[PeptideSpectrumMatch]
 
     def __iter__(self) -> Iterable[PeptideSpectrumMatch]:
         return self.psm_list.__iter__()
+
+    def __getitem__(self, idx) -> Union[PeptideSpectrumMatch, list[PeptideSpectrumMatch]]:
+        # TODO: Expand usage? E.g. index by spectrum_id? Return new PSMList for slice?
+        return self.psm_list[idx]
 
     @classmethod
     def from_csv(cls) -> "PSMList":

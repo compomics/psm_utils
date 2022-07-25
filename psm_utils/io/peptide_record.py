@@ -97,6 +97,8 @@ class PeptideRecord:
         ----------
         separator: str
             Separator (delimiter) used in PeptideRecord file.
+        header: list[str]
+            Column names used in PeptideRecord file.
 
         Raises
         ------
@@ -106,6 +108,7 @@ class PeptideRecord:
         """
         self.filename = filename
         self.separator = None
+        self.header = None
 
         if required_columns:
             self.required_columns = required_columns
@@ -141,9 +144,9 @@ class PeptideRecord:
         """Raise InvalidPeprecError if not all required columns are present."""
         with open(self.filename, "rt") as f:
             reader = csv.reader(f, delimiter=self.separator)
-            columns = next(reader)
+            self.header = next(reader)
             for rc in self.required_columns:
-                if rc not in columns:
+                if rc not in self.header:
                     raise InvalidPeprecError(f"Required column missing: `{rc}`")
 
     @staticmethod
@@ -303,8 +306,109 @@ class PeptideRecordReader(ReaderBase):
 
 
 class PeptideRecordWriter(WriterBase):
-    # TODO Implement
-    pass
+    def __init__(self, filename):
+        """
+        Writer for Peptide Record PSM files.
+
+        Parameters
+        ----------
+        filename: str, Path
+            Path to PSM file
+
+        """
+        super().__init__(filename)
+        self._open_file = None
+        self._writer = None
+
+    def __enter__(self) -> PeptideRecordWriter:
+        if Path(self.filename).is_file():
+            peprec = PeptideRecord(self.filename)
+            self._open_file = open(self.filename, "at", newline="")
+            self._writer = csv.DictWriter(
+                self._open_file,
+                fieldnames=peprec.header,
+                extrasaction="ignore",
+                delimiter=peprec.separator,
+            )
+        else:
+            self._open_file = open(self.filename, "wt", newline="")
+            self._writer = csv.DictWriter(
+                self._open_file,
+                fieldnames=PeptideRecord.required_columns
+                + PeptideRecord.optional_columns,
+                extrasaction="ignore",
+                delimiter=" ",
+            )
+            self._writer.writeheader()
+        return self
+
+    def __exit__(self, *args, **kwargs) -> None:
+        self._open_file.close()
+        self._open_file = None
+        self._writer = None
+
+    @staticmethod
+    def _psm_to_entry(psm: PeptideSpectrumMatch) -> dict:
+        return {
+            "spec_id": psm.spectrum_id,
+            "peptide": psm.peptide.sequence,
+            "modifications": psm.peptide.ms2pip_modifications,
+            "charge": psm.precursor_charge,
+            "label": -1 if psm.is_decoy else 1,
+            "observed_retention_time": psm.retention_time,
+            "score": psm.score,
+        }
+
+    def write_psm(self, psm: PeptideSpectrumMatch):
+        """
+        Write a single PSM to new or existing Peptide Record PSM file.
+
+        Parameters
+        ----------
+        psm: PeptideSpectrumMatch
+            PeptideSpectrumMatch object to write.
+
+        Examples
+        --------
+        To write single PSMs to a file, :py:class:`PeptideRecordWriter` must be opened
+        as a context manager. Then, within the context, :py:func:`write_psm` can be
+        called:
+
+        >>> with PeptideRecordWriter("peprec.txt") as writer:
+        >>>     writer.write_psm(psm)
+
+        """
+        if not self._open_file:
+            raise PSMUtilsIOException(
+                "`write_psm` method can only be called if `PeptideRecordWriter` is "
+                "opened in context (i.e., using the `with` statement)."
+            )
+        self._writer.writerow(self._psm_to_entry(psm))
+
+    # TODO: Rename to `write_psm_list`? (also for other writers)
+    # TODO: Support appending to existing file?
+    def write_file(self, psm_list: PSMList):
+        """
+        Write an entire PSMList to a new Peptide Record PSM file.
+
+        Parameters
+        ----------
+        psm_list: PSMList
+            PSMList object to write to file.
+
+        Examples
+        --------
+
+        >>> writer = PeptideRecordWriter("peprec.txt")
+        >>> writer.write_file(psm_list)
+
+        """
+        with open(self.filename, "wt", newline="") as f:
+            fieldnames = PeptideRecord.required_columns + PeptideRecord.optional_columns
+            writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter=" ")
+            writer.writeheader()
+            for psm in psm_list:
+                writer.writerow(self._psm_to_entry(psm))
 
 
 class InvalidPeprecError(Exception):

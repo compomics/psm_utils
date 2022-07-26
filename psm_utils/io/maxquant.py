@@ -62,20 +62,21 @@ class MaxquantReader(ReaderBase):
 
         self._validate_msms()
         self.modifications_definitions = modifications_definitions
-        self._reader = csv.DictReader(self.filename, delimiter="\t")
 
     def __iter__(self):
-        return self
+        return super().__iter__()
 
     def __next__(self) -> PeptideSpectrumMatch:
-        return self._get_peptide_spectrum_match(next(self._reader))
+        return super().__next__()
 
     def read_file(self) -> PSMList:
         """Read full MaxQuant msms.txt PSM file into a PSMList object."""
         msms_psms = []
+        with open(self.filename) as msms_in:
+            reader = csv.DictReader(msms_in, delimiter="\t")
 
-        for psm_dict in self._reader:
-            msms_psms.append(self._get_peptide_spectrum_match(psm_dict))
+            for psm_dict in reader:
+                msms_psms.append(self._get_peptide_spectrum_match(psm_dict))
 
         return PSMList(msms_psms)
 

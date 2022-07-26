@@ -68,16 +68,14 @@ class MaxquantReader(ReaderBase):
         return self
 
     def __next__(self) -> PeptideSpectrumMatch:
-        return PeptideSpectrumMatch(next(self._reader))
+        return self._get_peptide_spectrum_match(next(self._reader))
 
     def read_file(self) -> PSMList:
         """Read full MaxQuant msms.txt PSM file into a PSMList object."""
         msms_psms = []
-        with open(self.filename, "r") as msms_file:
-            msms_reader = csv.DictReader(msms_file, delimiter="\t")
 
-            for psm_dict in msms_reader:
-                msms_psms.append(self._get_peptide_spectrum_match(psm_dict))
+        for psm_dict in self._reader:
+            msms_psms.append(self._get_peptide_spectrum_match(psm_dict))
 
         return PSMList(msms_psms)
 
@@ -130,7 +128,7 @@ class MaxquantReader(ReaderBase):
             raise NotImplementedError(f"MSMS.txt mass error unit not supported.")
 
     def _get_peptide_spectrum_match(
-        self, psm_dict: Dict[str : Union[str, float]]
+        self, psm_dict: dict[str : Union[str, float]]
     ) -> PeptideSpectrumMatch:
         """Return a PeptideSpectrumMatch object from maxquat msms PSM"""
 

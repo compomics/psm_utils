@@ -113,7 +113,7 @@ class MaxquantReader(ReaderBase):
         case_mapping = {col.lower(): col for col in MSMS_DEFAULT_COLUMNS}
         required_col = list(map(lambda col: col.lower(), MSMS_DEFAULT_COLUMNS))
         rename_mapping = {
-            col: case_mapping[col.lower()]
+            case_mapping[col.lower()]: col
             for col in columns
             if col.lower() in required_col
         }
@@ -143,12 +143,20 @@ class MaxquantReader(ReaderBase):
         retention_time = float(psm_dict["Retention time"])
         protein_list = psm_dict["Proteins"]
         source = "maxquant"
+        provenance_data = ({"maxquant_filename": self.filename},)
         metadata = {
             "Delta Score": psm_dict["Delta score"],
-            "Missed cleavages": psm_dict["enzInt"],
+            # "Missed cleavages": psm_dict["enzInt"],
             "Localization prob": psm_dict["Localization prob"],
-            "Length": psm_dict["Length"],
+            "PepLen": psm_dict["Length"],
             "Precursor Intensity": psm_dict["Precursor Intensity"],
+            "dM": psm_dict[f"Mass error [{self._mass_error_unit}]"],
+            "Matches": psm_dict["Matches"],
+            "Intensities": psm_dict["Intensities"],
+            "Intensity coverage": psm_dict["Intensity coverage"],
+            f"Mass Deviations [{self._mass_error_unit}]": psm_dict[
+                self._rename_mapping[f"Mass Deviations [{self._mass_error_unit}]"]
+            ],
         }
         return PeptideSpectrumMatch(
             peptide=peptide,
@@ -161,6 +169,7 @@ class MaxquantReader(ReaderBase):
             retention_time=retention_time,
             protein_list=protein_list,
             source=source,
+            provenance_data=provenance_data,
             metadata=metadata,
         )
 

@@ -1,6 +1,7 @@
 import pytest
 
 import psm_utils.io.maxquant as maxquant
+from psm_utils import peptidoform, psm, psm_list
 
 TEST_COL = [
     "Raw file",
@@ -119,8 +120,8 @@ class TestMaxquantReader:
             "Localization prob": "Localization prob",
             "Matches": "Matches",
             "Intensities": "Intensities",
-            "Mass deviations [Da]": "Mass Deviations [Da]",
-            "Mass deviations [ppm]": "Mass Deviations [ppm]",
+            "Mass Deviations [Da]": "Mass deviations [Da]",
+            "Mass Deviations [ppm]": "Mass deviations [ppm]",
             "Intensity coverage": "Intensity coverage",
             "Reverse": "Reverse",
             "id": "id",
@@ -198,3 +199,47 @@ class TestMaxquantReader:
             for x in test_cases["input_modified_sequence"]
         ]
         assert output == test_cases["expected_output"]
+
+    def test_get_peptidoform(self):
+        msms_reader = maxquant.MaxquantReader(
+            "./tests/test_data/test_msms.txt", MODIFICATION_DEFINITIONS
+        )
+
+        test_cases = {
+            "_VGVGFGR_": peptidoform.Peptidoform("VGVGFGR"),
+            "_MCK_": peptidoform.Peptidoform("MCK"),
+            "_(ac)EEEIAALVIDNGSGMCK_": peptidoform.Peptidoform(
+                "[U:1]-EEEIAALVIDNGSGMCK"
+            ),
+            "_(gl)QYDADLEQILIQWITTQCRK_": peptidoform.Peptidoform(
+                "[U:28]-QYDADLEQILIQWITTQCRK"
+            ),
+            "_LAM(ox)QEFMILPVGAANFR_": peptidoform.Peptidoform(
+                "LAM[U:35]QEFMILPVGAANFR"
+            ),
+            "_VGVN(de)GFGR_": peptidoform.Peptidoform("VGVN[U:7]GFGR"),
+            "_(ac)EEEIAALVIDNGSGM(ox)CK_": peptidoform.Peptidoform(
+                "[U:1]-EEEIAALVIDNGSGM[U:35]CK"
+            ),
+            "_(ac)SDKPDM(ox)AEIEK_": peptidoform.Peptidoform("[U:1]-SDKPDM[U:35]AEIEK"),
+            "_YYWGGHYSWDM(Ox)AK_": peptidoform.Peptidoform("YYWGGHYSWDM[U:35]AK"),
+            "_YYWGGHYSWDM(Oxidation (M))AK_": peptidoform.Peptidoform(
+                "YYWGGHYSWDM[U:35]AK"
+            ),
+            "_YYWGGHYM(ox)WDM(ox)AK_": peptidoform.Peptidoform(
+                "YYWGGHYM[U:35]WDM[U:35]AK"
+            ),
+            "_DFK(Delta:H(4)C(3))SK_": peptidoform.Peptidoform("DFK[U:256]SK"),
+            "_(Acetyl (Protein N-term))ATGPM(ox)SFLK_": peptidoform.Peptidoform(
+                "[U:1]-ATGPM[U:35]SFLK"
+            ),
+        }
+
+        for test_string in test_cases.keys():
+            assert msms_reader._get_peptidoform(test_string) == test_cases[test_string]
+
+    def test_get_peptide_spectrum_match(self):
+        pass
+
+    def test_read_file(self):
+        pass

@@ -43,9 +43,10 @@ class PeptideSpectrumMatch:
     retention_time : float, optional
         Retention time.
     source: str, optional
-        pass
-    provenance_data:
-
+        PSM file type where PSM was stored. E.g., ``MaxQuant``.
+    provenance_data: dict, optional
+        Freefrom dict to hold data describing the PSM origin, e.g. a search
+        engine-specific identifier.
     metadata : dict, optional
         More data about PSM.
 

@@ -64,8 +64,16 @@ class MaxquantReader(ReaderBase):
         self.modifications_definitions = modifications_definitions
 
     def __iter__(self):
-        return super().__iter__()
+        """Iterate over file and return PSMs one-by-one"""
 
+        with open(self.filename) as msms_in:
+            reader = csv.DictReader(msms_in, delimiter="\t")
+
+            for psm_dict in reader:
+                psm = self._get_peptide_spectrum_match(psm_dict)
+                yield psm
+
+    # TODO next does not work yet
     def __next__(self) -> PeptideSpectrumMatch:
         return super().__next__()
 

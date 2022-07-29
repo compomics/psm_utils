@@ -56,11 +56,13 @@ import pandas as pd
 
 from psm_utils.io._base_classes import ReaderBase, WriterBase
 from psm_utils.io.exceptions import PSMUtilsIOException
+from psm_utils.peptidoform import Peptidoform
 from psm_utils.psm import PeptideSpectrumMatch
 from psm_utils.psm_list import PSMList
 
 
-class PeptideRecord:
+class _PeptideRecord:
+    """Helper class for handling Peptide Record files."""
 
     required_columns = ["peptide", "modifications"]
     optional_columns = [
@@ -79,7 +81,7 @@ class PeptideRecord:
         optional_columns: list[str] = None,
     ) -> None:
         """
-        Helper class for handling PeptideRecord files.
+        Helper class for handling Peptide Record files.
 
         Upon initialization, the separator inferred and presence of required columns
         is checked.
@@ -96,14 +98,14 @@ class PeptideRecord:
         Attributes
         ----------
         separator: str
-            Separator (delimiter) used in PeptideRecord file.
+            Separator (delimiter) used in Peptide Record file.
         header: list[str]
-            Column names used in PeptideRecord file.
+            Column names used in Peptide Record file.
 
         Raises
         ------
         InvalidPeprecError
-            If PeptideRecord separator cannot be inferred from header.
+            If Peptide Record separator cannot be inferred from header.
 
         """
         self.filename = filename
@@ -123,10 +125,10 @@ class PeptideRecord:
         self._validate_required_columns()
 
     def __repr__(self) -> str:
-        return f"PeptideRecord('{self.filename}')"
+        return f"_PeptideRecord('{self.filename}')"
 
     def _infer_separator(self) -> None:
-        """Infer separator used in PeptideRecord file."""
+        """Infer separator used in Peptide Record file."""
         with open(self.filename, "rt") as f:
             line = f.readline().strip()
             for sep in ["\t", ",", ";", " "]:
@@ -136,7 +138,7 @@ class PeptideRecord:
                     break
             else:
                 raise InvalidPeprecError(
-                    "Could not infer separator. Please validate the PeptideRecord "
+                    "Could not infer separator. Please validate the Peptide Record "
                     "header and/or the `required_columns` setting."
                 )
 
@@ -149,70 +151,11 @@ class PeptideRecord:
                 if rc not in self.header:
                     raise InvalidPeprecError(f"Required column missing: `{rc}`")
 
-    @staticmethod
-    def peprec_to_proforma(
-        peptide: str, modifications: str, label_mapping: Optional[dict[str, str]] = None
-    ) -> str:
-        """
-        Convert PeptideRecord (PEPREC) peptide and modifications to ProForma string.
-
-        Parameters
-        ----------
-        peptide: str
-            Stripped peptide sequence.
-        modifications: str
-            Peptide modifications in PEPREC format (e.g., ``4|Oxidation``)
-        label_mapping: dict[str, str], optional
-            Mapping to replace modifications labels from :py:obj:`key` to
-            :py:obj:`value`.
-
-        Returns
-        -------
-        proforma_seq: str
-            ProForma sequence
-
-        Raises
-        ------
-        InvalidPeprecModificationError
-            If a PEPREC modification cannot be parsed.
-
-        """
-        if not label_mapping:
-            label_mapping = {}
-
-        # List of peptide sequence with added terminal positions
-        peptide = [""] + list(peptide) + [""]
-
-        # Add modification labels
-        for position, old_label in zip(
-            modifications.split("|")[::2], modifications.split("|")[1::2]
-        ):
-            # Apply label_mapping
-            if old_label in label_mapping:
-                new_label = label_mapping[old_label]
-            else:
-                new_label = old_label
-
-            try:
-                peptide[int(position)] += f"[{new_label}]"
-            except ValueError:
-                raise InvalidPeprecModificationError(
-                    f"Could not parse PEPREC modification `{modifications}`."
-                )
-
-        # Add dashes between residues and termini
-        peptide[0] = peptide[0] + "-" if peptide[0] else ""
-        peptide[-1] = "-" + peptide[-1] if peptide[-1] else ""
-
-        proforma_seq = "".join(peptide)
-        return proforma_seq
-
 
 class PeptideRecordReader(ReaderBase):
     def __init__(
         self,
         filename: Union[str, Path],
-        modification_definitions: list[dict[str, str]] = None,
     ) -> None:
         """
         Reader for Peptide Record PSM files.
@@ -221,9 +164,6 @@ class PeptideRecordReader(ReaderBase):
         ----------
         filename: str, pathlib.Path
             Path to PSM file.
-        modification_definitions: list[dict[str, str]]
-            List of modification definition dictionaries. See
-            `Parsing of modification labels`_ for more information.
 
         Examples
         --------
@@ -245,10 +185,10 @@ class PeptideRecordReader(ReaderBase):
 
         """
 
-        super().__init__(filename, modification_definitions)
-        self._peprec = PeptideRecord(self.filename)
+        super().__init__(filename)
+        self._peprec = _PeptideRecord(self.filename)
 
-        # Define named tuple for single PeptideRecord entries, based on
+        # Define named tuple for single Peptide Record entries, based on
         # configured columns
         columns = self._peprec.required_columns + self._peprec.optional_columns
         self.PeprecEntry = namedtuple(
@@ -261,25 +201,26 @@ class PeptideRecordReader(ReaderBase):
             reader = csv.DictReader(open_file, delimiter=self._peprec.separator)
             for row in reader:
                 entry = self.PeprecEntry(**row)
-                psm = self._peprec_entry_to_psm(entry)
+                psm = self._entry_to_psm(entry, filename=self.filename)
                 yield psm
 
     def read_file(self) -> PSMList:
-        """Read full PeptideRecord PSM file into a PSMList object."""
+        """Read full Peptide Record PSM file into a PSMList object."""
         psm_list = []
         with open(self.filename) as peprec_in:
             reader = csv.DictReader(peprec_in, delimiter=self._peprec.separator)
             for row in reader:
                 entry = self.PeprecEntry(**row)
-                psm_list.append(self._peprec_entry_to_psm(entry))
+                psm_list.append(self._entry_to_psm(entry, filename=self.filename))
         return PSMList(psm_list)
 
-    def _peprec_entry_to_psm(self, entry: NamedTuple) -> PeptideSpectrumMatch:
-        """Parse single PeptideRecord entry to a `PeptideSpectrumMatch`."""
+    @staticmethod
+    def _entry_to_psm(
+        entry: NamedTuple, filename: Optional[str] = None
+    ) -> PeptideSpectrumMatch:
+        """Parse single Peptide Record entry to a `PeptideSpectrumMatch`."""
         # Parse sequence and modifications
-        proforma = PeptideRecord.peprec_to_proforma(
-            entry.peptide, entry.modifications, label_mapping=self._label_mapping
-        )
+        proforma = peprec_to_proforma(entry.peptide, entry.modifications, entry.charge)
 
         # Parse decoy label
         if entry.label:
@@ -301,7 +242,7 @@ class PeptideRecordReader(ReaderBase):
             retention_time=entry.observed_retention_time,
             score=entry.score,
             source="PeptideRecord",
-            provenance_data={"peprec_filename": self.filename},
+            provenance_data={"peprec_filename": filename},
         )
 
 
@@ -322,7 +263,7 @@ class PeptideRecordWriter(WriterBase):
 
     def __enter__(self) -> PeptideRecordWriter:
         if Path(self.filename).is_file():
-            peprec = PeptideRecord(self.filename)
+            peprec = _PeptideRecord(self.filename)
             self._open_file = open(self.filename, "at", newline="")
             self._writer = csv.DictWriter(
                 self._open_file,
@@ -334,8 +275,8 @@ class PeptideRecordWriter(WriterBase):
             self._open_file = open(self.filename, "wt", newline="")
             self._writer = csv.DictWriter(
                 self._open_file,
-                fieldnames=PeptideRecord.required_columns
-                + PeptideRecord.optional_columns,
+                fieldnames=_PeptideRecord.required_columns
+                + _PeptideRecord.optional_columns,
                 extrasaction="ignore",
                 delimiter=" ",
             )
@@ -349,12 +290,13 @@ class PeptideRecordWriter(WriterBase):
 
     @staticmethod
     def _psm_to_entry(psm: PeptideSpectrumMatch) -> dict:
+        sequence, modifications, charge = proforma_to_peprec(psm.peptide)
         return {
             "spec_id": psm.spectrum_id,
-            "peptide": psm.peptide.sequence,
-            "modifications": psm.peptide.ms2pip_modifications,
-            "charge": psm.precursor_charge,
-            "label": -1 if psm.is_decoy else 1,
+            "peptide": sequence,
+            "modifications": modifications,
+            "charge": charge if charge else psm.precursor_charge,
+            "label": None if psm.is_decoy is None else -1 if psm.is_decoy else 1,
             "observed_retention_time": psm.retention_time,
             "score": psm.score,
         }
@@ -404,171 +346,161 @@ class PeptideRecordWriter(WriterBase):
 
         """
         with open(self.filename, "wt", newline="") as f:
-            fieldnames = PeptideRecord.required_columns + PeptideRecord.optional_columns
+            fieldnames = (
+                _PeptideRecord.required_columns + _PeptideRecord.optional_columns
+            )
             writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter=" ")
             writer.writeheader()
             for psm in psm_list:
                 writer.writerow(self._psm_to_entry(psm))
 
 
-class InvalidPeprecError(Exception):
-    """Invalid PEPREC file."""
+def peprec_to_proforma(
+    peptide: str, modifications: str, charge: Optional[int]
+) -> Peptidoform:
+    """
+    Convert Peptide Record notation to :py:class:`psm_utils.peptidoform.Peptidoform`.
 
-    pass
+    Parameters
+    ----------
+    peptide: str
+        Stripped peptide sequence.
+    modifications: str
+        Modifications in Peptide Record notation (e.g., ``4|Oxidation``)
+    charge: int, optional
+        Precursor charge state
 
+    Returns
+    -------
+    peptidoform: psm_utils.peptidoform.Peptidoform
+        Peptidoform
 
-class _PeptideRecordOld:
-    """Peptide record (PEPREC)."""
+    Raises
+    ------
+    InvalidPeprecModificationError
+        If a PEPREC modification cannot be parsed.
 
-    def __init__(
-        self,
-        path: Optional[str] = None,
-        context: str = "default",
-        extra_required_columns: Optional[list[str]] = None,
+    """
+    # List of peptide sequence with added terminal positions
+    peptide = [""] + list(peptide) + [""]
+
+    # Add modification labels
+    for position, label in zip(
+        modifications.split("|")[::2], modifications.split("|")[1::2]
     ):
-        """
-        Peptide record (PEPREC).
-
-        Parameters
-        ----------
-        path: str, None
-            Path to PEPREC file. If not None, file is read on instance creation.
-        context: str
-            Context of PEPREC. Is used for determining the required columns. Can be any
-            of the following: {default, ms2rescore}.
-        extra_required_columns: list[str]
-            Extra required columns to be validated.
-
-        Attributes
-        ----------
-        df: pandas.DataFrame
-            DataFrame containing peptide record content.
-
-        Methods
-        -------
-        from_csv(path, **kwargs)
-            Read PEPREC from CSV.
-        to_csv(path, **kwargs)
-            Save PEPREC to CSV, if Path is None, overwrite existing PEPREC file.
-
-        """
-        self.path = path
-        self.context = context
-        self.extra_required_columns = extra_required_columns
-        self.df = None
-
-        if self.path:
-            self.read_csv(self.path)
-
-    def __repr__(self):
-        """Get string representation of PeptideRecord."""
-        return self.df.__repr__()
-
-    @property
-    def df(self) -> Optional[pd.DataFrame]:
-        """Get DataFrame with PeptideRecord."""
-        return self._df
-
-    @df.setter
-    def df(self, value: Optional[pd.DataFrame]):
-        """Set DataFrame with PeptideRecord."""
-        if isinstance(value, pd.DataFrame):
-            self._validate_column_names(value)
-        self._df = value
-
-    def read_csv(self, path: str, **kwargs):
-        """Read PEPREC from CSV."""
-        self._validate_header(path)
-        sep = self._infer_separator(path)
-        self.df = pd.read_csv(path, sep=sep, index_col=None, **kwargs)
-        self.df["modifications"] = self.df["modifications"].fillna("-")
-
-    def to_csv(self, path: Optional[str] = None, **kwargs):
-        """Save PEPREC to CSV, if Path is None, overwrite existing PEPREC file."""
-        if not path and self.path:
-            path = self.path
-        elif not path and not self.path:
-            raise ValueError("No known path to write PEPREC file.")
-        self.df.to_csv(path, sep=" ", index=False, float_format="%.3f", **kwargs)
-
-    def reorder_columns(self):
-        """Reorder columns with canonical PeptideRecord columns first."""
-        original_columns = self.df.columns.to_list()
-        for col in self._required_columns:
-            if col in original_columns:
-                original_columns.remove(col)
-            else:
-                self._required_columns.remove(col)
-        reordered_columns = self._required_columns + original_columns
-        self.df = self.df[reordered_columns]
-
-    @property
-    def _required_columns(self):
-        """Get required columns depending on PeptideRecord context."""
-        required_columns = [
-            "spec_id",
-            "peptide",
-            "modifications",
-            "charge",
-        ]
-        if self.context == "ms2rescore":
-            required_columns.extend(
-                [
-                    "psm_score",
-                    "observed_retention_time",
-                ]
+        try:
+            peptide[int(position)] += f"[{label}]"
+        except ValueError:
+            raise InvalidPeprecModificationError(
+                f"Could not parse PEPREC modification `{modifications}`."
             )
-        elif self.context == "retention_time":
-            required_columns.remove("modifications")
-        return required_columns
 
-    def _validate_header(self, path: str):
-        """Validate PEPREC header."""
-        with open(path, "rt") as f:
-            line = f.readline()
-            if line[:7] != "spec_id":
-                raise InvalidPeprecError("PEPREC header should start with `spec_id`.")
+    # Add dashes between residues and termini, and join sequence
+    peptide[0] = peptide[0] + "-" if peptide[0] else ""
+    peptide[-1] = "-" + peptide[-1] if peptide[-1] else ""
+    proforma_seq = "".join(peptide)
 
-    def _validate_column_names(self, df: pd.DataFrame):
-        """Validate header of PEPREC file."""
-        for col in self._required_columns:
-            if col not in df.columns:
-                raise InvalidPeprecError(
-                    f"Required column `{col}` missing from header."
-                )
+    # Add charge state
+    if charge:
+        proforma_seq += f"/{charge}"
 
-    @classmethod
-    def from_dataframe(cls, dataframe: pd.DataFrame):
-        """Create PeptideRecord instance with data from a pandas DataFrame."""
-        peprec = cls()
-        peprec.df = dataframe
-        peprec.reorder_columns()
-        return peprec
+    return Peptidoform(proforma_seq)
 
-    @classmethod
-    def from_csv(cls, *args, **kwargs):
-        """Create PeptideRecord instance with data from CSV file."""
-        peprec = cls()
-        peprec.read_csv(*args, **kwargs)
-        return peprec
 
-    @staticmethod
-    def _infer_separator(path: str) -> str:
-        """Infer separator in PEPREC file."""
-        with open(path, "rt") as f:
-            line = f.readline()
-            separator = line[7]
-        return separator
+def proforma_to_peprec(peptidoform: Peptidoform) -> tuple(str, str, Optional[int]):
+    """
+    Convert :py:class:`psm_utils.peptidoform.Peptidoform` to Peptide Record notation.
 
-    def validate_decoy_presence(self):
-        "check whether decoys are present in peprec file"
+    Parameters
+    ----------
+    peptidoform: psm_utils.peptidoform.Peptidoform
 
-        if sum(self.df["Label"] == -1) == 0:
-            raise InvalidPeprecError(
-                "No decoys present, make sure to provide decoys along targets"
+    Returns
+    -------
+    peptide: str
+        Stripped peptide sequence
+    modifications: str
+        Modifications in Peptide Record notation
+    charge: int, optional
+        Precursor charge state, if available, else :py:const:`None`
+    """
+
+    def _mod_to_ms2pip(mod_list: list, location: int):
+        """Proforma modification site (list) to MS²PIP modification."""
+        if len(mod_list) > 1:
+            raise InvalidPeprecModificationError(
+                "Multiple modifications per site not supported in Peptide Record format."
             )
-        else:
-            pass
+        return "|".join([str(location), mod_list[0].value])
+
+    ms2pip_mods = []
+    if peptidoform.properties["n_term"]:
+        ms2pip_mods.append(_mod_to_ms2pip(peptidoform.properties["n_term"], 0))
+    for i, (aa, mod) in enumerate(peptidoform.parsed_sequence):
+        if mod:
+            ms2pip_mods.append(_mod_to_ms2pip(mod, i + 1))
+    if peptidoform.properties["c_term"]:
+        ms2pip_mods.append(_mod_to_ms2pip(peptidoform.properties["n_term"], -1))
+
+    peptide = peptidoform.sequence
+    modifications = "|".join(ms2pip_mods) if ms2pip_mods else "-"
+    if peptidoform.properties["charge_state"]:
+        charge = peptidoform.properties["charge_state"].charge
+    else:
+        charge = None
+
+    return peptide, modifications, charge
+
+
+def from_dataframe(peprec_df: pd.DataFrame) -> PSMList:
+    """
+    Convert Peptide Record Pandas DataFrame into PSMList.
+
+    Parameters
+    ----------
+    peprec_df: pandas.DataFrame
+        Peptide Record DataFrame
+
+    Returns
+    -------
+    psm_list: PSMList
+        PSMList object
+
+    """
+    PeprecEntry = namedtuple(
+        "PeprecEntry", peprec_df.columns, defaults=[None for _ in peprec_df.columns]
+    )
+    psm_list = []
+    for _, row in peprec_df.iterrows():
+        entry = PeprecEntry(**row)
+        psm_list.append(PeptideRecordReader._entry_to_psm(entry))
+    return PSMList(psm_list)
+
+
+def to_dataframe(psm_list: PSMList) -> pd.DataFrame:
+    """
+    Convert PSMList object into Peptide Record Pandas DataFrame.
+
+    Parameters
+    ----------
+    psm_list: PSMList
+
+    Returns
+    -------
+    pd.DataFrame
+
+    Examples
+    --------
+
+    >>> psm_list = PeptideRecordReader("peprec.csv").read_file()
+    >>> psm_utils.io.peptide_record.to_dataframe(psm_list)
+        spec_id    peptide               modifications  charge  label  ...
+    0  peptide1      ACDEK                           -       2      1  ...
+    1  peptide2    ACDEFGR           2|Carbamidomethyl       3      1  ...
+    2  peptide3  ACDEFGHIK  0|Acetyl|2|Carbamidomethyl       2      1  ...
+
+    """
+    return pd.DataFrame([PeptideRecordWriter._psm_to_entry(psm) for psm in psm_list])
 
 
 class InvalidPeprecError(PSMUtilsIOException):

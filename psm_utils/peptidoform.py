@@ -42,29 +42,6 @@ class Peptidoform:
         self.sequence = "".join(pos[0] for pos in self.parsed_sequence)
 
     @property
-    def ms2pip_modifications(self) -> str:
-        """Peptide modifications in MS²PIP PEPREC notation."""
-
-        def _mod_to_ms2pip(mod_site: list, location: int):
-            """Proforma modification site (list) to MS²PIP modification."""
-            if len(mod_site) > 1:
-                raise PeptidoformException(
-                    "Multiple modifications per site not supported."
-                )
-            return "|".join([str(location), mod_site[0].name])
-
-        ms2pip_mods = []
-        if self.properties["n_term"]:
-            ms2pip_mods.append(_mod_to_ms2pip(self.properties["n_term"], 0))
-        for i, (aa, mod) in enumerate(self.parsed_sequence):
-            if mod:
-                ms2pip_mods.append(_mod_to_ms2pip(mod, i + 1))
-        if self.properties["c_term"]:
-            ms2pip_mods.append(_mod_to_ms2pip(self.properties["n_term"], -1))
-
-        return "|".join(ms2pip_mods) if ms2pip_mods else "-"
-
-    @property
     def sequential_composition(self) -> list[mass.Composition]:
         """Atomic compositions of both termini and each (modified) residue."""
         # Get compositions for fixed modifications by amino acid

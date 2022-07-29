@@ -1,7 +1,9 @@
+from __future__ import annotations
+
 from dataclasses import dataclass, field
 from typing import Any, Optional, Union
 
-from psm_utils.peptidoform import Peptidoform, PeptidoformException
+from psm_utils.peptidoform import Peptidoform
 
 
 # TODO: Rename `PeptideSpectrumMatch` to `PSM`?
@@ -12,7 +14,6 @@ class PeptideSpectrumMatch:
 
     Links a :class:`psm_utils.peptidoform.Peptidoform` to an observed spectrum
     and holds relevant the metadata.
-
 
     Parameters
     ----------
@@ -72,6 +73,10 @@ class PeptideSpectrumMatch:
         # Parse peptidoform
         if isinstance(self.peptide, str):
             self.peptide = Peptidoform(self.peptide)
+        elif not isinstance(self.peptide, Peptidoform):
+            raise TypeError(
+                f"Peptidoform or str expected for `peptide`, not `{type(self.peptide)}`."
+            )
         # Parse charge state
         if isinstance(self.precursor_charge, str):
             self.precursor_charge = int(self.precursor_charge.strip("+"))

@@ -53,7 +53,7 @@ class MaxquantReader(ReaderBase):
     def __init__(
         self,
         filename: Union[str, Path],
-        modifications_definitions: list[dict[str, str]],
+        modifications_definitions: List[Dict[str, str]],
     ) -> None:
         super().__init__(filename, modifications_definitions)
 
@@ -137,7 +137,7 @@ class MaxquantReader(ReaderBase):
             raise NotImplementedError(f"MSMS.txt mass error unit not supported.")
 
     def _get_peptide_spectrum_match(
-        self, psm_dict: dict[str : Union[str, float]]
+        self, psm_dict: Dict[str, Union[str, float]]
     ) -> PeptideSpectrumMatch:
         """Return a PeptideSpectrumMatch object from maxquat msms PSM"""
 

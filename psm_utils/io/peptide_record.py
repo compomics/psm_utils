@@ -356,7 +356,7 @@ class PeptideRecordWriter(WriterBase):
 
 
 def peprec_to_proforma(
-    peptide: str, modifications: str, charge: Optional[int]
+    peptide: str, modifications: str, charge: Optional[int] = None
 ) -> Peptidoform:
     """
     Convert Peptide Record notation to :py:class:`psm_utils.peptidoform.Peptidoform`.

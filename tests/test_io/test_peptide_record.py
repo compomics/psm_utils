@@ -5,27 +5,28 @@ import pytest
 from psm_utils.io.peptide_record import (
     InvalidPeprecError,
     InvalidPeprecModificationError,
-    PeptideRecord,
+    _PeptideRecord,
+    peprec_to_proforma,
 )
 
 
 class TestPeptideRecord:
     def test__infer_separator(self):
         # Tab
-        p = PeptideRecord("./tests/test_data/peprec.tsv")
+        p = _PeptideRecord("./tests/test_data/peprec.tsv")
         assert p.separator == "\t"
 
         # Comma
-        p = PeptideRecord("./tests/test_data/peprec.csv")
+        p = _PeptideRecord("./tests/test_data/peprec.csv")
         assert p.separator == ","
 
         # Space
-        p = PeptideRecord("./tests/test_data/peprec.txt")
+        p = _PeptideRecord("./tests/test_data/peprec.txt")
         assert p.separator == " "
 
         # Invalid: Mixed use of separators
         with pytest.raises(InvalidPeprecError):
-            p = PeptideRecord("./tests/test_data/peprec_invalid.csv")
+            p = _PeptideRecord("./tests/test_data/peprec_invalid.csv")
 
     def test_peprec_to_proforma(self):
         # Valid cases
@@ -39,14 +40,15 @@ class TestPeptideRecord:
             (("ACDMEK", "0|Acetyl|4|Ox|-1|Amide"), "[Acetyl]-ACDM[Ox]EK-[Amide]"),
             (("ACDMEK", "6|Methylation|-1|Amide"), "ACDMEK[Methylation]-[Amide]"),
             (("MCDMEK", "0|Acetyl|1|Oxidation"), "[Acetyl]-M[Oxidation]CDMEK"),
+            (("ACDMEK", "", "2"), "ACDMEK/2"),
         ]
         for test_in, expected_out in valid_test_cases:
-            test_out = PeptideRecord.peprec_to_proforma(*test_in)
-            assert test_out == expected_out
+            test_out = peprec_to_proforma(*test_in)
+            assert test_out.proforma == expected_out
 
         # Invalid case
         with pytest.raises(InvalidPeprecModificationError):
-            PeptideRecord.peprec_to_proforma("ACDE", "|")
+            peprec_to_proforma("ACDE", "|")
 
 
 class TestPeptideRecordReader:

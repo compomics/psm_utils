@@ -195,7 +195,7 @@ class TestMaxquantReader:
             "./tests/test_data/test_msms.txt", MODIFICATION_DEFINITIONS
         )
         output = [
-            msms_reader.parse_maxquant_modification(x)
+            msms_reader._parse_maxquant_modification(x)
             for x in test_cases["input_modified_sequence"]
         ]
         assert output == test_cases["expected_output"]

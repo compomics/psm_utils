@@ -42,29 +42,6 @@ class Peptidoform:
         self.sequence = "".join(pos[0] for pos in self.parsed_sequence)
 
     @property
-    def ms2pip_modifications(self) -> str:
-        """Peptide modifications in MS²PIP PEPREC notation."""
-
-        def _mod_to_ms2pip(mod_site: list, location: int):
-            """Proforma modification site (list) to MS²PIP modification."""
-            if len(mod_site) > 1:
-                raise PeptidoformException(
-                    "Multiple modifications per site not supported."
-                )
-            return "|".join([str(location), mod_site[0].name])
-
-        ms2pip_mods = []
-        if self.properties["n_term"]:
-            ms2pip_mods.append(_mod_to_ms2pip(self.properties["n_term"], 0))
-        for i, (aa, mod) in enumerate(self.parsed_sequence):
-            if mod:
-                ms2pip_mods.append(_mod_to_ms2pip(mod, i + 1))
-        if self.properties["c_term"]:
-            ms2pip_mods.append(_mod_to_ms2pip(self.properties["n_term"], -1))
-
-        return "|".join(ms2pip_mods) if ms2pip_mods else "-"
-
-    @property
     def sequential_composition(self) -> list[mass.Composition]:
         """Atomic compositions of both termini and each (modified) residue."""
         # Get compositions for fixed modifications by amino acid
@@ -113,7 +90,7 @@ class Peptidoform:
 
         # C-terminus
         c_term = mass.Composition({"H": 1, "O": 1})
-        if self.properties["n_term"]:
+        if self.properties["c_term"]:
             for tag in self.properties["c_term"]:
                 try:
                     c_term += tag.composition
@@ -156,6 +133,60 @@ class Peptidoform:
     def theoretical_mass(self) -> float:
         """Monoisotopic mass of the full uncharged (modified) peptide."""
         return sum(self.sequential_theoretical_mass)
+
+    def rename_modifications(self, mapping: dict[str, str]) -> None:
+        """
+        Apply mapping to rename modification tags.
+
+        Parameters
+        ----------
+        mapping : dict[str, str]
+            Mapping of ``old label`` → ``new label`` for each modification that
+            requires renaming. Modification labels that are not in the mapping will not
+            be renamed.
+
+        Examples
+        --------
+        >>> peptide = Peptidoform('[Acedyl]-AC[Carbamidomedyl]DEFGHIK')
+        >>> peptide.rename_modifications({
+        ...     "Acedyl": "Acetyl",
+        ...     "Carbamidomedyl": "Carbamidomethyl"
+        ... })
+        >>> peptide.proforma
+        '[Acetyl]-AC[Carbamidomethyl]DEFGHIK'
+
+        """
+
+        def _rename_modification_list(mods):
+            new_mods = []
+            for mod in mods:
+                if mod.value in mapping:
+                    new_mods.append(proforma.process_tag_tokens(mapping[mod.value]))
+                else:
+                    new_mods.append(mod)
+            return new_mods
+
+        # Sequential modifications
+        for i, (aa, mods) in enumerate(self.parsed_sequence):
+            if mods:
+                new_mods = _rename_modification_list(mods)
+                self.parsed_sequence[i] = (aa, new_mods)
+
+        # Non-sequence modifications
+        for mod_type in [
+            "n_term",
+            "c_term",
+            "unlocalized_modifications",
+            "labile_modifications",
+            "fixed_modifications",
+        ]:
+            if self.properties[mod_type]:
+                self.properties[mod_type] = _rename_modification_list(
+                    self.properties[mod_type]
+                )
+
+        # Rebuild proforma string with new labels
+        self.proforma = proforma.to_proforma(self.parsed_sequence, **self.properties)
 
 
 class PeptidoformException(PSMUtilsException):

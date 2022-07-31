@@ -56,6 +56,9 @@ class PSMList:
         # TODO: Expand usage? E.g. index by spectrum_id? Return new PSMList for slice?
         return self.psm_list[idx]
 
+    def __len__(self) -> int:
+        return self.psm_list.__len__()
+
     def rename_modifications(self, mapping: dict[str, str]) -> None:
         """
         Apply mapping to rename modification tags for all PSMs.

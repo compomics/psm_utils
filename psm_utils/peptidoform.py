@@ -60,7 +60,7 @@ class Peptidoform:
                     n_term += tag.composition
                 except (AttributeError, KeyError):
                     raise ModificationException(
-                        f"Cannot resolve composition for modification {tag.name}."
+                        f"Cannot resolve composition for modification {tag.value}."
                     )
         comp_list.append(n_term)
 
@@ -84,7 +84,7 @@ class Peptidoform:
                     except (AttributeError, KeyError):
                         raise ModificationException(
                             "Cannot resolve composition for modification "
-                            f"{tag.name}."
+                            f"{tag.value}."
                         )
             comp_list.append(position_comp)
 
@@ -96,7 +96,7 @@ class Peptidoform:
                     c_term += tag.composition
                 except (AttributeError, KeyError):
                     raise ModificationException(
-                        f"Cannot resolve composition for modification {tag.name}."
+                        f"Cannot resolve composition for modification {tag.value}."
                     )
         comp_list.append(c_term)
 
@@ -113,26 +113,95 @@ class Peptidoform:
                 comp += tag.composition
             except (AttributeError, KeyError):
                 raise ModificationException(
-                    f"Cannot resolve composition for modification {tag.name}."
+                    f"Cannot resolve composition for modification {tag.value}."
                 )
         for tag in self.properties["unlocalized_modifications"]:
             try:
                 comp += tag.composition
             except (AttributeError, KeyError):
                 raise ModificationException(
-                    f"Cannot resolve composition for modification {tag.name}."
+                    f"Cannot resolve composition for modification {tag.value}."
                 )
         return comp
 
     @property
     def sequential_theoretical_mass(self) -> float:
         """Monoisotopic mass of both termini and each (modified) residue."""
-        return [comp.mass() for comp in self.sequential_composition]
+        fixed_rules = {}
+        for rule in self.properties["fixed_modifications"]:
+            for aa in rule.targets:
+                fixed_rules[aa] = rule.modification_tag.mass
+
+        mass_list = []
+
+        # N-terminus
+        n_term = mass.Composition({"H": 1}).mass()
+        if self.properties["n_term"]:
+            for tag in self.properties["n_term"]:
+                try:
+                    n_term += tag.mass
+                except (AttributeError, KeyError):
+                    raise ModificationException(
+                        f"Cannot resolve mass for modification {tag.value}."
+                    )
+        mass_list.append(n_term)
+
+        # Sequence
+        for aa, tags in self.parsed_sequence:
+            # Amino acid
+            try:
+                position_mass = mass.std_aa_mass[aa]
+            except (AttributeError, KeyError):
+                raise AmbiguousResidueException(
+                    f"Cannot resolve mass for amino acid {aa}."
+                )
+            # Fixed modifications
+            if aa in fixed_rules:
+                position_mass += fixed_rules[aa]
+            # Localized modifications
+            if tags:
+                for tag in tags:
+                    try:
+                        position_mass += tag.mass
+                    except (AttributeError, KeyError):
+                        raise ModificationException(
+                            "Cannot resolve mass for modification " f"{tag.value}."
+                        )
+            mass_list.append(position_mass)
+
+        # C-terminus
+        c_term = mass.Composition({"H": 1, "O": 1}).mass()
+        if self.properties["c_term"]:
+            for tag in self.properties["c_term"]:
+                try:
+                    c_term += tag.mass
+                except (AttributeError, KeyError):
+                    raise ModificationException(
+                        f"Cannot resolve mass for modification {tag.value}."
+                    )
+        mass_list.append(c_term)
+
+        return mass_list
 
     @property
     def theoretical_mass(self) -> float:
         """Monoisotopic mass of the full uncharged (modified) peptide."""
-        return sum(self.sequential_theoretical_mass)
+        mass = sum(self.sequential_theoretical_mass)
+        for tag in self.properties["labile_modifications"]:
+            try:
+                mass += tag.mass
+            except (AttributeError, KeyError):
+                raise ModificationException(
+                    f"Cannot resolve mass for modification {tag.value}."
+                )
+        for tag in self.properties["unlocalized_modifications"]:
+            try:
+                mass += tag.mass
+            except (AttributeError, KeyError):
+                raise ModificationException(
+                    f"Cannot resolve mass for modification {tag.value}."
+                )
+        return mass
 
     def rename_modifications(self, mapping: dict[str, str]) -> None:
         """

@@ -165,7 +165,6 @@ class TestMaxquantReader:
                 "_YYWGGHYSWDM(Ox)AK_",
                 "_YYWGGHYSWDM(Oxidation (M))AK_",
                 "_YYWGGHYM(ox)WDM(ox)AK_",
-                "_DFK(Delta:H(4)C(3))SK_",
                 "_(Acetyl (Protein N-term))ATGPM(ox)SFLK_",
                 "_ACDE(Amidated (Peptide C-term))_",
                 "_ACM(Ox)DE(Amidated (Peptide C-term))_",
@@ -174,64 +173,56 @@ class TestMaxquantReader:
             "expected_output": [
                 "VGVGFGR",
                 "MCK",
-                "[U:1]-EEEIAALVIDNGSGMCK",
-                "[U:28]-QYDADLEQILIQWITTQCRK",
-                "LAM[U:35]QEFMILPVGAANFR",
-                "VGVN[U:7]GFGR",
-                "[U:1]-EEEIAALVIDNGSGM[U:35]CK",
-                "[U:1]-SDKPDM[U:35]AEIEK",
-                "YYWGGHYSWDM[U:35]AK",
-                "YYWGGHYSWDM[U:35]AK",
-                "YYWGGHYM[U:35]WDM[U:35]AK",
-                "DFK[U:256]SK",
-                "[U:1]-ATGPM[U:35]SFLK",
-                "ACDE-[U:2]",
-                "ACM[U:35]DE-[U:2]",
-                "[U:1]-M[U:35]ACM[U:35]DEM[U:35]-[U:2]",
+                "[ac]-EEEIAALVIDNGSGMCK",
+                "[gl]-QYDADLEQILIQWITTQCRK",
+                "LAM[ox]QEFMILPVGAANFR",
+                "VGVN[de]GFGR",
+                "[ac]-EEEIAALVIDNGSGM[ox]CK",
+                "[ac]-SDKPDM[ox]AEIEK",
+                "YYWGGHYSWDM[Ox]AK",
+                "YYWGGHYSWDM[Oxidation (M)]AK",
+                "YYWGGHYM[ox]WDM[ox]AK",
+                "[Acetyl (Protein N-term)]-ATGPM[ox]SFLK",
+                "ACDE-[Amidated (Peptide C-term)]",
+                "ACM[Ox]DE-[Amidated (Peptide C-term)]",
+                "[Acetyl (Protein N-term)]-M[Ox]ACM[Ox]DEM[Ox]-[Amidated (Peptide C-term)]",
             ],
         }
 
-        msms_reader = maxquant.MaxquantReader(
-            "./tests/test_data/test_msms.txt", MODIFICATION_DEFINITIONS
-        )
-        output = [
-            msms_reader._parse_maxquant_modification(x)
-            for x in test_cases["input_modified_sequence"]
-        ]
-        assert output == test_cases["expected_output"]
+        msms_reader = maxquant.MaxquantReader("./tests/test_data/test_msms.txt")
+
+        for test_in, expected_out in zip(test_cases["input_modified_sequence"], test_cases["expected_output"]):
+            output = msms_reader._parse_maxquant_modification(test_in)
+            assert output == expected_out
 
     def test_get_peptidoform(self):
         msms_reader = maxquant.MaxquantReader(
-            "./tests/test_data/test_msms.txt", MODIFICATION_DEFINITIONS
+            "./tests/test_data/test_msms.txt",
         )
 
         test_cases = {
             "_VGVGFGR_": peptidoform.Peptidoform("VGVGFGR"),
             "_MCK_": peptidoform.Peptidoform("MCK"),
             "_(ac)EEEIAALVIDNGSGMCK_": peptidoform.Peptidoform(
-                "[U:1]-EEEIAALVIDNGSGMCK"
+                "[ac]-EEEIAALVIDNGSGMCK"
             ),
             "_(gl)QYDADLEQILIQWITTQCRK_": peptidoform.Peptidoform(
-                "[U:28]-QYDADLEQILIQWITTQCRK"
+                "[gl]-QYDADLEQILIQWITTQCRK"
             ),
-            "_LAM(ox)QEFMILPVGAANFR_": peptidoform.Peptidoform(
-                "LAM[U:35]QEFMILPVGAANFR"
-            ),
-            "_VGVN(de)GFGR_": peptidoform.Peptidoform("VGVN[U:7]GFGR"),
+            "_LAM(ox)QEFMILPVGAANFR_": peptidoform.Peptidoform("LAM[ox]QEFMILPVGAANFR"),
+            "_VGVN(de)GFGR_": peptidoform.Peptidoform("VGVN[de]GFGR"),
             "_(ac)EEEIAALVIDNGSGM(ox)CK_": peptidoform.Peptidoform(
-                "[U:1]-EEEIAALVIDNGSGM[U:35]CK"
+                "[ac]-EEEIAALVIDNGSGM[ox]CK"
             ),
-            "_(ac)SDKPDM(ox)AEIEK_": peptidoform.Peptidoform("[U:1]-SDKPDM[U:35]AEIEK"),
-            "_YYWGGHYSWDM(Ox)AK_": peptidoform.Peptidoform("YYWGGHYSWDM[U:35]AK"),
+            "_(ac)SDKPDM(ox)AEIEK_": peptidoform.Peptidoform("[ac]-SDKPDM[ox]AEIEK"),
+            "_YYWGGHYSWDM(Ox)AK_": peptidoform.Peptidoform("YYWGGHYSWDM[Ox]AK"),
             "_YYWGGHYSWDM(Oxidation (M))AK_": peptidoform.Peptidoform(
-                "YYWGGHYSWDM[U:35]AK"
+                "YYWGGHYSWDM[Oxidation (M)]AK"
             ),
-            "_YYWGGHYM(ox)WDM(ox)AK_": peptidoform.Peptidoform(
-                "YYWGGHYM[U:35]WDM[U:35]AK"
-            ),
-            "_DFK(Delta:H(4)C(3))SK_": peptidoform.Peptidoform("DFK[U:256]SK"),
+            "_YYWGGHYM(ox)WDM(ox)AK_": peptidoform.Peptidoform("YYWGGHYM[ox]WDM[ox]AK"),
+            "_DFK(Delta_H(4)C(3))SK_": peptidoform.Peptidoform("DFK[Delta_H(4)C(3)]SK"),
             "_(Acetyl (Protein N-term))ATGPM(ox)SFLK_": peptidoform.Peptidoform(
-                "[U:1]-ATGPM[U:35]SFLK"
+                "[Acetyl (Protein N-term)]-ATGPM[ox]SFLK"
             ),
         }
 

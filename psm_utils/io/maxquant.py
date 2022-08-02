@@ -53,15 +53,13 @@ class MaxquantReader(ReaderBase):
     def __init__(
         self,
         filename: Union[str, Path],
-        modifications_definitions: List[Dict[str, str]],
     ) -> None:
-        super().__init__(filename, modifications_definitions)
+        super().__init__(filename)
 
         self._rename_mapping = None
         self._mass_error_unit = None
 
         self._validate_msms()
-        self.modifications_definitions = modifications_definitions
 
     def __iter__(self):
         """Iterate over file and return PSMs one-by-one"""
@@ -194,7 +192,6 @@ class MaxquantReader(ReaderBase):
 
         # pattern to match open and closed round brackets
         pattern = re.compile(r"\(((?:[^)(]+|\((?:[^)(]+|\([^)(]*\))*\))*)\)")
-        modification_def_map = self.map_modification_definitions
         proforma_seq = modified_seq.strip("_")
         seq_length = len(proforma_seq) + 1
 
@@ -205,35 +202,25 @@ class MaxquantReader(ReaderBase):
 
             # if N-term mod
             if match.start() == 1:
-                if "N-term" in modification_def_map[match[0][1:-1]].site:
-                    proforma_seq = re.sub(
-                        f"\({se_mod_string}\)",
-                        f"[{modification_def_map[match[0][1:-1]].proforma_label}]-",
-                        proforma_seq,
-                    )
-                else:
-                    raise ModificationParsingException(
-                        "non N-terminal modification cannot be in front of a sequence"
-                    )
+                proforma_seq = re.sub(
+                    f"\({se_mod_string}\)",
+                    f"[{match[0][1:-1]}]-",
+                    proforma_seq,
+                )
 
             # if C-term mod
             elif match.end() == seq_length:
-                if "C-term" in modification_def_map[match[0][1:-1]].site:
-                    proforma_seq = re.sub(
-                        f"\({se_mod_string}\)",
-                        f"-[{modification_def_map[match[0][1:-1]].proforma_label}]",
-                        proforma_seq,
-                    )
-                else:
-                    raise ModificationParsingException(
-                        "non C-terminal modification cannot be at the end of a sequence"
-                    )
+                proforma_seq = re.sub(
+                    f"\({se_mod_string}\)",
+                    f"-[{match[0][1:-1]}]",
+                    proforma_seq,
+                )
 
             # if modification on amino acid
             else:
                 proforma_seq = re.sub(
                     f"\({se_mod_string}\)",
-                    f"[{modification_def_map[match[0][1:-1]].proforma_label}]",
+                    f"[{match[0][1:-1]}]",
                     proforma_seq,
                 )
 

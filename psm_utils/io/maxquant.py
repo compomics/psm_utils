@@ -1,11 +1,13 @@
 """Interface to MaxQuant msms.txt PSM files."""
 
+from __future__ import annotations
+
 import csv
 import logging
 import re
 from itertools import compress
 from pathlib import Path
-from typing import Dict, List, Union
+from typing import Union
 
 import numpy as np
 
@@ -131,7 +133,7 @@ class MaxQuantReader(ReaderBase):
             )
 
     @staticmethod
-    def _fix_column_case(columns: List[str]) -> Dict[str, str]:
+    def _fix_column_case(columns: list[str]) -> dict[str, str]:
         """
         Create mapping for column names with the correct case.
 
@@ -157,7 +159,7 @@ class MaxQuantReader(ReaderBase):
             raise NotImplementedError(f"MSMS.txt mass error unit not supported.")
 
     def _get_peptide_spectrum_match(
-        self, psm_dict: Dict[str, Union[str, float]]
+        self, psm_dict: dict[str, Union[str, float]]
     ) -> PeptideSpectrumMatch:
         """Return a PeptideSpectrumMatch object from MaxQuant msms.txt PSM file."""
         def _parse_array(array):

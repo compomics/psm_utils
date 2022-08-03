@@ -22,13 +22,39 @@ class MzidReader(ReaderBase):
 
     def __init__(self, filename: Union[str, Path]) -> None:
         super().__init__(filename)
+        """
+        Reader for MZID Record PSM files.
 
+        Parameters
+        ----------
+        filename: str, pathlib.Path
+            Path to PSM file.
+
+        Examples
+        --------
+
+        MzidReader supports iteration:
+
+        >>> from psm_utils.io.mzid import MzidReader
+        >>> for psm in MzidReader("peptides_1_1_0.mzid"):
+        ...     print(psm.peptide.proforma)
+        ACDEK
+        AC[Carbamidomethyl]DEFGR
+        [Acetyl]-AC[Carbamidomethyl]DEFGHIK
+
+        Or a full file can be read at once into a :py:class:`psm_utils.psm_list.PSMList`
+        object:
+
+        >>> mzid_reader = MzidReader("peprec.txt")
+        >>> psm_list = mzid_reader.read_file()
+
+        """
         self.filename = filename
         self.source = self._infer_source()
         self.searchengine_key_dict = self._get_searchengine_specific_keys()
 
     def __iter__(self):
-
+        """Iterate over file and return PSMs one-by-one."""
         with mzid.read(self.filename) as reader:
 
             for spectrum in reader:
@@ -44,7 +70,7 @@ class MzidReader(ReaderBase):
         return super().__next__()
 
     def read_file(self) -> PSMList:
-        """Read mzid file to PSM list"""
+        """Read full mzid file to PSM list object"""
 
         with mzid.read(self.filename) as reader:
             # Go over each Spectrum that has a match
@@ -66,7 +92,7 @@ class MzidReader(ReaderBase):
         rawfile: str,
         SpectrumIdentificationItem: dict[str, Union[str, float, list]],
     ) -> PeptideSpectrumMatch:
-        """Return a PeptideSpectrumMatch object from mzid psm"""
+        """Parse single mzid Record entry to a `PeptideSpectrumMatch`."""
 
         try:
             peptide = self._parse_peptidoform(

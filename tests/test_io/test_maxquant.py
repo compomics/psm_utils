@@ -43,7 +43,7 @@ class TestMaxQuantReader:
 
         # Test when column name is missing
         columns.remove("Mass")
-        with pytest.raises(maxquant.MsmsParsingError):
+        with pytest.raises(maxquant.MSMSParsingError):
             maxquant.MaxQuantReader._evaluate_columns(columns)
 
     def test_fix_column_case(self):
@@ -140,7 +140,3 @@ class TestMaxQuantReader:
         ):
             output = msms_reader._parse_peptidoform(test_in)
             assert output.proforma == expected_out
-
-    # TODO!!!
-    def test_read_file(self):
-        pass

@@ -114,3 +114,12 @@ psm_utils.io.peptideshaker
 .. automodule:: psm_utils.io.peptideshaker
    :members:
    :inherited-members:
+
+
+
+psm_utils.io.xtandem
+##########################
+
+.. automodule:: psm_utils.io.xtandem
+   :members:
+   :inherited-members:

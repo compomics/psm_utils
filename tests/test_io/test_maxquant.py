@@ -1,6 +1,7 @@
 import pytest
 
 import psm_utils.io.maxquant as maxquant
+from psm_utils import peptidoform, psm, psm_list
 
 TEST_COL = [
     "Raw file",
@@ -28,21 +29,22 @@ TEST_COL = [
     "id",
 ]
 
-class TestMaxquantReader:
+
+class TestMaxQuantReader:
     def test_evaluate_columns(self):
-        
+
         columns = TEST_COL.copy()
         # Test with the right column names
-        assert maxquant.MaxquantReader._evaluate_columns(columns) == True
+        assert maxquant.MaxQuantReader._evaluate_columns(columns) == True
 
         # Test with right columns names but lowercase columnname
         columns[0] = "raw file"
-        assert maxquant.MaxquantReader._evaluate_columns(columns) == True
+        assert maxquant.MaxQuantReader._evaluate_columns(columns) == True
 
         # Test when column name is missing
         columns.remove("Mass")
-        with pytest.raises(maxquant.MsmsParsingError):
-            maxquant.MaxquantReader._evaluate_columns(columns)
+        with pytest.raises(maxquant.MSMSParsingError):
+            maxquant.MaxQuantReader._evaluate_columns(columns)
 
     def test_fix_column_case(self):
 
@@ -65,8 +67,8 @@ class TestMaxquantReader:
             "Localization prob": "Localization prob",
             "Matches": "Matches",
             "Intensities": "Intensities",
-            "Mass deviations [Da]": "Mass Deviations [Da]",
-            "Mass deviations [ppm]": "Mass Deviations [ppm]",
+            "Mass Deviations [Da]": "Mass deviations [Da]",
+            "Mass Deviations [ppm]": "Mass deviations [ppm]",
             "Intensity coverage": "Intensity coverage",
             "Reverse": "Reverse",
             "id": "id",
@@ -75,12 +77,10 @@ class TestMaxquantReader:
         columns = TEST_COL.copy()
 
         # Test to get rename dict with default msms
-        assert maxquant.MaxquantReader._fix_column_case(columns) == expected_rename_dict
+        assert maxquant.MaxQuantReader._fix_column_case(columns) == expected_rename_dict
 
     def test_set_mass_error_unit(self):
-        msms_reader = maxquant.MaxquantReader(
-            "./tests/test_data/test_msms.txt"
-        )
+        msms_reader = maxquant.MaxQuantReader("./tests/test_data/test_msms.txt")
         # Test dalton mass error case
         assert msms_reader._mass_error_unit == "Da"
 
@@ -94,4 +94,49 @@ class TestMaxquantReader:
         columns.remove("Mass error [ppm]")
         with pytest.raises(NotImplementedError):
             msms_reader._set_mass_error_unit(columns)
-        
+
+    def test_parse_peptidoform(self):
+        test_cases = {
+            "input_modified_sequence": [
+                "_VGVGFGR_",
+                "_MCK_",
+                "_(ac)EEEIAALVIDNGSGMCK_",
+                "_(gl)QYDADLEQILIQWITTQCRK_",
+                "_LAM(ox)QEFMILPVGAANFR_",
+                "_VGVN(de)GFGR_",
+                "_(ac)EEEIAALVIDNGSGM(ox)CK_",
+                "_(ac)SDKPDM(ox)AEIEK_",
+                "_YYWGGHYSWDM(Ox)AK_",
+                "_YYWGGHYSWDM(Oxidation (M))AK_",
+                "_YYWGGHYM(ox)WDM(ox)AK_",
+                "_(Acetyl (Protein N-term))ATGPM(ox)SFLK_",
+                "_ACDE(Amidated (Peptide C-term))_",
+                "_ACM(Ox)DE(Amidated (Peptide C-term))_",
+                "_(Acetyl (Protein N-term))M(Ox)ACM(Ox)DEM(Ox)(Amidated (Peptide C-term))_",
+            ],
+            "expected_output": [
+                "VGVGFGR",
+                "MCK",
+                "[ac]-EEEIAALVIDNGSGMCK",
+                "[gl]-QYDADLEQILIQWITTQCRK",
+                "LAM[ox]QEFMILPVGAANFR",
+                "VGVN[de]GFGR",
+                "[ac]-EEEIAALVIDNGSGM[ox]CK",
+                "[ac]-SDKPDM[ox]AEIEK",
+                "YYWGGHYSWDM[Ox]AK",
+                "YYWGGHYSWDM[Oxidation (M)]AK",
+                "YYWGGHYM[ox]WDM[ox]AK",
+                "[Acetyl (Protein N-term)]-ATGPM[ox]SFLK",
+                "ACDE-[Amidated (Peptide C-term)]",
+                "ACM[Ox]DE-[Amidated (Peptide C-term)]",
+                "[Acetyl (Protein N-term)]-M[Ox]ACM[Ox]DEM[Ox]-[Amidated (Peptide C-term)]",
+            ],
+        }
+
+        msms_reader = maxquant.MaxQuantReader("./tests/test_data/test_msms.txt")
+
+        for test_in, expected_out in zip(
+            test_cases["input_modified_sequence"], test_cases["expected_output"]
+        ):
+            output = msms_reader._parse_peptidoform(test_in)
+            assert output.proforma == expected_out

@@ -111,7 +111,6 @@ class MzidReader(ReaderBase):
         except KeyError:
             rt = float("nan")
 
-        # TODO add rank in metadata
         psm = PeptideSpectrumMatch(
             peptide=peptide,
             spectrum_id=str(spectrum_title),
@@ -204,8 +203,28 @@ class MzidReader(ReaderBase):
 
     def _get_searchengine_specific_metadata(self, SpectrumIdentificationItem):
         """Get searchengine specific psm metadata"""
-        # TODO
-        return dict()
+
+        metadata = {
+            "calculatedMassToCharge": SpectrumIdentificationItem[
+                "calculatedMassToCharge"
+            ],
+            "rank": SpectrumIdentificationItem["rank"],
+            "Length": len(SpectrumIdentificationItem["PeptideSequence"]),
+        }
+        if self.source == "MS-GF+":
+            metadata.update(
+                {
+                    "MS-GF:DeNovoScore": SpectrumIdentificationItem[
+                        "MS-GF:DeNovoScore"
+                    ],
+                    "MS-GF:EValue": SpectrumIdentificationItem["MS-GF:EValue"],
+                    "MS-GF:DeNovoScore": SpectrumIdentificationItem[
+                        "MS-GF:DeNovoScore"
+                    ],
+                    "IsotopeError": SpectrumIdentificationItem["IsotopeError"],
+                }
+            )
+        return metadata
 
     @staticmethod
     def _get_rawfile_name(file_location: str) -> str:

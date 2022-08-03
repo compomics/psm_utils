@@ -229,8 +229,10 @@ class MzidReader(ReaderBase):
     @staticmethod
     def _get_rawfile_name(file_location: str) -> str:
         """Get rawfile name out of mzid file location or filename"""
-
-        filename = file_location.rsplit("/", 1)[1]
+        if "/" in file_location:
+            filename = file_location.rsplit("/", 1)[1]
+        elif "\\" in file_location:
+            filename = file_location.rsplit("\\", 1)[1]
         return filename.rsplit(".", 1)[0]
 
 

@@ -28,10 +28,20 @@ class MzidReader(ReaderBase):
         self.searchengine_key_dict = self._get_searchengine_specific_keys()
 
     def __iter__(self):
-        raise NotImplementedError()
+
+        with mzid.read(self.filename) as reader:
+
+            for spectrum in reader:
+                spectrum_title = spectrum[self.searchengine_key_dict["spectrum_key"]]
+                rawfile = self._get_rawfile_name(spectrum["location"])
+                for psm_dict in spectrum["SpectrumIdentificationItem"]:
+                    psm = self._get_peptide_spectrum_match(
+                        spectrum_title, rawfile, psm_dict
+                    )
+                    yield psm
 
     def __next__(self) -> PeptideSpectrumMatch:
-        raise NotImplementedError()
+        return super().__next__()
 
     def read_file(self) -> PSMList:
         """Read mzid file to PSM list"""
@@ -39,6 +49,7 @@ class MzidReader(ReaderBase):
         with mzid.read(self.filename) as reader:
             # Go over each Spectrum that has a match
             psm_list = []
+            # Go over each PSM
             for spectrum in reader:
                 spectrum_title = spectrum[self.searchengine_key_dict["spectrum_key"]]
                 rawfile = self._get_rawfile_name(spectrum["location"])
@@ -59,22 +70,18 @@ class MzidReader(ReaderBase):
 
         try:
             peptide = self._parse_peptidoform(
-                SpectrumIdentificationItem["Sequence"],
-                PeptideSpectrumMatch["Modification"],
+                SpectrumIdentificationItem["PeptideSequence"],
+                SpectrumIdentificationItem["Modification"],
             )
         except KeyError:
-            peptide = Peptidoform(SpectrumIdentificationItem["Sequence"])
+            peptide = Peptidoform(SpectrumIdentificationItem["PeptideSequence"])
 
         isdecoy, protein_list = self._parse_PeptideEvidenceRef(
             SpectrumIdentificationItem["PeptideEvidenceRef"]
         )
         # retention time is often missing from mzid
         try:
-            rt = float(
-                SpectrumIdentificationItem["PeptideEvidenceRef"][
-                    self._get_searchengine_specific_keys["rt_key"]
-                ]
-            )
+            rt = float(SpectrumIdentificationItem[self.searchengine_key_dict["rt_key"]])
         except KeyError:
             rt = float("nan")
 
@@ -166,7 +173,7 @@ class MzidReader(ReaderBase):
             return {
                 "score_key": "MS-GF:RawScore",
                 "rt_key": "scan start time",
-                "spectrum_key": "specrum title",
+                "spectrum_key": "spectrum title",
             }
 
     def _get_searchengine_specific_metadata(self, SpectrumIdentificationItem):
@@ -174,6 +181,7 @@ class MzidReader(ReaderBase):
         # TODO
         return dict()
 
+    @staticmethod
     def _get_rawfile_name(file_location: str) -> str:
         """Get rawfile name out of mzid file location or filename"""
 

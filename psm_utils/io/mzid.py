@@ -287,6 +287,26 @@ class MzidReader(ReaderBase):
         return score_key
 
     @staticmethod
+<<<<<<< HEAD
+    def _infer_score(identification_keys: list):
+        """Infer the score used when source is not unknown"""
+
+        score = None
+        for score in STANDARD_SEARCHENGINE_SCORES:
+            if score in identification_keys:
+                score_key = score
+                break
+        if not score:
+            raise UnknownMzidScore("No known score metric found in Mzid file")
+
+        return score_key
+
+    @staticmethod
+    def _get_rawfile_name(file_location: str) -> str:
+        """Get rawfile name out of mzid file location or filename."""
+
+        return Path(file_location).stem
+=======
     def _get_rawfile_name(file_location: str) -> str:
         """Get rawfile name out of mzid file location or filename."""
 

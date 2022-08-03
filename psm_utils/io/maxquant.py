@@ -182,7 +182,6 @@ class MaxQuantReader(ReaderBase):
             provenance_data=({"maxquant_filename": self.filename}),
             metadata={
                 "Delta Score": float(psm_dict["Delta score"]),
-                "Missed cleavages": float(psm_dict["enzInt"]),
                 "Localization prob": float(psm_dict["Localization prob"]),
                 "PepLen": int(psm_dict["Length"]),
                 "Precursor Intensity": float(psm_dict["Precursor Intensity"]),

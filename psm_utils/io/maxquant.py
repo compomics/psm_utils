@@ -47,13 +47,15 @@ MSMS_DEFAULT_COLUMNS = {
 }
 
 
-class MaxquantReader(ReaderBase):
+class MaxQuantReader(ReaderBase):
     """Reader for MaxQuant msms.txt PSM files."""
 
     def __init__(
         self,
         filename: Union[str, Path],
     ) -> None:
+        """Reader for MaxQuant msms.txt PSM files."""
+
         super().__init__(filename)
 
         self._rename_mapping = None
@@ -63,28 +65,23 @@ class MaxquantReader(ReaderBase):
 
     def __iter__(self):
         """Iterate over file and return PSMs one-by-one"""
-
         with open(self.filename) as msms_in:
             reader = csv.DictReader(msms_in, delimiter="\t")
-
             for psm_dict in reader:
                 psm = self._get_peptide_spectrum_match(psm_dict)
                 yield psm
 
-    # TODO next does not work yet
     def __next__(self) -> PeptideSpectrumMatch:
         return super().__next__()
 
     def read_file(self) -> PSMList:
         """Read full MaxQuant msms.txt PSM file into a PSMList object."""
-        msms_psms = []
+        psm_list = []
         with open(self.filename) as msms_in:
             reader = csv.DictReader(msms_in, delimiter="\t")
-
             for psm_dict in reader:
-                msms_psms.append(self._get_peptide_spectrum_match(psm_dict))
-
-        return PSMList(msms_psms)
+                psm_list.append(self._get_peptide_spectrum_match(psm_dict))
+        return PSMList(psm_list)
 
     def _validate_msms(self) -> None:
         with open(self.filename, "r") as msms_file:
@@ -96,7 +93,6 @@ class MaxquantReader(ReaderBase):
     @staticmethod
     def _evaluate_columns(columns) -> bool:
         """Case insensitive column evaluation msms file."""
-
         columns = list(map(lambda col: col.lower(), columns))
         column_check = [
             True if col.lower() in columns else False for col in MSMS_DEFAULT_COLUMNS
@@ -137,97 +133,72 @@ class MaxquantReader(ReaderBase):
     def _get_peptide_spectrum_match(
         self, psm_dict: Dict[str, Union[str, float]]
     ) -> PeptideSpectrumMatch:
-        """Return a PeptideSpectrumMatch object from maxquat msms PSM"""
-
-        peptide = self._get_peptidoform(psm_dict["Modified sequence"])
-        spectrum_id = psm_dict["Scan number"]
-        run = psm_dict["Raw file"]
-        is_decoy = psm_dict["Reverse"] == "+"
-        score = float(psm_dict["Score"])
-        precursor_charge = int(psm_dict["Charge"])
-        precursor_mz = float(psm_dict["m/z"])
-        retention_time = float(psm_dict["Retention time"])
-        protein_list = psm_dict["Proteins"]
-        source = "maxquant"
-        provenance_data = ({"maxquant_filename": self.filename},)
-        metadata = {
-            "Delta Score": psm_dict["Delta score"],
-            # "Missed cleavages": psm_dict["enzInt"],
-            "Localization prob": psm_dict["Localization prob"],
-            "PepLen": psm_dict["Length"],
-            "Precursor Intensity": psm_dict["Precursor Intensity"],
-            "dM": psm_dict[f"Mass error [{self._mass_error_unit}]"],
-            "Matches": psm_dict["Matches"],
-            "Intensities": psm_dict["Intensities"],
-            "Intensity coverage": psm_dict["Intensity coverage"],
-            f"Mass Deviations [{self._mass_error_unit}]": psm_dict[
-                self._rename_mapping[f"Mass Deviations [{self._mass_error_unit}]"]
-            ],
-        }
-        return PeptideSpectrumMatch(
-            peptide=peptide,
-            spectrum_id=spectrum_id,
-            run=run,
-            is_decoy=is_decoy,
-            score=score,
-            precursor_charge=precursor_charge,
-            precursor_mz=precursor_mz,
-            retention_time=retention_time,
-            protein_list=protein_list,
-            source=source,
-            provenance_data=provenance_data,
-            metadata=metadata,
+        """Return a PeptideSpectrumMatch object from MaxQuant msms.txt PSM file."""
+        psm = PeptideSpectrumMatch(
+            peptide=self._parse_peptidoform(psm_dict["Modified sequence"]),
+            spectrum_id=psm_dict["Scan number"],
+            run=psm_dict["Raw file"],
+            is_decoy=psm_dict["Reverse"] == "+",
+            score=float(psm_dict["Score"]),
+            precursor_charge=int(psm_dict["Charge"]),
+            precursor_mz=float(psm_dict["m/z"]),
+            retention_time=float(psm_dict["Retention time"]),
+            protein_list=psm_dict["Proteins"],
+            source="maxquant",
+            provenance_data=({"maxquant_filename": self.filename}),
+            metadata={
+                "Delta Score": psm_dict["Delta score"],
+                # "Missed cleavages": psm_dict["enzInt"],
+                "Localization prob": psm_dict["Localization prob"],
+                "PepLen": psm_dict["Length"],
+                "Precursor Intensity": psm_dict["Precursor Intensity"],
+                "dM": psm_dict[f"Mass error [{self._mass_error_unit}]"],
+                "Matches": psm_dict["Matches"],
+                "Intensities": psm_dict["Intensities"],
+                "Intensity coverage": psm_dict["Intensity coverage"],
+                f"Mass Deviations [{self._mass_error_unit}]": psm_dict[
+                    self._rename_mapping[f"Mass Deviations [{self._mass_error_unit}]"]
+                ],
+            },
         )
+        return psm
 
-    def _get_peptidoform(
-        self,
-        modified_peptideseq: str,
-    ) -> Peptidoform:
-        """Return a peptido form"""
-
-        return Peptidoform(self._parse_maxquant_modification(modified_peptideseq))
-
-    def _parse_maxquant_modification(self, modified_seq):
-        """Parse modified maxquant seq to proforma sequence"""
+    @staticmethod
+    def _parse_peptidoform(modified_seq: str) -> Peptidoform:
+        """Parse modified sequence to :py:class:`psm_utils.peptidoform.Peptidoform`."""
 
         # pattern to match open and closed round brackets
         pattern = re.compile(r"\(((?:[^)(]+|\((?:[^)(]+|\([^)(]*\))*\))*)\)")
-        proforma_seq = modified_seq.strip("_")
-        seq_length = len(proforma_seq) + 1
+        modified_seq = modified_seq.strip("_")
+        modified_seq_len = len(modified_seq)
 
         for match in pattern.finditer(modified_seq):
             # take match object string, remove leading and trailing bracket
             # and escape remaining brackets
-            se_mod_string = match[0][1:-1].replace("(", "\(").replace(")", "\)")
+            se_mod_string = match[1].replace("(", "\(").replace(")", "\)")
 
             # if N-term mod
-            if match.start() == 1:
-                proforma_seq = re.sub(
-                    f"\({se_mod_string}\)",
-                    f"[{match[0][1:-1]}]-",
-                    proforma_seq,
+            if match.start() == 0:
+                modified_seq = re.sub(
+                    f"\({se_mod_string}\)", f"[{match[1]}]-", modified_seq
                 )
 
             # if C-term mod
-            elif match.end() == seq_length:
-                proforma_seq = re.sub(
-                    f"\({se_mod_string}\)",
-                    f"-[{match[0][1:-1]}]",
-                    proforma_seq,
+            elif match.end() == modified_seq_len:
+                modified_seq = re.sub(
+                    f"\({se_mod_string}\)", f"-[{match[1]}]", modified_seq
                 )
 
             # if modification on amino acid
             else:
-                proforma_seq = re.sub(
-                    f"\({se_mod_string}\)",
-                    f"[{match[0][1:-1]}]",
-                    proforma_seq,
+                modified_seq = re.sub(
+                    f"\({se_mod_string}\)", f"[{match[1]}]", modified_seq
                 )
 
-        return proforma_seq
+        return Peptidoform(modified_seq)
 
 
-class MaxquantWriter(WriterBase):
+class MaxQuantWriter(WriterBase):
     """Writer for MaxQuant msms.txt files (not implemented)."""
 
     def __init__(self, filename):

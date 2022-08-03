@@ -29,75 +29,22 @@ TEST_COL = [
     "id",
 ]
 
-MODIFICATION_DEFINITIONS = [
-    {
-        "site": "S|T|Y",
-        "search_engine_label": "Phospho",
-        "proforma_label": "U:21",
-    },
-    {
-        "site": "M",
-        "search_engine_label": "Oxidation (M)",
-        "proforma_label": "U:35",
-    },
-    {
-        "site": "M",
-        "search_engine_label": "ox",
-        "proforma_label": "U:35",
-    },
-    {
-        "site": "M",
-        "search_engine_label": "Ox",
-        "proforma_label": "U:35",
-    },
-    {
-        "site": "N-term",
-        "search_engine_label": "Acetyl (Protein N-term)",
-        "proforma_label": "U:1",
-    },
-    {
-        "site": "N-term",
-        "search_engine_label": "ac",
-        "proforma_label": "U:1",
-    },
-    {
-        "site": "N-term",
-        "search_engine_label": "gl",
-        "proforma_label": "U:28",
-    },
-    {
-        "site": "N",
-        "search_engine_label": "de",
-        "proforma_label": "U:7",
-    },
-    {
-        "site": "C-term",
-        "search_engine_label": "Amidated (Peptide C-term)",
-        "proforma_label": "U:2",
-    },
-    {
-        "site": "K",
-        "search_engine_label": "Delta:H(4)C(3)",
-        "proforma_label": "U:256",
-    },
-]
 
-
-class TestMaxquantReader:
+class TestMaxQuantReader:
     def test_evaluate_columns(self):
 
         columns = TEST_COL.copy()
         # Test with the right column names
-        assert maxquant.MaxquantReader._evaluate_columns(columns) == True
+        assert maxquant.MaxQuantReader._evaluate_columns(columns) == True
 
         # Test with right columns names but lowercase columnname
         columns[0] = "raw file"
-        assert maxquant.MaxquantReader._evaluate_columns(columns) == True
+        assert maxquant.MaxQuantReader._evaluate_columns(columns) == True
 
         # Test when column name is missing
         columns.remove("Mass")
         with pytest.raises(maxquant.MsmsParsingError):
-            maxquant.MaxquantReader._evaluate_columns(columns)
+            maxquant.MaxQuantReader._evaluate_columns(columns)
 
     def test_fix_column_case(self):
 
@@ -130,12 +77,10 @@ class TestMaxquantReader:
         columns = TEST_COL.copy()
 
         # Test to get rename dict with default msms
-        assert maxquant.MaxquantReader._fix_column_case(columns) == expected_rename_dict
+        assert maxquant.MaxQuantReader._fix_column_case(columns) == expected_rename_dict
 
     def test_set_mass_error_unit(self):
-        msms_reader = maxquant.MaxquantReader(
-            "./tests/test_data/test_msms.txt", MODIFICATION_DEFINITIONS
-        )
+        msms_reader = maxquant.MaxQuantReader("./tests/test_data/test_msms.txt")
         # Test dalton mass error case
         assert msms_reader._mass_error_unit == "Da"
 
@@ -150,8 +95,7 @@ class TestMaxquantReader:
         with pytest.raises(NotImplementedError):
             msms_reader._set_mass_error_unit(columns)
 
-    def test_parse_maxquant_modification(self):
-
+    def test_parse_peptidoform(self):
         test_cases = {
             "input_modified_sequence": [
                 "_VGVGFGR_",
@@ -189,45 +133,13 @@ class TestMaxquantReader:
             ],
         }
 
-        msms_reader = maxquant.MaxquantReader("./tests/test_data/test_msms.txt")
+        msms_reader = maxquant.MaxQuantReader("./tests/test_data/test_msms.txt")
 
-        for test_in, expected_out in zip(test_cases["input_modified_sequence"], test_cases["expected_output"]):
-            output = msms_reader._parse_maxquant_modification(test_in)
-            assert output == expected_out
-
-    def test_get_peptidoform(self):
-        msms_reader = maxquant.MaxquantReader(
-            "./tests/test_data/test_msms.txt",
-        )
-
-        test_cases = {
-            "_VGVGFGR_": peptidoform.Peptidoform("VGVGFGR"),
-            "_MCK_": peptidoform.Peptidoform("MCK"),
-            "_(ac)EEEIAALVIDNGSGMCK_": peptidoform.Peptidoform(
-                "[ac]-EEEIAALVIDNGSGMCK"
-            ),
-            "_(gl)QYDADLEQILIQWITTQCRK_": peptidoform.Peptidoform(
-                "[gl]-QYDADLEQILIQWITTQCRK"
-            ),
-            "_LAM(ox)QEFMILPVGAANFR_": peptidoform.Peptidoform("LAM[ox]QEFMILPVGAANFR"),
-            "_VGVN(de)GFGR_": peptidoform.Peptidoform("VGVN[de]GFGR"),
-            "_(ac)EEEIAALVIDNGSGM(ox)CK_": peptidoform.Peptidoform(
-                "[ac]-EEEIAALVIDNGSGM[ox]CK"
-            ),
-            "_(ac)SDKPDM(ox)AEIEK_": peptidoform.Peptidoform("[ac]-SDKPDM[ox]AEIEK"),
-            "_YYWGGHYSWDM(Ox)AK_": peptidoform.Peptidoform("YYWGGHYSWDM[Ox]AK"),
-            "_YYWGGHYSWDM(Oxidation (M))AK_": peptidoform.Peptidoform(
-                "YYWGGHYSWDM[Oxidation (M)]AK"
-            ),
-            "_YYWGGHYM(ox)WDM(ox)AK_": peptidoform.Peptidoform("YYWGGHYM[ox]WDM[ox]AK"),
-            "_DFK(Delta_H(4)C(3))SK_": peptidoform.Peptidoform("DFK[Delta_H(4)C(3)]SK"),
-            "_(Acetyl (Protein N-term))ATGPM(ox)SFLK_": peptidoform.Peptidoform(
-                "[Acetyl (Protein N-term)]-ATGPM[ox]SFLK"
-            ),
-        }
-
-        for test_string in test_cases.keys():
-            assert msms_reader._get_peptidoform(test_string) == test_cases[test_string]
+        for test_in, expected_out in zip(
+            test_cases["input_modified_sequence"], test_cases["expected_output"]
+        ):
+            output = msms_reader._parse_peptidoform(test_in)
+            assert output.proforma == expected_out
 
     # TODO!!!
     def test_read_file(self):

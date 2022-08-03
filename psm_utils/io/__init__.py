@@ -11,7 +11,7 @@ import psm_utils.io.peptide_record as peptide_record
 # TODO: to be completed
 READERS = {
     "peprec": peptide_record.PeptideRecordReader,
-    "msms": maxquant.MaxquantReader,
+    "msms": maxquant.MaxQuantReader,
 }
 
 # TODO: to be completed

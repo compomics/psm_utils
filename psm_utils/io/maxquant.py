@@ -7,6 +7,8 @@ from itertools import compress
 from pathlib import Path
 from typing import Dict, List, Union
 
+import numpy as np
+
 from psm_utils.exceptions import PSMUtilsException
 from psm_utils.io._base_classes import ReaderBase
 from psm_utils.peptidoform import Peptidoform
@@ -158,6 +160,12 @@ class MaxQuantReader(ReaderBase):
         self, psm_dict: Dict[str, Union[str, float]]
     ) -> PeptideSpectrumMatch:
         """Return a PeptideSpectrumMatch object from MaxQuant msms.txt PSM file."""
+        def _parse_array(array):
+            try:
+                return np.array(array.split(";"), dtype=np.float32)
+            except ValueError:
+                return np.array(array.split(";"))
+
         psm = PeptideSpectrumMatch(
             peptide=self._parse_peptidoform(psm_dict["Modified sequence"]),
             spectrum_id=psm_dict["Scan number"],
@@ -167,22 +175,26 @@ class MaxQuantReader(ReaderBase):
             precursor_charge=int(psm_dict["Charge"]),
             precursor_mz=float(psm_dict["m/z"]),
             retention_time=float(psm_dict["Retention time"]),
-            protein_list=psm_dict["Proteins"],
+            protein_list=psm_dict["Proteins"].split(";"),
             source="maxquant",
             provenance_data=({"maxquant_filename": self.filename}),
             metadata={
-                "Delta Score": psm_dict["Delta score"],
-                # "Missed cleavages": psm_dict["enzInt"],
-                "Localization prob": psm_dict["Localization prob"],
-                "PepLen": psm_dict["Length"],
-                "Precursor Intensity": psm_dict["Precursor Intensity"],
-                "dM": psm_dict[f"Mass error [{self._mass_error_unit}]"],
-                "Matches": psm_dict["Matches"],
-                "Intensities": psm_dict["Intensities"],
-                "Intensity coverage": psm_dict["Intensity coverage"],
-                f"Mass Deviations [{self._mass_error_unit}]": psm_dict[
-                    self._rename_mapping[f"Mass Deviations [{self._mass_error_unit}]"]
-                ],
+                "Delta Score": float(psm_dict["Delta score"]),
+                "Missed cleavages": float(psm_dict["enzInt"]),
+                "Localization prob": float(psm_dict["Localization prob"]),
+                "PepLen": int(psm_dict["Length"]),
+                "Precursor Intensity": float(psm_dict["Precursor Intensity"]),
+                "dM": float(psm_dict[f"Mass error [{self._mass_error_unit}]"]),
+                "Matches": _parse_array(psm_dict["Matches"]),
+                "Intensities": _parse_array(psm_dict["Intensities"]),
+                "Intensity coverage": float(psm_dict["Intensity coverage"]),
+                f"Mass Deviations [{self._mass_error_unit}]": _parse_array(
+                    psm_dict[
+                        self._rename_mapping[
+                            f"Mass Deviations [{self._mass_error_unit}]"
+                        ]
+                    ]
+                ),
             },
         )
         return psm

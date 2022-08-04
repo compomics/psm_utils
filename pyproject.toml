@@ -27,7 +27,6 @@ dependencies = [
     "numpy",
     "click",
     "rich",
-    "xml"
 ]
 
 [project.optional-dependencies]

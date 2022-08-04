@@ -1,7 +1,5 @@
 import xml.etree.ElementTree as ET
 
-import pytest
-
 import psm_utils.io.mzid as mzid
 from psm_utils import peptidoform, psm, psm_list
 

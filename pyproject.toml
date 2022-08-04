@@ -26,7 +26,8 @@ dependencies = [
     "pandas",
     "numpy",
     "click",
-    "rich"
+    "rich",
+    "xml"
 ]
 
 [project.optional-dependencies]

@@ -66,9 +66,6 @@ class MzidReader(ReaderBase):
                     )
                     yield psm
 
-    def __next__(self) -> PeptideSpectrumMatch:
-        return super().__next__()
-
     def read_file(self) -> PSMList:
         """Read full mzid file to PSM list object"""
 
@@ -185,7 +182,7 @@ class MzidReader(ReaderBase):
         return isdecoy, protein_list
 
     def _get_searchengine_specific_keys(self):
-        """Get searchengine specific score"""
+        """Get searchengine specific keys"""
         # TODO works for PEAKS pro?
         if "PEAKS" in self.source:
             return {

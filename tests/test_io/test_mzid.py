@@ -177,7 +177,7 @@ class TestMzIdentMlReader:
 
         test_cases = {
             "file:/F:/FromE/H088333_1p_WNE15_trap24_CMB-867_3_LFQ_PNE1904-039.mgf": "H088333_1p_WNE15_trap24_CMB-867_3_LFQ_PNE1904-039",
-            "C:\\Users\\robbin\\Desktop\\mgf\\ignore\\YPIC_Run1_CH2-1.mgf": "YPIC_Run1_CH2-1",
+            "C:/Users/robbin/Desktop/mgf/ignore/YPIC_Run1_CH2-1.mgf": "YPIC_Run1_CH2-1",
             "/Users/kims336/Research/Data/QCShew/test.mgf": "test",
         }
 

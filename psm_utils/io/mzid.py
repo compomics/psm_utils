@@ -18,10 +18,8 @@ logger = logging.getLogger(__name__)
 
 
 class MzidReader(ReaderBase):
-    """Reader for MaxQuant msms.txt PSM files."""
-
     def __init__(self, filename: Union[str, Path]) -> None:
-        super().__init__(filename)
+
         """
         Reader for MZID Record PSM files.
 
@@ -45,18 +43,18 @@ class MzidReader(ReaderBase):
         Or a full file can be read at once into a :py:class:`psm_utils.psm_list.PSMList`
         object:
 
-        >>> mzid_reader = MzidReader("peprec.txt")
+        >>> mzid_reader = MzidReader("peptides_1_1_0.mzid")
         >>> psm_list = mzid_reader.read_file()
 
         """
-        self.filename = filename
+        super().__init__(filename)
         self.source = self._infer_source()
         self.searchengine_key_dict = self._get_searchengine_specific_keys()
 
     def __iter__(self):
         """Iterate over file and return PSMs one-by-one."""
-        with mzid.read(self.filename) as reader:
 
+        with mzid.read(str(self.filename.absolute())) as reader:
             for spectrum in reader:
                 spectrum_title = spectrum[self.searchengine_key_dict["spectrum_key"]]
                 rawfile = self._get_rawfile_name(spectrum["location"])
@@ -67,9 +65,9 @@ class MzidReader(ReaderBase):
                     yield psm
 
     def read_file(self) -> PSMList:
-        """Read full mzid file to PSM list object"""
+        """Read full mzid file to PSM list object."""
 
-        with mzid.read(self.filename) as reader:
+        with mzid.read(str(self.filename.absolute())) as reader:
             # Go over each Spectrum that has a match
             psm_list = []
             # Go over each PSM
@@ -87,24 +85,25 @@ class MzidReader(ReaderBase):
         self,
         spectrum_title: str,
         rawfile: str,
-        SpectrumIdentificationItem: dict[str, Union[str, float, list]],
+        spectrum_identification_item: dict[str, Union[str, float, list]],
     ) -> PeptideSpectrumMatch:
         """Parse single mzid Record entry to a `PeptideSpectrumMatch`."""
 
         try:
-            peptide = self._parse_peptidoform(
-                SpectrumIdentificationItem["PeptideSequence"],
-                SpectrumIdentificationItem["Modification"],
-            )
+            modifications = spectrum_identification_item["Modification"]
         except KeyError:
-            peptide = Peptidoform(SpectrumIdentificationItem["PeptideSequence"])
+            modifications = []
+        sequence = spectrum_identification_item["PeptideSequence"]
+        peptide = self._parse_peptidoform(sequence, modifications)
 
-        isdecoy, protein_list = self._parse_PeptideEvidenceRef(
-            SpectrumIdentificationItem["PeptideEvidenceRef"]
+        isdecoy, protein_list = self._parse_peptide_evidence_ref(
+            spectrum_identification_item["PeptideEvidenceRef"]
         )
         # retention time is often missing from mzid
         try:
-            rt = float(SpectrumIdentificationItem[self.searchengine_key_dict["rt_key"]])
+            rt = float(
+                spectrum_identification_item[self.searchengine_key_dict["rt_key"]]
+            )
         except KeyError:
             rt = float("nan")
 
@@ -114,47 +113,41 @@ class MzidReader(ReaderBase):
             run=str(rawfile),
             is_decoy=isdecoy,
             score=float(
-                SpectrumIdentificationItem[self.searchengine_key_dict["score_key"]]
+                spectrum_identification_item[self.searchengine_key_dict["score_key"]]
             ),
-            precursor_charge=int(SpectrumIdentificationItem["chargeState"]),
-            # Or use calculatedMassToCharge?
-            precursor_mz=float(SpectrumIdentificationItem["experimentalMassToCharge"]),
-            # Retention time often not included in mzid output
+            precursor_charge=int(spectrum_identification_item["chargeState"]),
+            precursor_mz=float(
+                spectrum_identification_item["experimentalMassToCharge"]
+            ),
             retention_time=rt,
             protein_list=protein_list,
             source=self.source,
-            provenance_data=({f"{self.source}_filename": self.filename}),
+            provenance_data=({f"mzid_filename": self.filename}),
             metadata=self._get_searchengine_specific_metadata(
-                SpectrumIdentificationItem
+                spectrum_identification_item
             ),
         )
         return psm
 
     @staticmethod
     def _parse_peptidoform(seq: str, modification_list: list[dict]):
-        """Return a peptido form"""
-        # TODO: not able to differentiate between c-terminal mod and mod on last aa
+        """Parse mzid sequence and modifications to Peptidoform."""
 
-        modification_lengths = 0
+        peptide = [""] + list(seq) + [""]
+
+        # Add modification labels
         for mod in modification_list:
-            if mod["location"] == 0:
-                proforma_mod = f"[{mod['name']}]-"
-                seq = proforma_mod + seq
+            peptide[int(mod["location"])] += f"[{mod['name']}]"
 
-            else:
-                proforma_mod = f"[{mod['name']}]"
-                seq = (
-                    seq[0 : mod["location"] + modification_lengths]
-                    + proforma_mod
-                    + seq[mod["location"] + modification_lengths :]
-                )
+        # Add dashes between residues and termnin, and join sequence
+        peptide[0] = peptide[0] + "-" if peptide[0] else ""
+        peptide[-1] = "-" + peptide[-1] if peptide[-1] else ""
+        proforma_seq = "".join(peptide)
 
-            modification_lengths += len(proforma_mod)
-
-        return Peptidoform(seq)
+        return Peptidoform(proforma_seq)
 
     def _infer_source(self):
-        """Get the source of the mzid file"""
+        """Get the source of the mzid file."""
 
         mzid_xml = ET.parse(self.filename)
         root = mzid_xml.getroot()
@@ -164,25 +157,25 @@ class MzidReader(ReaderBase):
 
     @staticmethod
     def _get_xml_namespace(root_tag):
-        """Get the namespace of the xml root"""
+        """Get the namespace of the xml root."""
 
         m = re.match(r"\{.*\}", root_tag)
         return m.group(0) if m else ""
 
     @staticmethod
-    def _parse_PeptideEvidenceRef(PeptideEvidenceList: list[dict]):
-        """Parse peptide evidence References of PSM"""
+    def _parse_peptide_evidence_ref(peptide_evidence_list: list[dict]):
+        """Parse peptide evidence References of PSM."""
 
-        isdecoy = PeptideEvidenceList[0]["isDecoy"]
+        isdecoy = peptide_evidence_list[0]["isDecoy"]
 
         protein_list = [
-            d["accession"] for d in PeptideEvidenceList if "accession" in d.keys()
+            d["accession"] for d in peptide_evidence_list if "accession" in d.keys()
         ]
 
         return isdecoy, protein_list
 
     def _get_searchengine_specific_keys(self):
-        """Get searchengine specific keys"""
+        """Get searchengine specific keys."""
         # TODO works for PEAKS pro?
         if "PEAKS" in self.source:
             return {
@@ -199,7 +192,7 @@ class MzidReader(ReaderBase):
             }
 
     def _get_searchengine_specific_metadata(self, SpectrumIdentificationItem):
-        """Get searchengine specific psm metadata"""
+        """Get searchengine specific psm metadata."""
 
         metadata = {
             "calculatedMassToCharge": SpectrumIdentificationItem[
@@ -225,12 +218,9 @@ class MzidReader(ReaderBase):
 
     @staticmethod
     def _get_rawfile_name(file_location: str) -> str:
-        """Get rawfile name out of mzid file location or filename"""
-        if "/" in file_location:
-            filename = file_location.rsplit("/", 1)[1]
-        elif "\\" in file_location:
-            filename = file_location.rsplit("\\", 1)[1]
-        return filename.rsplit(".", 1)[0]
+        """Get rawfile name out of mzid file location or filename."""
+
+        return Path(file_location).stem
 
 
 class MzidWriter(WriterBase):

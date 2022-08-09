@@ -70,6 +70,13 @@ class TestMzIdentMlReader:
                     "name": "Acetyl",
                 },
             ],
+            "RESRSGQSSGY": [
+                {
+                    "monoisotopicMassDelta": -0.984016,
+                    "location": 12,
+                    "name": "Amidated",
+                }
+            ],
         }
         expected_output = {
             "TMKQNAVS": peptidoform.Peptidoform("TM[Oxidation]KQNAVS"),
@@ -78,6 +85,7 @@ class TestMzIdentMlReader:
             ),
             "NGFLMRKV": peptidoform.Peptidoform("[Acetyl]-NGFLMRKV"),
             "GETKMVETAL": peptidoform.Peptidoform("[Acetyl]-GETKM[Oxidation]VETAL"),
+            "RESRSGQSSGY": peptidoform.Peptidoform("RESRSGQSSGY-[Amidated]"),
         }
 
         for seq in test_cases.keys():
@@ -87,7 +95,7 @@ class TestMzIdentMlReader:
                 == expected_output[seq]
             )
 
-    def test_parse_PeptideEvidenceRef(self):
+    def test_parse_peptide_evidence_ref(self):
 
         test_cases = [
             [
@@ -161,7 +169,7 @@ class TestMzIdentMlReader:
         ]
         for i, test_case in enumerate(test_cases):
             assert (
-                mzid.MzidReader._parse_PeptideEvidenceRef(test_case)
+                mzid.MzidReader._parse_peptide_evidence_ref(test_case)
                 == expected_output[i]
             )
 

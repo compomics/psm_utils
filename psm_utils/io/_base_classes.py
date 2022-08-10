@@ -30,13 +30,6 @@ class ReaderBase(ABC):
 
         self.filename = Path(filename)
 
-        # Create easy-to-use mapping of modification SE label to ProForma label
-        self._label_mapping = {
-            mod_def["search_engine_label"]: mod_def["proforma_label"]
-            for mod_def
-            in self.modification_definitions
-        }
-
     @abstractmethod
     def __iter__(self):
         raise NotImplementedError()
@@ -51,7 +44,8 @@ class WriterBase(ABC):
     """Abstract base class for PSM file writers."""
 
     def __init__(self, filename):
-        self.filename = filename
+        super().__init__()
+        self.filename = Path(filename)
 
     @abstractmethod
     def write_psm(self, psm: PeptideSpectrumMatch):

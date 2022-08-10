@@ -50,6 +50,8 @@ class PeptideSpectrumMatch:
         engine-specific identifier.
     metadata : dict, optional
         More data about PSM.
+    rescoring_features : dict, optional
+        Dict with features that can be used for PSM rescoring.
 
     """
 
@@ -68,6 +70,7 @@ class PeptideSpectrumMatch:
     source: Optional[str] = field(default=None, repr=False)
     provenance_data: Optional[dict] = field(default=None, repr=False)
     metadata: Optional[dict] = field(default=None, repr=False)
+    rescoring_features: Optional[dict] = field(default=None, repr=False)
 
     def __post_init__(self):
         # Parse peptidoform

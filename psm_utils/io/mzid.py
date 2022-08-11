@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import logging
+from multiprocessing.sharedctypes import Value
 import re
+from tkinter import scrolledtext
 import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Union
@@ -15,6 +17,42 @@ from psm_utils.psm import PeptideSpectrumMatch
 from psm_utils.psm_list import PSMList
 
 logger = logging.getLogger(__name__)
+
+STANDARD_SEARCHENGINE_SCORES = [
+    "Amanda:AmandaScore",
+    "Andromeda:score",
+    "Byonic:Score",
+    "Comet:Xcorr",
+    "DeBunker:score",
+    "IdentityE Score",
+    "KSDP score",
+    "MS-GF:RawScore",
+    "MSFit:Mowse score",
+    "MSPathFinder:RawScore" "MSPepSearch:score",
+    "Mascot:score",
+    "MetaMorpheus:score",
+    "OMSSA:evalue",
+    "OpenPepXL:score",
+    "PEAKS:peptideScore",
+    "PeptideShaker PSM score",
+    "Phenyx:Pepzscore",
+    "ProLuCID:xcorr",
+    "ProSight:specral C-score",
+    "Profound:z value",
+    "ProteinProspector:score",
+    "ProteinScape:SequestMetaScore",
+    "ProteomeDiscoverer:Delta Score",
+    "SEQUEST:xcorr",
+    "SIM-XL score ",
+    "SQID:score ",
+    "Sonar:Score",
+    "SpectrumMill:Score",
+    "TopMG:spectral E-Value",
+    "X!Tandem:hyperscore",
+    "ZCore:probScore:",
+    "Percolator:scrolledtext",
+    "xi:score",
+]
 
 
 class MzidReader(ReaderBase):
@@ -174,9 +212,9 @@ class MzidReader(ReaderBase):
 
         return isdecoy, protein_list
 
-    def _get_searchengine_specific_keys(self):
+    def _get_searchengine_specific_keys(self, identification_keys: list):
         """Get searchengine specific keys."""
-        # TODO works for PEAKS pro?
+
         if "PEAKS" in self.source:
             return {
                 "score_key": "PEAKS:peptideScore",
@@ -189,6 +227,22 @@ class MzidReader(ReaderBase):
                 "score_key": "MS-GF:RawScore",
                 "rt_key": "scan start time",
                 "spectrum_key": "spectrum title",
+            }
+
+        else:
+            score = None
+            for score in STANDARD_SEARCHENGINE_SCORES:
+                if score in identification_keys:
+                    score_key = score
+                    break
+
+            if not score:
+                raise UnknownMzidScore("No known score metric found in Mzid file")
+
+            return {
+                "score_key": score_key,
+                "rt_key": "retention time",
+                "spectrum_key": "spectrumID",
             }
 
     def _get_searchengine_specific_metadata(self, SpectrumIdentificationItem):
@@ -236,3 +290,9 @@ class MzidWriter(WriterBase):
     def write_file(self, psm_list: PSMList):
         """Write entire PSMList to the MaxQuant msms.txt PSM file."""
         raise NotImplementedError()
+
+
+class UnknownMzidScore(PSMUtilsException):
+    """Exception while handling or parsing peptide modifications."""
+
+    pass

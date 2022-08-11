@@ -1,7 +1,9 @@
 from __future__ import annotations
 
 import logging
+from multiprocessing.sharedctypes import Value
 import re
+from tkinter import scrolledtext
 import xml.etree.ElementTree as ET
 from multiprocessing.sharedctypes import Value
 from pathlib import Path
@@ -224,7 +226,7 @@ class MzidReader(ReaderBase):
 
         return isdecoy, protein_list
 
-    def _get_searchengine_specific_keys(self):
+    def _get_searchengine_specific_keys(self, identification_keys: list):
         """Get searchengine specific keys."""
 
         if "PEAKS" in self.source:

@@ -108,6 +108,15 @@ psm_utils.io.peptide_record
 
 
 
+psm_utils.io.percolator
+###########################
+
+.. automodule:: psm_utils.io.percolator
+   :members:
+   :inherited-members:
+
+
+
 psm_utils.io.peptideshaker
 ##########################
 

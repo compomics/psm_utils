@@ -4,6 +4,15 @@ Reader and writers for Percolator Tab ``PIN``/``POUT`` PSM files.
 The tab-delimited input and output format for Percolator are defined on the
 `Percolator GitHub Wiki pages <https://github.com/percolator/percolator/wiki/Interface>`_.
 
+Notes
+-----
+
+* While :py:class:`PercolatorTabReader` supports reading the peptide notation with
+  preceding and following amino acids (e.g. ``R.ACDEK.F``),
+  :py:class:`PercolatorTabWriter` simply writes peptides in Proforma format, without
+  preceding and following amino acids.
+
+
 """
 
 from __future__ import annotations
@@ -11,7 +20,7 @@ from __future__ import annotations
 import csv
 import re
 from pathlib import Path
-from typing import Iterable, Union
+from typing import Iterable, Optional, Union
 
 from psm_utils.io._base_classes import ReaderBase, WriterBase
 from psm_utils.io.exceptions import PSMUtilsIOException
@@ -30,6 +39,13 @@ class PercolatorTabReader(ReaderBase):
     ) -> None:
         """
         Reader for Percolator Tab PIN/POUT PSM file.
+
+        As the score, retention time, and precursor m/z are often embedded as feature
+        columns, but not with a fixed column name, their respective column names need to
+        be provided as parameters to the class. If not provided, these properties will
+        not be added to the resulting :py:class:`psm_utils.psm.PeptideSpectrumMatch`.
+        Nevertheless, they will still be added to its :py:attr:`rescoring_features`
+        property dictionary, along with the other features.
 
         Parameters
         ----------
@@ -164,7 +180,9 @@ class PercolatorTabReader(ReaderBase):
 
 
 class PercolatorTabWriter(WriterBase):
-    def __init__(self, filename: Union[str, Path], feature_names: list[str]) -> None:
+    def __init__(
+        self, filename: Union[str, Path], feature_names: Optional[list[str]] = None
+    ) -> None:
         """
         Writer for Percolator TSV "PIN" and "POUT" PSM files.
 
@@ -172,12 +190,17 @@ class PercolatorTabWriter(WriterBase):
         ----------
         filename: str, pathlib.Path
             Path to PSM file.
-        feature_names: list[str]
-            List of feature names to extract from PSMs and write to file.
+        feature_names: list[str], optional
+            List of feature names to extract from PSMs and write to file. List values
+            should correspond to keys in the
+            :py:class:`psm_utils.psm.PeptideSpectrumMatch.rescoring_features` property.
+            If :py:const:`None`, no rescoring features will be written to the file. If appending to
+            an existing file, the existing header will be used to determine the feature
+            names.
 
         """
         super().__init__(filename)
-        self.feature_names = list(feature_names)
+        self.feature_names = list(feature_names) if feature_names else []
 
         self._columns = (
             ["PSMId", "Label", "ScanNr"] + self.feature_names + ["Peptide", "Proteins"]
@@ -188,17 +211,29 @@ class PercolatorTabWriter(WriterBase):
 
     def __enter__(self) -> PercolatorTabWriter:
         """Either open existing file in append mode or new file in write mode."""
-        mode = "at" if self.filename.is_file() else "wt"
+        file_existed = self.filename.is_file()
+        mode = "at" if file_existed else "wt"
         self._open_file = _PercolatorTabIO(
             self.filename, mode, newline="", protein_separator=self._protein_separator
         )
+        if file_existed:
+            with open(self.filename, "rt") as open_file:
+                for line in open_file:
+                    fieldnames = line.strip().split("\t")
+                    break
+                else:
+                    raise ValueError(
+                        f"File {self.filename} exists, but is not a valid Percolator Tab file."
+                    )
+        else:
+            fieldnames = self._columns
         self._writer = csv.DictWriter(
             self._open_file,
-            fieldnames=self._columns,
+            fieldnames=fieldnames,
             extrasaction="ignore",
             delimiter="\t",
         )
-        if self.filename.is_file():
+        if not file_existed:
             self._writer.writeheader()
         return self
 

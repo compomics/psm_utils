@@ -15,3 +15,14 @@ class TestPercolatorTabReader:
 
         for test_in, expected_out in test_cases:
             assert expected_out == PercolatorTabReader._infer_charge_columns(test_in)
+
+    def test_parse_peptidoform(self):
+        test_cases = [
+            ("ACDEFGHR", "ACDEFGHR"),
+            ("K.ACDEFGHR.I", "ACDEFGHR"),
+            ("K.ACDEFGHR.-", "ACDEFGHR"),
+            ("-.ACDEFGHR.I", "ACDEFGHR"),
+            ("-.ACDEFGHR.-", "ACDEFGHR"),
+        ]
+        for test_in, expected_out in test_cases:
+            assert expected_out == PercolatorTabReader._parse_peptidoform(test_in).proforma

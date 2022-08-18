@@ -3,6 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any, Optional, Union
 
+from pyteomics import proforma
+
 from psm_utils.peptidoform import Peptidoform
 
 
@@ -37,8 +39,6 @@ class PeptideSpectrumMatch:
         (``False``).
     score : float, optional
         Search engine score.
-    precursor_charge : int, optional
-        Precursor charge.
     precursor_mz : float, optional
         Precursor m/z.
     retention_time : float, optional
@@ -63,7 +63,6 @@ class PeptideSpectrumMatch:
     spectrum: Optional[Any] = None
     is_decoy: Optional[bool] = None
     score: Optional[float] = None
-    precursor_charge: Optional[int] = field(default=None, repr=False)
     precursor_mz: Optional[float] = field(default=None, repr=False)
     retention_time: Optional[float] = field(default=None, repr=False)
     protein_list: Optional[str] = field(default=None, repr=False)
@@ -80,11 +79,20 @@ class PeptideSpectrumMatch:
             raise TypeError(
                 f"Peptidoform or str expected for `peptide`, not `{type(self.peptide)}`."
             )
-        # Parse charge state
-        if isinstance(self.precursor_charge, str):
-            self.precursor_charge = int(self.precursor_charge.strip("+"))
-        elif self.peptide.properties["charge_state"]:
-            self.precursor_charge = self.peptide.properties["charge_state"].charge
+
+    @property
+    def precursor_charge(self) -> int:
+        """Precursor charge, as embedded in :py:attr:`peptide`."""
+        try:
+            return self.peptide.properties["charge_state"].charge
+        except (AttributeError, KeyError):
+            return None
+
+    @precursor_charge.setter
+    def precursor_charge(self, charge: Union[str, int]) -> int:
+        if isinstance(charge, str):
+            charge = charge.strip("+")
+        self.peptide.properties["charge_state"] = proforma.ChargeState(charge)
 
     @property
     def universal_spectrum_identifier(self) -> str:

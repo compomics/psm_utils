@@ -46,7 +46,7 @@ MSMS_DEFAULT_COLUMNS = {
 }
 
 
-class MaxQuantReader(ReaderBase):
+class MSMSReader(ReaderBase):
     """Reader for MaxQuant msms.txt PSM files."""
 
     def __init__(
@@ -66,10 +66,10 @@ class MaxQuantReader(ReaderBase):
 
         Examples
         --------
-        :py:class:`MaxQuantReader` supports iteration:
+        :py:class:`MSMSReader` supports iteration:
 
-        >>> from psm_utils.io.maxquant import MaxQuantReader
-        >>> for psm in MaxQuantReader("msms.txt"):
+        >>> from psm_utils.io.maxquant import MSMSReader
+        >>> for psm in MSMSReader("msms.txt"):
         ...     print(psm.peptide.proforma)
         WFEELSK
         NDVPLVGGK
@@ -79,7 +79,7 @@ class MaxQuantReader(ReaderBase):
         Or a full file can be read at once into a :py:class:`psm_utils.psm_list.PSMList`
         object:
 
-        >>> reader = MaxQuantReader("msms.txt")
+        >>> reader = MSMSReader("msms.txt")
         >>> psm_list = reader.read_file()
 
         """
@@ -162,6 +162,7 @@ class MaxQuantReader(ReaderBase):
         self, psm_dict: dict[str, Union[str, float]]
     ) -> PeptideSpectrumMatch:
         """Return a PeptideSpectrumMatch object from MaxQuant msms.txt PSM file."""
+
         def _parse_array(array):
             try:
                 return np.array(array.split(";"), dtype=np.float32)

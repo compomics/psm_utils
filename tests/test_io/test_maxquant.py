@@ -30,21 +30,21 @@ TEST_COL = [
 ]
 
 
-class TestMaxQuantReader:
+class TestMSMSReader:
     def test_evaluate_columns(self):
 
         columns = TEST_COL.copy()
         # Test with the right column names
-        assert maxquant.MaxQuantReader._evaluate_columns(columns) == True
+        assert maxquant.MSMSReader._evaluate_columns(columns) == True
 
         # Test with right columns names but lowercase columnname
         columns[0] = "raw file"
-        assert maxquant.MaxQuantReader._evaluate_columns(columns) == True
+        assert maxquant.MSMSReader._evaluate_columns(columns) == True
 
         # Test when column name is missing
         columns.remove("Mass")
         with pytest.raises(maxquant.MSMSParsingError):
-            maxquant.MaxQuantReader._evaluate_columns(columns)
+            maxquant.MSMSReader._evaluate_columns(columns)
 
     def test_fix_column_case(self):
 
@@ -77,10 +77,10 @@ class TestMaxQuantReader:
         columns = TEST_COL.copy()
 
         # Test to get rename dict with default msms
-        assert maxquant.MaxQuantReader._fix_column_case(columns) == expected_rename_dict
+        assert maxquant.MSMSReader._fix_column_case(columns) == expected_rename_dict
 
     def test_set_mass_error_unit(self):
-        msms_reader = maxquant.MaxQuantReader("./tests/test_data/test_msms.txt")
+        msms_reader = maxquant.MSMSReader("./tests/test_data/test_msms.txt")
         # Test dalton mass error case
         assert msms_reader._mass_error_unit == "Da"
 
@@ -133,7 +133,7 @@ class TestMaxQuantReader:
             ],
         }
 
-        msms_reader = maxquant.MaxQuantReader("./tests/test_data/test_msms.txt")
+        msms_reader = maxquant.MSMSReader("./tests/test_data/test_msms.txt")
 
         for test_in, expected_out in zip(
             test_cases["input_modified_sequence"], test_cases["expected_output"]

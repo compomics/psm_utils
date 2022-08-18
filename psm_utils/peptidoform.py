@@ -1,45 +1,51 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any
-
 from pyteomics import mass, proforma
 
 from psm_utils.exceptions import PSMUtilsException
 
 
-@dataclass
 class Peptidoform:
     """
-    Data Class representing a peptidoform.
-
-    Parameters
-    ----------
-    proforma : str
-        Peptidoform sequence in ProForma v2 notation.
-
-    Attributes
-    ----------
-    parsed_sequence : list
-        List of tuples with residue and modifications for each location.
-    properties : dict[str, Any]
-        Dict with sequence-wide properties.
-
-
+    Peptide sequence, modifications and charge state represented in ProForma notation.
     """
 
-    proforma: str
-    parsed_sequence: list = field(init=False, repr=False, compare=False)
-    properties: dict[str, Any] = field(init=False, repr=False, compare=False)
-    sequence: str = field(init=False, repr=False, compare=False)
+    def __init__(self, proforma_sequence: str) -> None:
+        """
+        Peptide sequence, modifications and charge state represented in ProForma notation.
 
-    def __post_init__(self):
-        self.parsed_sequence, self.properties = proforma.parse(self.proforma)
+        Parameters
+        ----------
+        proforma_sequence : str
+            Peptidoform sequence in ProForma v2 notation.
+
+        Attributes
+        ----------
+        parsed_sequence : list
+            List of tuples with residue and modifications for each location.
+        properties : dict[str, Any]
+            Dict with sequence-wide properties.
+
+        """
+        self.parsed_sequence, self.properties = proforma.parse(proforma_sequence)
+
         if self.properties["isotopes"]:
             raise NotImplementedError(
                 "Peptidoforms with isotopes are currently not supported."
             )
-        self.sequence = "".join(pos[0] for pos in self.parsed_sequence)
+
+    def __repr__(self) -> str:
+        return f"{self.__class__.__qualname__}(proforma='{self.proforma}')"
+
+    @property
+    def proforma(self) -> str:
+        """Peptidoform sequence in ProForma v2 notation."""
+        return proforma.to_proforma(self.parsed_sequence, **self.properties)
+
+    @property
+    def sequence(self) -> str:
+        """Stripped peptide sequence."""
+        return "".join(pos[0] for pos in self.parsed_sequence)
 
     @property
     def sequential_composition(self) -> list[mass.Composition]:
@@ -253,9 +259,6 @@ class Peptidoform:
                 self.properties[mod_type] = _rename_modification_list(
                     self.properties[mod_type]
                 )
-
-        # Rebuild proforma string with new labels
-        self.proforma = proforma.to_proforma(self.parsed_sequence, **self.properties)
 
 
 class PeptidoformException(PSMUtilsException):

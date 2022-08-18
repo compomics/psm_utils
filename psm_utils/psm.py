@@ -1,27 +1,32 @@
 from __future__ import annotations
 
-from dataclasses import dataclass, field
-from typing import Any, Optional, Union
+from dataclasses import field
+from typing import Any, Dict, List, Optional, Union
 
+from pydantic.dataclasses import dataclass
 from pyteomics import proforma
 
 from psm_utils.peptidoform import Peptidoform
 
 
-# TODO: Rename `PeptideSpectrumMatch` to `PSM`?
-@dataclass
-class PeptideSpectrumMatch:
+class _PydanticConfig:
+    arbitrary_types_allowed = True
+
+
+@dataclass(config=_PydanticConfig)
+class PeptideSpectrumMatch:  # TODO: Rename `PeptideSpectrumMatch` to `PSM`?
     """
     Data class representing a peptide-spectrum match (PSM).
 
     Links a :class:`psm_utils.peptidoform.Peptidoform` to an observed spectrum
-    and holds relevant the metadata.
+    and holds the related information. Attribute types are coerced and enforced upon
+    initialization.
 
     Parameters
     ----------
     peptide : Peptidoform, str
         Peptidoform object or string in ProForma v2 notation.
-    spectrum_id : str
+    spectrum_id : str, int
         Spectrum identifier as used in spectrum file (e.g., mzML or MGF),
         usually in HUPO-PSI nativeID format (MS:1000767), e.g.,
         ``controllerType=0 controllerNumber=0 scan=423``.
@@ -33,7 +38,7 @@ class PeptideSpectrumMatch:
         ProteomeXchange identifier, e.g. ``PXD028735``.
     spectrum : any, optional
         Observed spectrum. Can be freely used, for instance as a
-        ``spectrum_utils.spectrum.MsmsSpectrum`` object.
+        :py:class:`spectrum_utils.spectrum.MsmsSpectrum` object.
     is_decoy : bool, optional
         Boolean specifying if the PSM is a decoy (``True``) or target hit
         (``False``).
@@ -43,33 +48,35 @@ class PeptideSpectrumMatch:
         Precursor m/z.
     retention_time : float, optional
         Retention time.
-    source: str, optional
+    protein_list : list[str]
+        List of proteins or protein groups associated with peptide.
+    source : str, optional
         PSM file type where PSM was stored. E.g., ``MaxQuant``.
-    provenance_data: dict, optional
-        Freefrom dict to hold data describing the PSM origin, e.g. a search
+    provenance_data : dict[str, str], optional
+        Freeform dict to hold data describing the PSM origin, e.g. a search
         engine-specific identifier.
-    metadata : dict, optional
+    metadata : dict[str, str], optional
         More data about PSM.
-    rescoring_features : dict, optional
+    rescoring_features : dict[str, str], optional
         Dict with features that can be used for PSM rescoring.
 
     """
 
     peptide: Union[Peptidoform, str]
-    spectrum_id: str
+    spectrum_id: Union[int, str]
     run: Optional[str] = None
     collection: Optional[str] = None
     # TODO: Not yet sure if `spectrum` should be included...
     spectrum: Optional[Any] = None
     is_decoy: Optional[bool] = None
     score: Optional[float] = None
-    precursor_mz: Optional[float] = field(default=None, repr=False)
-    retention_time: Optional[float] = field(default=None, repr=False)
-    protein_list: Optional[str] = field(default=None, repr=False)
-    source: Optional[str] = field(default=None, repr=False)
-    provenance_data: Optional[dict] = field(default=None, repr=False)
-    metadata: Optional[dict] = field(default=None, repr=False)
-    rescoring_features: Optional[dict] = field(default=None, repr=False)
+    precursor_mz: Optional[float] = field(default=None)
+    retention_time: Optional[float] = field(default=None)
+    protein_list: Optional[List[str]] = field(default=None)
+    source: Optional[str] = field(default=None)
+    provenance_data: Optional[Dict[str, str]] = field(default=None)
+    metadata: Optional[Dict[str, str]] = field(default=None)
+    rescoring_features: Optional[Dict[str, str]] = field(default=None)
 
     def __post_init__(self):
         # Parse peptidoform

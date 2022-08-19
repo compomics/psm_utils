@@ -170,12 +170,13 @@ class MSMSReader(ReaderBase):
                 return np.array(array.split(";"))
 
         psm = PeptideSpectrumMatch(
-            peptide=self._parse_peptidoform(psm_dict["Modified sequence"]),
+            peptide=self._parse_peptidoform(
+                psm_dict["Modified sequence"], psm_dict["Charge"]
+            ),
             spectrum_id=psm_dict["Scan number"],
             run=psm_dict["Raw file"],
             is_decoy=psm_dict["Reverse"] == "+",
             score=float(psm_dict["Score"]),
-            precursor_charge=int(psm_dict["Charge"]),
             precursor_mz=float(psm_dict["m/z"]),
             retention_time=float(psm_dict["Retention time"]),
             protein_list=psm_dict["Proteins"].split(";"),
@@ -202,7 +203,7 @@ class MSMSReader(ReaderBase):
         return psm
 
     @staticmethod
-    def _parse_peptidoform(modified_seq: str) -> Peptidoform:
+    def _parse_peptidoform(modified_seq: str, charge: int) -> Peptidoform:
         """Parse modified sequence to :py:class:`psm_utils.peptidoform.Peptidoform`."""
 
         # pattern to match open and closed round brackets
@@ -232,6 +233,8 @@ class MSMSReader(ReaderBase):
                 modified_seq = re.sub(
                     f"\({se_mod_string}\)", f"[{match[1]}]", modified_seq
                 )
+
+        modified_seq += f"/{charge}"
 
         return Peptidoform(modified_seq)
 

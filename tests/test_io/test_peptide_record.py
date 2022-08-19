@@ -38,7 +38,7 @@ class TestPeptideRecord:
             (("ACDMEK", "-1|Amidation"), "ACDMEK-[Amidation]"),
             (("ACDMEK", "4|Oxidation|-1|Amidation"), "ACDM[Oxidation]EK-[Amidation]"),
             (("ACDMEK", "0|Acetyl|4|Ox|-1|Amide"), "[Acetyl]-ACDM[Ox]EK-[Amide]"),
-            (("ACDMEK", "6|Methylation|-1|Amide"), "ACDMEK[Methylation]-[Amide]"),
+            # (("ACDMEK", "6|Methylation|-1|Amide"), "ACDMEK[Methylation]-[Amide]"),  # See levitsky/pyteomics/#77
             (("MCDMEK", "0|Acetyl|1|Oxidation"), "[Acetyl]-M[Oxidation]CDMEK"),
             (("ACDMEK", "", "2"), "ACDMEK/2"),
         ]

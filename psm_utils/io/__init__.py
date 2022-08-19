@@ -5,23 +5,23 @@ from typing import Union
 
 from rich.progress import track
 
-import psm_utils.io.maxquant
-import psm_utils.io.peptide_record
-import psm_utils.io.percolator
-import psm_utils.io.xtandem
+import psm_utils.io.maxquant as maxquant
+import psm_utils.io.peptide_record as peptide_record
+import psm_utils.io.percolator as percolator
+import psm_utils.io.xtandem as xtandem
 
 # TODO: to be completed
 READERS = {
-    "msms":psm_utils.io.maxquant.MSMSReader,
-    "peprec": psm_utils.io.peptide_record.PeptideRecordReader,
-    "percolator": psm_utils.io.percolator.PercolatorTabReader,
-    "xtandem": psm_utils.io.xtandem.XTandemReader,
+    "msms": maxquant.MSMSReader,
+    "peprec": peptide_record.PeptideRecordReader,
+    "percolator": percolator.PercolatorTabReader,
+    "xtandem": xtandem.XTandemReader,
 }
 
 # TODO: to be completed
 WRITERS = {
-    "peprec": psm_utils.io.peptide_record.PeptideRecordWriter,
-    "percolator": psm_utils.io.percolator.PercolatorTabWriter,
+    "peprec": peptide_record.PeptideRecordWriter,
+    "percolator": percolator.PercolatorTabWriter,
 }
 
 

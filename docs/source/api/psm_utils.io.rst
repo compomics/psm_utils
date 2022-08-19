@@ -117,10 +117,10 @@ psm_utils.io.percolator
 
 
 
-psm_utils.io.peptideshaker
+psm_utils.io.tsv
 ##########################
 
-.. automodule:: psm_utils.io.peptideshaker
+.. automodule:: psm_utils.io.tsv
    :members:
    :inherited-members:
 

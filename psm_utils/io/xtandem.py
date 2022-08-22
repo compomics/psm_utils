@@ -109,7 +109,7 @@ class XTandemReader(ReaderBase):
                 psm_list.append(self._parse_entry(entry))
         return PSMList(psm_list)
 
-    def _parse_peptidoform(self, peptide_entry) -> Peptidoform:
+    def _parse_peptidoform(self, peptide_entry, charge: int) -> Peptidoform:
         """Parse X!Tandem XML peptide entry to :py:class:`psm_utils.peptidoform.Peptidoform`."""
         if "aa" in peptide_entry:
             # Parse modifications
@@ -143,19 +143,20 @@ class XTandemReader(ReaderBase):
             # No modifications to parse
             proforma_seq = peptide_entry["seq"]
 
+        proforma_seq += f"/{charge}"
+
         return Peptidoform(proforma_seq)
 
     def _parse_entry(self, entry) -> PeptideSpectrumMatch:
         """Parse X!Tandem XML entry to :py:class:`psm_utils.psm.PeptideSpectrumMatch`."""
         peptide_entry = entry["protein"][0]["peptide"]
         psm = PeptideSpectrumMatch(
-            peptide=self._parse_peptidoform(peptide_entry),
+            peptide=self._parse_peptidoform(peptide_entry, entry["z"]),
             spectrum_id=entry["support"]["fragment ion mass spectrum"]["note"].split(
                 " "
             )[0],
             is_decoy=entry["protein"][0]["label"].startswith(self.decoy_prefix),
             score=-np.log(peptide_entry["expect"]),
-            precursor_charge=entry["z"],
             precursor_mz=entry["mh"] - mass.nist_mass["H"][0][0],
             retention_time=entry["rt"],
             protein_list=[entry["protein"][0]["label"]],

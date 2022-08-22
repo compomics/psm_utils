@@ -218,7 +218,7 @@ class PeptideRecordReader(ReaderBase):
     def _entry_to_psm(
         entry: NamedTuple, filename: Optional[str] = None
     ) -> PeptideSpectrumMatch:
-        """Parse single Peptide Record entry to a `PeptideSpectrumMatch`."""
+        """Parse single Peptide Record entry to `PeptideSpectrumMatch`."""
         # Parse sequence and modifications
         proforma = peprec_to_proforma(entry.peptide, entry.modifications, entry.charge)
 
@@ -227,7 +227,7 @@ class PeptideRecordReader(ReaderBase):
             is_decoy_map = {"-1": True, "1": False}
             try:
                 is_decoy = is_decoy_map[entry.label]
-            except ValueError:
+            except (ValueError, KeyError):
                 InvalidPeprecError(
                     f"Could not parse value for `label` {entry.label}. Should be `1` or `-1`."
                 )
@@ -237,7 +237,6 @@ class PeptideRecordReader(ReaderBase):
         return PeptideSpectrumMatch(
             peptide=proforma,
             spectrum_id=entry.spec_id,
-            precursor_charge=entry.charge,
             is_decoy=is_decoy,
             retention_time=entry.observed_retention_time,
             score=entry.score,

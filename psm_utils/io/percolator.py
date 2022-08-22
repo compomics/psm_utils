@@ -136,16 +136,16 @@ class PercolatorTabReader(ReaderBase):
         return charge_column, charge_onehot_columns
 
     @staticmethod
-    def _parse_peptidoform(percolator_peptide):
+    def _parse_peptidoform(percolator_peptide, charge):
         """Parse Percolator TSV peptide notation to Peptidoform."""
         # Remove leading and trailing amino acids
         match = re.match("^[A-Z-]\.(.+)\.[A-Z-]$", percolator_peptide)
-        if match:
-            return Peptidoform(match[1])
-        else:
-            return Peptidoform(percolator_peptide)
+        peptidoform = match[1] if match else percolator_peptide
+        if charge:
+            peptidoform += f"/{charge}"
+        return Peptidoform(peptidoform)
 
-    def _parse_charge(self, entry):
+    def _parse_charge(self, entry) -> Union[int, None]:
         """Parse charge state from single or one-hot encoded charge state."""
         if self.charge_column:
             return int(entry["charge"])
@@ -163,17 +163,18 @@ class PercolatorTabReader(ReaderBase):
         rescoring_features = {
             k: v for k, v in entry.items() if k not in self.non_feature_columns
         }
+        charge = self._parse_charge(entry)
+        peptide = self._parse_peptidoform(entry["Peptide"], charge)
         psm = PeptideSpectrumMatch(
-            peptide=self._parse_peptidoform(entry["Peptide"]),
+            peptide=peptide,
             spectrum_id=entry[self.id_column],
             is_decoy=is_decoy,
             score=float(entry[self.score_column]) if self.score_column else None,
-            precursor_charge=self._parse_charge(entry),
             precursor_mz=float(entry[self.mz_column]) if self.mz_column else None,
             retention_time=float(entry[self.rt_column]) if self.rt_column else None,
             protein_list=entry["Proteins"].split(self._protein_separator),
             source="percolator",
-            provenance_data={"filename": self.filename},
+            provenance_data={"filename": str(self.filename)},
             rescoring_features=rescoring_features,
         )
         return psm

@@ -7,16 +7,21 @@ from rich.progress import track
 
 import psm_utils.io.maxquant as maxquant
 import psm_utils.io.peptide_record as peptide_record
+import psm_utils.io.percolator as percolator
+import psm_utils.io.xtandem as xtandem
 
 # TODO: to be completed
 READERS = {
+    "msms": maxquant.MSMSReader,
     "peprec": peptide_record.PeptideRecordReader,
-    "msms": maxquant.MaxQuantReader,
+    "percolator": percolator.PercolatorTabReader,
+    "xtandem": xtandem.XTandemReader,
 }
 
 # TODO: to be completed
 WRITERS = {
     "peprec": peptide_record.PeptideRecordWriter,
+    "percolator": percolator.PercolatorTabWriter,
 }
 
 

@@ -83,7 +83,8 @@ class TSVReader(ReaderBase):
         entry = {k: v if v else None for k, v in entry.items()}
 
         # Parse protein list
-        entry["protein_list"] = ast.literal_eval(entry["protein_list"])
+        if "protein_list" in entry:
+            entry["protein_list"] = ast.literal_eval(entry["protein_list"])
 
         # Extract dict properties
         parsed_entry = {}
@@ -114,7 +115,11 @@ class TSVReader(ReaderBase):
 class TSVWriter(WriterBase):
     """Reader for psm_utils TSV format."""
 
-    def __init__(self, filename: Union[str, Path], example_psm: Optional[PeptideSpectrumMatch] = None):
+    def __init__(
+        self,
+        filename: Union[str, Path],
+        example_psm: Optional[PeptideSpectrumMatch] = None,
+    ):
         """
         Reader for psm_utils TSV format.
 
@@ -146,17 +151,7 @@ class TSVWriter(WriterBase):
             with open(self.filename, "rt") as open_file:
                 # Get fieldnames
                 self.fieldnames = open_file.readline().strip().split("\t")
-                # Check if newline is needed
-                for line in open_file:
-                    pass
-                ends_on_newline = line[-1] in ["\n", "\r"]
-
-
             self._open_file = open(self.filename, "at", newline="")
-            if not ends_on_newline:
-                self._open_file.write()
-
-
             self._writer = csv.DictWriter(
                 self._open_file,
                 fieldnames=self.fieldnames,

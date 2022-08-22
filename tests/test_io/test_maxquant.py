@@ -112,7 +112,7 @@ class TestMSMSReader:
                 ("_(Acetyl (Protein N-term))ATGPM(ox)SFLK_", 2),
                 ("_ACDE(Amidated (Peptide C-term))_", 2),
                 ("_ACM(Ox)DE(Amidated (Peptide C-term))_", 2),
-                #"_(Acetyl (Protein N-term))M(Ox)ACM(Ox)DEM(Ox)(Amidated (Peptide C-term))_",  # See levitsky/pyteomics/#77
+                # "_(Acetyl (Protein N-term))M(Ox)ACM(Ox)DEM(Ox)(Amidated (Peptide C-term))_",  # See levitsky/pyteomics/#77
             ],
             "expected_output": [
                 "VGVGFGR/2",
@@ -129,7 +129,7 @@ class TestMSMSReader:
                 "[Acetyl (Protein N-term)]-ATGPM[ox]SFLK/2",
                 "ACDE-[Amidated (Peptide C-term)]/2",
                 "ACM[Ox]DE-[Amidated (Peptide C-term)]/2",
-                #"[Acetyl (Protein N-term)]-M[Ox]ACM[Ox]DEM[Ox]-[Amidated (Peptide C-term)]",
+                # "[Acetyl (Protein N-term)]-M[Ox]ACM[Ox]DEM[Ox]-[Amidated (Peptide C-term)]",
             ],
         }
 
@@ -138,5 +138,5 @@ class TestMSMSReader:
         for test_in, expected_out in zip(
             test_cases["input"], test_cases["expected_output"]
         ):
-            output = msms_reader._parse_peptidoform(test_in)
+            output = msms_reader._parse_peptidoform(*test_in)
             assert output.proforma == expected_out

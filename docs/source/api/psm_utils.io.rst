@@ -90,6 +90,15 @@ psm_utils.io
    :members:
 
 
+psm_utils.io.idxml
+#####################
+
+.. automodule:: psm_utils.io.idxml
+   :members:
+   :inherited-members:
+
+
+
 psm_utils.io.maxquant
 #####################
 

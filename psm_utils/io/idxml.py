@@ -22,11 +22,10 @@ from psm_utils.io._base_classes import ReaderBase
 from psm_utils.psm import PeptideSpectrumMatch
 from psm_utils.psm_list import PSMList
 
-# patterns to match open and closed round brackets
-MODIFICATION_PATTERN = re.compile(r"\(((?:[^)(]+|\((?:[^)(]+|\([^)(]*\))*\))*)\)")
-MODIFICATION_PATTERN_NTERM = re.compile(
-    r"^\.\(((?:[^)(]+|\((?:[^)(]+|\([^)(]*\))*\))*)\)"
-)
+# Patterns to match open and closed round/square brackets
+MOD_PATTERN = re.compile(r"\(((?:[^)(]+|\((?:[^)(]+|\([^)(]*\))*\))*)\)")
+MOD_PATTERN_NTERM = re.compile(r"^\.\[((?:[^][]+|\[(?:[^][]+|\[[^][]*\])*\])*)\]")
+MOD_PATTERN_CTERM = re.compile(r"\.\[((?:[^][]+|\[(?:[^][]+|\[[^][]*\])*\])*)\]$")
 
 
 class IdXMLReader(ReaderBase):
@@ -43,16 +42,22 @@ class IdXMLReader(ReaderBase):
 
     @staticmethod
     def _parse_peptidoform(sequence: str, charge: int):
-        """Parse idXML peptide to :py:class:`psm_utils.peptidoform.Peptidoform`."""
-        # N-terminal modification
-        if sequence[0] == ".":
-            sequence = MODIFICATION_PATTERN_NTERM.sub(r"[\1]-", sequence)
-        # Sequence modifications
-        sequence = MODIFICATION_PATTERN.sub(r"[\1]", sequence)
+        """
+        Parse idXML peptide to :py:class:`psm_utils.peptidoform.Peptidoform`.
 
-        # TODO: C-terminal modifications?
-
-        # Add charge
+        Notes
+        -----
+        Implemented according to the documentation on
+        `github.com/OpenMS/OpenMS <https://github.com/OpenMS/OpenMS/blob/8cb90/src/openms/include/OpenMS/CHEMISTRY/AASequence.h>`_
+        . The differentiation between square- and round bracket notation is removed
+        after parsing.
+        """
+        sequence = MOD_PATTERN.sub(r"[\1]", sequence)
+        if sequence[:2] == ".[":
+            sequence = MOD_PATTERN_NTERM.sub(r"[\1]-", sequence)
+        if sequence[-1] == "]":
+            sequence = MOD_PATTERN_CTERM.sub(r"-[\1]", sequence)
+        sequence = sequence.strip(".")
         sequence += f"/{charge}"
         return sequence
 
@@ -82,14 +87,5 @@ class IdXMLReader(ReaderBase):
                 "idxml:score_type": entry["score_type"],
                 "idxml:higher_score_better": entry["higher_score_better"],
                 "idxml:significance_threshold": entry["significance_threshold"],
-                "idxml:consensus_support": peptide_hit["consensus_support"],
             },
         )
-
-
-class XTandemException(PSMUtilsException):
-    pass
-
-
-class XTandemModificationException(XTandemException):
-    pass

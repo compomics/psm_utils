@@ -8,6 +8,7 @@
 
    Readme <self>
    changelog
+   contributing
 
 
 .. toctree::

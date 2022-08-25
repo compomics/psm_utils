@@ -5,16 +5,20 @@ from typing import Union
 
 from rich.progress import track
 
+import psm_utils.io.idxml as idxml
 import psm_utils.io.maxquant as maxquant
 import psm_utils.io.peptide_record as peptide_record
 import psm_utils.io.percolator as percolator
+import psm_utils.io.tsv as tsv
 import psm_utils.io.xtandem as xtandem
 
 # TODO: to be completed
 READERS = {
+    "idxml": idxml.IdXMLReader,
     "msms": maxquant.MSMSReader,
     "peprec": peptide_record.PeptideRecordReader,
     "percolator": percolator.PercolatorTabReader,
+    "tsv": tsv.TSVReader,
     "xtandem": xtandem.XTandemReader,
 }
 
@@ -22,12 +26,37 @@ READERS = {
 WRITERS = {
     "peprec": peptide_record.PeptideRecordWriter,
     "percolator": percolator.PercolatorTabWriter,
+    "tsv": tsv.TSVWriter,
 }
 
 
 def _infer_filetype(filename: str):
     """Infer filetype from file extension."""
     raise NotImplementedError()
+
+
+def read_file(filename: Union[str, Path], *args, filetype: str = "infer", **kwargs):
+    """
+    Read PSM file into :py:class:`~psm_utils.psmlist.PSMList`.
+
+    Parameters
+    ----------
+    filename: str
+        Path to file.
+    filetype: str, optional
+        File type. Any of {#TODO: add list}.
+    *args : tuple
+        Additional arguments are passed to the :py:class:`psm_utils.io` reader.
+    **kwargs : dict, optional
+        Additional keyword arguments are passed to the :py:class:`psm_utils.io` reader.
+    """
+    if filetype == "infer":
+        filetype = _infer_filetype(filetype)
+
+    reader_cls = READERS[filetype]
+    reader = reader_cls(filename, *args, **kwargs)
+    psm_list = reader.read_file()
+    return psm_list
 
 
 def convert(

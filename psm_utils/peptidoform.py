@@ -37,6 +37,9 @@ class Peptidoform:
     def __repr__(self) -> str:
         return f"{self.__class__.__qualname__}('{self.proforma}')"
 
+    def __str__(self) -> str:
+        return self.proforma
+
     @property
     def proforma(self) -> str:
         """Peptidoform sequence in ProForma v2 notation."""

@@ -1,5 +1,4 @@
 """
-
 Interface with X!Tandem XML PSM files.
 
 
@@ -84,7 +83,7 @@ class XTandemReader(ReaderBase):
         GANLGEMTNAGIPVPPGFC[+57.022]VTAEAYK
         ...
 
-        Or a full file can be read at once into a :py:class:`psm_utils.psm_list.PSMList`
+        Or a full file can be read at once into a :py:class:`~psm_utils.psm_list.PSMList`
         object:
 
         >>> reader = XTandemReader("pyro.t.xml")
@@ -110,7 +109,7 @@ class XTandemReader(ReaderBase):
         return PSMList(psm_list)
 
     def _parse_peptidoform(self, peptide_entry, charge: int) -> Peptidoform:
-        """Parse X!Tandem XML peptide entry to :py:class:`psm_utils.peptidoform.Peptidoform`."""
+        """Parse X!Tandem XML peptide entry to :py:class:`~psm_utils.peptidoform.Peptidoform`."""
         if "aa" in peptide_entry:
             # Parse modifications
             seq_list = list(peptide_entry["seq"])
@@ -148,7 +147,7 @@ class XTandemReader(ReaderBase):
         return Peptidoform(proforma_seq)
 
     def _parse_entry(self, entry) -> PeptideSpectrumMatch:
-        """Parse X!Tandem XML entry to :py:class:`psm_utils.psm.PeptideSpectrumMatch`."""
+        """Parse X!Tandem XML entry to :py:class:`~psm_utils.psm.PeptideSpectrumMatch`."""
         peptide_entry = entry["protein"][0]["peptide"]
         psm = PeptideSpectrumMatch(
             peptide=self._parse_peptidoform(peptide_entry, entry["z"]),

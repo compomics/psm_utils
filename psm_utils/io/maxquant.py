@@ -76,8 +76,8 @@ class MSMSReader(ReaderBase):
         GANLGEMTNAGIPVPPGFC[+57.022]VTAEAYK
         ...
 
-        Or a full file can be read at once into a :py:class:`psm_utils.psm_list.PSMList`
-        object:
+        Or a full file can be read at once into a
+        :py:class:`~psm_utils.psm_list.PSMList` object:
 
         >>> reader = MSMSReader("msms.txt")
         >>> psm_list = reader.read_file()
@@ -196,7 +196,7 @@ class MSMSReader(ReaderBase):
 
     @staticmethod
     def _parse_peptidoform(modified_seq: str, charge: int) -> Peptidoform:
-        """Parse modified sequence to :py:class:`psm_utils.peptidoform.Peptidoform`."""
+        """Parse modified sequence to :py:class:`~psm_utils.peptidoform.Peptidoform`."""
 
         # pattern to match open and closed round brackets
         pattern = re.compile(r"\(((?:[^)(]+|\((?:[^)(]+|\([^)(]*\))*\))*)\)")

@@ -3,7 +3,7 @@ Reader and writer for a simple, lossless psm_utils TSV format.
 
 Most PSM file formats will introduce a loss of some information when reading,
 writing, or converting with :py:mod:`psm_utils.io` due to differences between file
-formats. In contrast, :py:class:`psm_utils.io.psm_list.PSMList` objects can be written
+formats. In contrast, :py:class:`~psm_utils.io.psm_list.PSMList` objects can be written
 to — or read from — this simple TSV format without any information loss (with exception
 of the free-form :py:attr:`spectrum` attribute).
 
@@ -12,7 +12,7 @@ a field contains the delimiter. Peptidoforms are written in the `HUPO-PSI ProFor
 <https://psidev.info/proforma>`_ notation.
 
 Required and optional columns equate to the required and optional attributes of
-:py:class:`psm_utils.psm.PeptideSpectrumMatch`. Dictionary items in
+:py:class:`~psm_utils.psm.PeptideSpectrumMatch`. Dictionary items in
 :py:attr:`provenance_data`, :py:attr:`metadata`, and :py:attr:`rescoring_features`
 are flattened to separate columns, each with their column names prefixed with
 ``provenance:``, ``meta:``, and ``rescoring:``, respectively.
@@ -78,7 +78,7 @@ class TSVReader(ReaderBase):
 
     @staticmethod
     def _parse_entry(entry: dict):
-        """Parse single TSV entry to :py:class:`psm_utils.psm.PeptideSpectrumMatch`."""
+        """Parse single TSV entry to :py:class:`~psm_utils.psm.PeptideSpectrumMatch`."""
         # Replace empty strings with None
         entry = {k: v if v else None for k, v in entry.items()}
 

@@ -43,9 +43,10 @@ class PercolatorTabReader(ReaderBase):
         As the score, retention time, and precursor m/z are often embedded as feature
         columns, but not with a fixed column name, their respective column names need to
         be provided as parameters to the class. If not provided, these properties will
-        not be added to the resulting :py:class:`psm_utils.psm.PeptideSpectrumMatch`.
-        Nevertheless, they will still be added to its :py:attr:`rescoring_features`
-        property dictionary, along with the other features.
+        not be added to the resulting :py:class:`~psm_utils.psm.PeptideSpectrumMatch`.
+        Nevertheless, they will still be added to its
+        :py:attr:`~psm_utils.psm.PeptideSpectrumMatch.rescoring_features` property
+        dictionary, along with the other features.
 
         Parameters
         ----------
@@ -194,7 +195,7 @@ class PercolatorTabWriter(WriterBase):
         feature_names: list[str], optional
             List of feature names to extract from PSMs and write to file. List values
             should correspond to keys in the
-            :py:class:`psm_utils.psm.PeptideSpectrumMatch.rescoring_features` property.
+            :py:class:`~psm_utils.psm.PeptideSpectrumMatch.rescoring_features` property.
             If :py:const:`None`, no rescoring features will be written to the file. If appending to
             an existing file, the existing header will be used to determine the feature
             names.

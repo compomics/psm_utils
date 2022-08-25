@@ -7,6 +7,7 @@
    :includehidden:
 
    Readme <self>
+   quickstart
    changelog
    contributing
 

@@ -8,3 +8,6 @@ python:
       extra_requirements:
         - dev
         - doc
+
+sphinx:
+  builder: dirhtml

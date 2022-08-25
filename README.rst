@@ -42,7 +42,7 @@ About
 Introduction
 ************
 
-:py:mod:`psm_utils` is a Python package with utilities for parsing and
+psm_utils is a Python package with utilities for parsing and
 handling peptide-spectrum matches (PSMs) and proteomics search engine results.
 It is mainly developed to be used in Python packages developed at
 `CompOmics <https://www.compomics.com>`_, such as
@@ -65,30 +65,30 @@ Goals and non-goals
   `ProForma 2.0 <https://psidev.info/proforma>`_ , the
   `Universal Spectrum Identifier <https://psidev.info/usi>`_, and
   `mzIdentML <https://psidev.info/mzidentml>`_
-- To be **open and dynamic**: :py:mod:`psm_utils` is fully open source, under the
+- To be **open and dynamic**: psm_utils is fully open source, under the
   permissive Apache 2.0 license. New reader and writer modules can easily be
   added, and we welcome everyone to contribute to the project. See
   :doc:`contributing` for more information.
-- **NOT to reinvent the wheel**: Instead, :py:mod:`psm_utils.io` heavily makes
+- **NOT to reinvent the wheel**: Instead, psm_utils heavily makes
   use of packages such as `pyteomics <http://pyteomics.readthedocs.io/>`_ and
   `psims <https://github.com/mobiusklein/psims>`_ that have existing
-  functionality for reading and/or writing PSM files. :py:mod:`psm_utils.io`
+  functionality for reading and/or writing PSM files. ``psm_utils.io``
   provides a unified, higher level Python API build on top of these packages.
 
 
 Supported file formats
 **********************
 
- ================================================================================ =============== ================
-  File format                                                                      Read support    Write support
- ================================================================================ =============== ================
-  `OpenMS idXML <https://www.openms.de/>`_                                         ✅               ❌
-  `MaxQuant msms.txt <https://www.maxquant.org/>`_                                 ✅               ❌
-  `Peptide Record </api/psm_utils.io.html#module-psm_utils.io.peptide_record>`_    ✅               ✅
-  `Percolator tab <https://github.com/percolator/percolator/wiki/Interface>`_      ✅               ✅
-  `TSV </api/psm_utils.io.html#module-psm_utils.io.tsv>`_                          ✅               ✅
-  `X!Tandem XML <https://www.thegpm.org/tandem/>`_                                 ✅               ❌
- ================================================================================ =============== ================
+ ===================================================================================================================== =============== ===============
+  File format                                                                                                           Read support    Write support
+ ===================================================================================================================== =============== ===============
+  `OpenMS idXML <https://www.openms.de/>`_                                                                              ✅              ❌
+  `MaxQuant msms.txt <https://www.maxquant.org/>`_                                                                      ✅              ❌
+  `Peptide Record <https://psm-utils.readthedocs.io/en/latest/api/psm_utils.io/#module-psm_utils.io.peptide_record>`_   ✅              ✅
+  `Percolator tab <https://github.com/percolator/percolator/wiki/Interface>`_                                           ✅              ✅
+  `TSV <https://psm-utils.readthedocs.io/en/latest/api/psm_utils.io/#module-psm_utils.io.tsv>`_                         ✅              ✅
+  `X!Tandem XML <https://www.thegpm.org/tandem/>`_                                                                      ✅              ❌
+ ===================================================================================================================== =============== ===============
 
 
 
@@ -102,31 +102,13 @@ Install with pip:
     pip install psm-utils
 
 
-Note: In the PyPI package name, a hyphen is used instead of an underscore, as per `PEP8 convention <https://peps.python.org/pep-0008/#package-and-module-names>`_.
+Note: In the PyPI package name, a hyphen is used instead of an underscore, as
+per `PEP8 convention <https://peps.python.org/pep-0008/#package-and-module-names>`_.
 
 
 
-Quickstart
-##########
-*TODO*
+Full documentation
+##################
 
-
-
-Changelog
-#########
-
-See :doc:`changelog` for the full changelog.
-
-
-
-Development
-###########
-
-For development, install with pip in editable mode with the optional ``dev``
-dependencies:
-
-.. code-block:: sh
-
-    pip install --editable .[dev]
-
-See :doc:`contributing` for more information on the full development workflow.
+The full documentation, including a quickstart guide and Python API reference
+is available on `psm_utils.readthedocs.io <https://psm-utils.readthedocs.io>`_.

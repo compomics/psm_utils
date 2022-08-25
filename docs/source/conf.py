@@ -19,6 +19,7 @@ release = __version__
 # General configuration
 extensions = [
     "sphinx.ext.autodoc",
+    "sphinx.ext.autosectionlabel",
     "sphinx.ext.autosummary",
     "sphinx.ext.napoleon",
     "sphinx_rtd_theme",
@@ -32,7 +33,8 @@ exclude_patterns = ["_build"]
 
 # Options for HTML output
 html_theme = "sphinx_rtd_theme"
-# html_static_path = ["_static"]
+html_static_path = ["_static"]
+html_css_files = ["css/custom.css"]
 
 # Autodoc options
 autodoc_member_order = "bysource"

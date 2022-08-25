@@ -18,7 +18,7 @@ class PeptideSpectrumMatch:  # TODO: Rename `PeptideSpectrumMatch` to `PSM`?
     """
     Data class representing a peptide-spectrum match (PSM).
 
-    Links a :class:`psm_utils.peptidoform.Peptidoform` to an observed spectrum
+    Links a :class:`~psm_utils.peptidoform.Peptidoform` to an observed spectrum
     and holds the related information. Attribute types are coerced and enforced upon
     initialization.
 
@@ -101,10 +101,20 @@ class PeptideSpectrumMatch:  # TODO: Rename `PeptideSpectrumMatch` to `PSM`?
             charge = charge.strip("+")
         self.peptide.properties["charge_state"] = proforma.ChargeState(charge)
 
-    @property
-    def universal_spectrum_identifier(self) -> str:
-        """"""
-        raise NotImplementedError
+    def universal_spectrum_identifier(self, as_url=False) -> str:
+        """
+        Compile USI for PeptideSpectrumMatch.
+
+        Parameters
+        ----------
+        as_url : bool, optional
+            Return URL to proteomeXchange.org USI aggregator.
+        """
+        # TODO: Support nativeID spectrum flag
+        usi = f"mzspec:{self.collection}:{self.run}:scan:{self.spectrum_id}:{self.peptide}"
+        if as_url:
+            usi = "http://proteomecentral.proteomexchange.org/usi/?usi=" + usi
+        return usi
 
     def to_peprec_entry(self) -> dict:
         entry = {

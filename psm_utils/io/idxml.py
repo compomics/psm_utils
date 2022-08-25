@@ -6,7 +6,7 @@ Notes
 -----
 
 * idXML supports multiple peptide hits (identifications) per spectrum. Each peptide hit
-  is parsed as an individual :py:class:`psm_utils.psm.PeptideSpectrumMatch` object.
+  is parsed as an individual :py:class:`~psm_utils.psm.PeptideSpectrumMatch` object.
 
 """
 
@@ -43,7 +43,7 @@ class IdXMLReader(ReaderBase):
     @staticmethod
     def _parse_peptidoform(sequence: str, charge: int):
         """
-        Parse idXML peptide to :py:class:`psm_utils.peptidoform.Peptidoform`.
+        Parse idXML peptide to :py:class:`~psm_utils.peptidoform.Peptidoform`.
 
         Notes
         -----
@@ -71,7 +71,7 @@ class IdXMLReader(ReaderBase):
             return None
 
     def _parse_psm(self, entry: dict, peptide_hit: dict) -> PeptideSpectrumMatch:
-        """Parse idXML PSM to :py:class:`psm_utils.psm.PeptideSpectrumMatch`."""
+        """Parse idXML PSM to :py:class:`~psm_utils.psm.PeptideSpectrumMatch`."""
         return PeptideSpectrumMatch(
             peptide=self._parse_peptidoform(
                 peptide_hit["sequence"], peptide_hit["charge"]

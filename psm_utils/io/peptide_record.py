@@ -177,7 +177,7 @@ class PeptideRecordReader(ReaderBase):
         AC[Carbamidomethyl]DEFGR
         [Acetyl]-AC[Carbamidomethyl]DEFGHIK
 
-        Or a full file can be read at once into a :py:class:`psm_utils.psm_list.PSMList`
+        Or a full file can be read at once into a :py:class:`~psm_utils.psm_list.PSMList`
         object:
 
         >>> peprec_reader = PeptideRecordReader("peprec.txt")
@@ -358,7 +358,7 @@ def peprec_to_proforma(
     peptide: str, modifications: str, charge: Optional[int] = None
 ) -> Peptidoform:
     """
-    Convert Peptide Record notation to :py:class:`psm_utils.peptidoform.Peptidoform`.
+    Convert Peptide Record notation to :py:class:`~psm_utils.peptidoform.Peptidoform`.
 
     Parameters
     ----------
@@ -408,7 +408,7 @@ def peprec_to_proforma(
 
 def proforma_to_peprec(peptidoform: Peptidoform) -> tuple(str, str, Optional[int]):
     """
-    Convert :py:class:`psm_utils.peptidoform.Peptidoform` to Peptide Record notation.
+    Convert :py:class:`~psm_utils.peptidoform.Peptidoform` to Peptide Record notation.
 
     Parameters
     ----------

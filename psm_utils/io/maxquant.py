@@ -76,8 +76,8 @@ class MSMSReader(ReaderBase):
         GANLGEMTNAGIPVPPGFC[+57.022]VTAEAYK
         ...
 
-        Or a full file can be read at once into a :py:class:`psm_utils.psm_list.PSMList`
-        object:
+        Or a full file can be read at once into a
+        :py:class:`~psm_utils.psm_list.PSMList` object:
 
         >>> reader = MSMSReader("msms.txt")
         >>> psm_list = reader.read_file()
@@ -163,12 +163,6 @@ class MSMSReader(ReaderBase):
     ) -> PeptideSpectrumMatch:
         """Return a PeptideSpectrumMatch object from MaxQuant msms.txt PSM file."""
 
-        def _parse_array(array):
-            try:
-                return np.array(array.split(";"), dtype=np.float32)
-            except ValueError:
-                return np.array(array.split(";"))
-
         psm = PeptideSpectrumMatch(
             peptide=self._parse_peptidoform(
                 psm_dict["Modified sequence"], psm_dict["Charge"]
@@ -180,31 +174,29 @@ class MSMSReader(ReaderBase):
             precursor_mz=float(psm_dict["m/z"]),
             retention_time=float(psm_dict["Retention time"]),
             protein_list=psm_dict["Proteins"].split(";"),
-            source="maxquant",
-            provenance_data=({"maxquant_filename": self.filename}),
+            source="msms",
+            provenance_data=({"msms_filename": str(self.filename)}),
             metadata={
-                "Delta Score": float(psm_dict["Delta score"]),
-                "Localization prob": float(psm_dict["Localization prob"]),
-                "PepLen": int(psm_dict["Length"]),
-                "Precursor Intensity": float(psm_dict["Precursor Intensity"]),
-                "dM": float(psm_dict[f"Mass error [{self._mass_error_unit}]"]),
-                "Matches": _parse_array(psm_dict["Matches"]),
-                "Intensities": _parse_array(psm_dict["Intensities"]),
-                "Intensity coverage": float(psm_dict["Intensity coverage"]),
-                f"Mass Deviations [{self._mass_error_unit}]": _parse_array(
-                    psm_dict[
-                        self._rename_mapping[
-                            f"Mass Deviations [{self._mass_error_unit}]"
-                        ]
+                "Delta Score": psm_dict["Delta score"],
+                "Localization prob": psm_dict["Localization prob"],
+                "PepLen": psm_dict["Length"],
+                "Precursor Intensity": psm_dict["Precursor Intensity"],
+                "dM": psm_dict[f"Mass error [{self._mass_error_unit}]"],
+                "Matches": psm_dict["Matches"],
+                "Intensities": psm_dict["Intensities"],
+                "Intensity coverage": psm_dict["Intensity coverage"],
+                f"Mass Deviations [{self._mass_error_unit}]": psm_dict[
+                    self._rename_mapping[
+                        f"Mass Deviations [{self._mass_error_unit}]"
                     ]
-                ),
+                ],
             },
         )
         return psm
 
     @staticmethod
     def _parse_peptidoform(modified_seq: str, charge: int) -> Peptidoform:
-        """Parse modified sequence to :py:class:`psm_utils.peptidoform.Peptidoform`."""
+        """Parse modified sequence to :py:class:`~psm_utils.peptidoform.Peptidoform`."""
 
         # pattern to match open and closed round brackets
         pattern = re.compile(r"\(((?:[^)(]+|\((?:[^)(]+|\([^)(]*\))*\))*)\)")

@@ -68,7 +68,8 @@ Goals and non-goals
 - To be **open and dynamic**: psm_utils is fully open source, under the
   permissive Apache 2.0 license. New reader and writer modules can easily be
   added, and we welcome everyone to contribute to the project. See
-  :doc:`contributing` for more information.
+  `Contributing <https://psm-utils.readthedocs.io/en/latest/contributing>`_
+  for more information.
 - **NOT to reinvent the wheel**: Instead, psm_utils heavily makes
   use of packages such as `pyteomics <http://pyteomics.readthedocs.io/>`_ and
   `psims <https://github.com/mobiusklein/psims>`_ that have existing
@@ -79,16 +80,16 @@ Goals and non-goals
 Supported file formats
 **********************
 
- ===================================================================================================================== =============== ===============
-  File format                                                                                                           Read support    Write support
- ===================================================================================================================== =============== ===============
-  `OpenMS idXML <https://www.openms.de/>`_                                                                              ✅              ❌
-  `MaxQuant msms.txt <https://www.maxquant.org/>`_                                                                      ✅              ❌
-  `Peptide Record <https://psm-utils.readthedocs.io/en/latest/api/psm_utils.io/#module-psm_utils.io.peptide_record>`_   ✅              ✅
-  `Percolator tab <https://github.com/percolator/percolator/wiki/Interface>`_                                           ✅              ✅
-  `TSV <https://psm-utils.readthedocs.io/en/latest/api/psm_utils.io/#module-psm_utils.io.tsv>`_                         ✅              ✅
-  `X!Tandem XML <https://www.thegpm.org/tandem/>`_                                                                      ✅              ❌
- ===================================================================================================================== =============== ===============
+===================================================================================================================== =============== ===============
+ File format                                                                                                           Read support    Write support
+===================================================================================================================== =============== ===============
+ `OpenMS idXML <https://www.openms.de/>`_                                                                              ✅              ❌
+ `MaxQuant msms.txt <https://www.maxquant.org/>`_                                                                      ✅              ❌
+ `Peptide Record <https://psm-utils.readthedocs.io/en/latest/api/psm_utils.io/#module-psm_utils.io.peptide_record>`_   ✅              ✅
+ `Percolator tab <https://github.com/percolator/percolator/wiki/Interface>`_                                           ✅              ✅
+ `TSV <https://psm-utils.readthedocs.io/en/latest/api/psm_utils.io/#module-psm_utils.io.tsv>`_                         ✅              ✅
+ `X!Tandem XML <https://www.thegpm.org/tandem/>`_                                                                      ✅              ❌
+===================================================================================================================== =============== ===============
 
 
 

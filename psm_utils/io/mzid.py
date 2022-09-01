@@ -1,11 +1,11 @@
 from __future__ import annotations
 
 import logging
-from multiprocessing.sharedctypes import Value
 import re
-from tkinter import scrolledtext
 import xml.etree.ElementTree as ET
+from multiprocessing.sharedctypes import Value
 from pathlib import Path
+from tkinter import scrolledtext
 from typing import Union
 
 from pyteomics import mzid
@@ -93,10 +93,16 @@ class MzidReader(ReaderBase):
         """Iterate over file and return PSMs one-by-one."""
 
         with mzid.read(str(self.filename.absolute())) as reader:
+
             for spectrum in reader:
                 spectrum_title = spectrum[self.searchengine_key_dict["spectrum_key"]]
                 rawfile = self._get_rawfile_name(spectrum["location"])
+
                 for psm_dict in spectrum["SpectrumIdentificationItem"]:
+                    if not self.searchengine_key_dict["score"]:
+                        self.searchengine_key_dict["score"] = self._infer_score(
+                            spectrum["SpectrumIdentificationItem"].keys()
+                        )
                     psm = self._get_peptide_spectrum_match(
                         spectrum_title, rawfile, psm_dict
                     )
@@ -112,7 +118,12 @@ class MzidReader(ReaderBase):
             for spectrum in reader:
                 spectrum_title = spectrum[self.searchengine_key_dict["spectrum_key"]]
                 rawfile = self._get_rawfile_name(spectrum["location"])
+
                 for psm in spectrum["SpectrumIdentificationItem"]:
+                    if not self.searchengine_key_dict["score"]:
+                        self.searchengine_key_dict["score"] = self._infer_score(
+                            spectrum["SpectrumIdentificationItem"].keys()
+                        )
                     psm_list.append(
                         self._get_peptide_spectrum_match(spectrum_title, rawfile, psm)
                     )
@@ -212,7 +223,7 @@ class MzidReader(ReaderBase):
 
         return isdecoy, protein_list
 
-    def _get_searchengine_specific_keys(self, identification_keys: list):
+    def _get_searchengine_specific_keys(self):
         """Get searchengine specific keys."""
 
         if "PEAKS" in self.source:
@@ -229,21 +240,12 @@ class MzidReader(ReaderBase):
                 "spectrum_key": "spectrum title",
             }
 
-        else:
-            score = None
-            for score in STANDARD_SEARCHENGINE_SCORES:
-                if score in identification_keys:
-                    score_key = score
-                    break
-
-            if not score:
-                raise UnknownMzidScore("No known score metric found in Mzid file")
-
-            return {
-                "score_key": score_key,
-                "rt_key": "retention time",
-                "spectrum_key": "spectrumID",
-            }
+        # if source not known return standard keys and none as score key
+        return {
+            "score_key": None,
+            "rt_key": "retention time",
+            "spectrum_key": "spectrumID",
+        }
 
     def _get_searchengine_specific_metadata(self, SpectrumIdentificationItem):
         """Get searchengine specific psm metadata."""
@@ -269,6 +271,20 @@ class MzidReader(ReaderBase):
                 }
             )
         return metadata
+
+    @staticmethod
+    def _infer_score(identification_keys: list):
+        """Infer the score used when source is not unknown"""
+
+        score = None
+        for score in STANDARD_SEARCHENGINE_SCORES:
+            if score in identification_keys:
+                score_key = score
+                break
+        if not score:
+            raise UnknownMzidScore("No known score metric found in Mzid file")
+
+        return score_key
 
     @staticmethod
     def _get_rawfile_name(file_location: str) -> str:

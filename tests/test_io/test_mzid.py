@@ -79,19 +79,17 @@ class TestMzIdentMlReader:
             ],
         }
         expected_output = {
-            "TMKQNAVS": peptidoform.Peptidoform("TM[Oxidation]KQNAVS"),
-            "KEMVGRIRYGKHRSPMRKQEKT": peptidoform.Peptidoform(
-                "KEM[Oxidation]VGRIRYGKHRSPM[Oxidation]RKQEKT"
-            ),
-            "NGFLMRKV": peptidoform.Peptidoform("[Acetyl]-NGFLMRKV"),
-            "GETKMVETAL": peptidoform.Peptidoform("[Acetyl]-GETKM[Oxidation]VETAL"),
-            "RESRSGQSSGY": peptidoform.Peptidoform("RESRSGQSSGY-[Amidated]"),
+            "TMKQNAVS": "TM[Oxidation]KQNAVS",
+            "KEMVGRIRYGKHRSPMRKQEKT": "KEM[Oxidation]VGRIRYGKHRSPM[Oxidation]RKQEKT",
+            "NGFLMRKV": "[Acetyl]-NGFLMRKV",
+            "GETKMVETAL": "[Acetyl]-GETKM[Oxidation]VETAL",
+            "RESRSGQSSGY": "RESRSGQSSGY-[Amidated]",
         }
 
         for seq in test_cases.keys():
 
             assert (
-                mzid.MzidReader._parse_peptidoform(seq, test_cases[seq])
+                mzid.MzidReader._parse_peptidoform(seq, test_cases[seq]).proforma
                 == expected_output[seq]
             )
 

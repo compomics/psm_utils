@@ -1,9 +1,7 @@
 from __future__ import annotations
 
 import logging
-from multiprocessing.sharedctypes import Value
 import re
-from tkinter import scrolledtext
 import xml.etree.ElementTree as ET
 from multiprocessing.sharedctypes import Value
 from pathlib import Path
@@ -97,6 +95,7 @@ class MzidReader(ReaderBase):
         with mzid.read(str(self.filename.absolute())) as reader:
 
         with mzid.read(str(self.filename.absolute())) as reader:
+
             for spectrum in reader:
                 spectrum_title = spectrum[self.searchengine_key_dict["spectrum_key"]]
                 rawfile = self._get_rawfile_name(spectrum["location"])
@@ -226,7 +225,7 @@ class MzidReader(ReaderBase):
 
         return isdecoy, protein_list
 
-    def _get_searchengine_specific_keys(self, identification_keys: list):
+    def _get_searchengine_specific_keys(self):
         """Get searchengine specific keys."""
 
         if "PEAKS" in self.source:
@@ -290,26 +289,6 @@ class MzidReader(ReaderBase):
         return score_key
 
     @staticmethod
-<<<<<<< HEAD
-    def _infer_score(identification_keys: list):
-        """Infer the score used when source is not unknown"""
-
-        score = None
-        for score in STANDARD_SEARCHENGINE_SCORES:
-            if score in identification_keys:
-                score_key = score
-                break
-        if not score:
-            raise UnknownMzidScore("No known score metric found in Mzid file")
-
-        return score_key
-
-    @staticmethod
-    def _get_rawfile_name(file_location: str) -> str:
-        """Get rawfile name out of mzid file location or filename."""
-
-        return Path(file_location).stem
-=======
     def _get_rawfile_name(file_location: str) -> str:
         """Get rawfile name out of mzid file location or filename."""
 

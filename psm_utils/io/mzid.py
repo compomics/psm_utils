@@ -94,8 +94,6 @@ class MzidReader(ReaderBase):
 
         with mzid.read(str(self.filename.absolute())) as reader:
 
-        with mzid.read(str(self.filename.absolute())) as reader:
-
             for spectrum in reader:
                 spectrum_title = spectrum[self.searchengine_key_dict["spectrum_key"]]
                 rawfile = self._get_rawfile_name(spectrum["location"])

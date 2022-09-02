@@ -8,6 +8,7 @@ from rich.progress import track
 
 import psm_utils.io.idxml as idxml
 import psm_utils.io.maxquant as maxquant
+import psm_utils.io.mzid as mzid
 import psm_utils.io.peptide_record as peptide_record
 import psm_utils.io.percolator as percolator
 import psm_utils.io.tsv as tsv
@@ -28,28 +29,30 @@ FILETYPES = {
         "extension": "_msms.txt",
         "filename_pattern": r"^msms\.txt$",
     },
-
+    "mzid": {
+        "reader": mzid.MzidReader,
+        "writer": None,
+        "extension": ".mzid",
+        "filename_pattern": r"^.*\.(?:(?:mzidentml)|(?:mzid))$",
+    },
     "peprec": {
         "reader": peptide_record.PeptideRecordReader,
         "writer": peptide_record.PeptideRecordWriter,
         "extension": ".peprec.txt",
-        "filename_pattern": r"(^.*\.peprec(?:\.txt)?$)|(^peprec\.txt$)",
+        "filename_pattern": r"(^.*\.peprec(?:\.txt)?$)|(?:^peprec\.txt$)",
     },
-
     "percolator": {
         "reader": percolator.PercolatorTabReader,
         "writer": percolator.PercolatorTabWriter,
         "extension": ".percolator.txt",
         "filename_pattern": r"^.*\.(?:(?:pin)|(?:pout))$",
     },
-
     "tsv": {
         "reader": tsv.TSVReader,
         "writer": tsv.TSVWriter,
         "extension": ".tsv",
         "filename_pattern": r"^.*\.tsv$",
     },
-
     "xtandem": {
         "reader": xtandem.XTandemReader,
         "writer": None,

@@ -11,10 +11,10 @@ class TestMzIdentMlReader:
     def test_infer_source(self):
 
         msgf = mzid.MzidReader(MSGF_TEST_FILE)
-        assert msgf.source == "MS-GF+"
+        assert msgf._source == "MS-GF+"
 
         peaks = mzid.MzidReader(PEAKS_TEST_FILE)
-        assert peaks.source == "PEAKS Studio"
+        assert peaks._source == "PEAKS Studio"
 
     def test_get_namespace(self):
 
@@ -26,72 +26,81 @@ class TestMzIdentMlReader:
         )
 
     def test_parse_peptidoform(self):
-
         test_cases = {
-            "TMKQNAVS": [
-                {
-                    "monoisotopicMassDelta": 15.994915,
-                    "location": 2,
-                    "residues": ["M"],
-                    "name": "Oxidation",
-                }
-            ],
-            "KEMVGRIRYGKHRSPMRKQEKT": [
-                {
-                    "monoisotopicMassDelta": 15.994915,
-                    "location": 3,
-                    "residues": ["M"],
-                    "name": "Oxidation",
-                },
-                {
-                    "monoisotopicMassDelta": 15.994915,
-                    "location": 16,
-                    "residues": ["M"],
-                    "name": "Oxidation",
-                },
-            ],
-            "NGFLMRKV": [
-                {
-                    "monoisotopicMassDelta": 42.010565,
-                    "location": 0,
-                    "name": "Acetyl",
-                }
-            ],
-            "GETKMVETAL": [
-                {
-                    "monoisotopicMassDelta": 15.994915,
-                    "location": 5,
-                    "residues": ["M"],
-                    "name": "Oxidation",
-                },
-                {
-                    "monoisotopicMassDelta": 42.010565,
-                    "location": 0,
-                    "name": "Acetyl",
-                },
-            ],
-            "RESRSGQSSGY": [
-                {
-                    "monoisotopicMassDelta": -0.984016,
-                    "location": 12,
-                    "name": "Amidated",
-                }
-            ],
-        }
-        expected_output = {
-            "TMKQNAVS": "TM[Oxidation]KQNAVS",
-            "KEMVGRIRYGKHRSPMRKQEKT": "KEM[Oxidation]VGRIRYGKHRSPM[Oxidation]RKQEKT",
-            "NGFLMRKV": "[Acetyl]-NGFLMRKV",
-            "GETKMVETAL": "[Acetyl]-GETKM[Oxidation]VETAL",
-            "RESRSGQSSGY": "RESRSGQSSGY-[Amidated]",
-        }
-
-        for seq in test_cases.keys():
-
-            assert (
-                mzid.MzidReader._parse_peptidoform(seq, test_cases[seq]).proforma
-                == expected_output[seq]
+            "TM[Oxidation]KQNAVS/2": (
+                "TMKQNAVS",
+                [
+                    {
+                        "monoisotopicMassDelta": 15.994915,
+                        "location": 2,
+                        "residues": ["M"],
+                        "name": "Oxidation",
+                    }
+                ],
+                2,
+            ),
+            "KEM[Oxidation]VGRIRYGKHRSPM[Oxidation]RKQEKT/3": (
+                "KEMVGRIRYGKHRSPMRKQEKT",
+                [
+                    {
+                        "monoisotopicMassDelta": 15.994915,
+                        "location": 3,
+                        "residues": ["M"],
+                        "name": "Oxidation",
+                    },
+                    {
+                        "monoisotopicMassDelta": 15.994915,
+                        "location": 16,
+                        "residues": ["M"],
+                        "name": "Oxidation",
+                    },
+                ],
+                3,
+            ),
+            "[Acetyl]-NGFLMRKV/4": (
+                "NGFLMRKV",
+                [
+                    {
+                        "monoisotopicMassDelta": 42.010565,
+                        "location": 0,
+                        "name": "Acetyl",
+                    }
+                ],
+                4,
+            ),
+            "[Acetyl]-GETKM[Oxidation]VETAL/2": (
+                "GETKMVETAL",
+                [
+                    {
+                        "monoisotopicMassDelta": 15.994915,
+                        "location": 5,
+                        "residues": ["M"],
+                        "name": "Oxidation",
+                    },
+                    {
+                        "monoisotopicMassDelta": 42.010565,
+                        "location": 0,
+                        "name": "Acetyl",
+                    },
+                ],
+                2,
+            ),
+            "RESRSGQSSGY-[Amidated]/2": (
+                "RESRSGQSSGY",
+                [
+                    {
+                        "monoisotopicMassDelta": -0.984016,
+                        "location": 12,
+                        "name": "Amidated",
+                    }
+                ],
+                2,
             )
+        }
+
+        for expected_out, test_in in test_cases.items():
+            test_out = mzid.MzidReader._parse_peptidoform(*test_in).proforma
+            assert test_out == expected_out
 
     def test_parse_peptide_evidence_ref(self):
 
@@ -170,17 +179,6 @@ class TestMzIdentMlReader:
                 mzid.MzidReader._parse_peptide_evidence_ref(test_case)
                 == expected_output[i]
             )
-
-    def test_get_rawfile_name(self):
-
-        test_cases = {
-            "file:/F:/FromE/H088333_1p_WNE15_trap24_CMB-867_3_LFQ_PNE1904-039.mgf": "H088333_1p_WNE15_trap24_CMB-867_3_LFQ_PNE1904-039",
-            "C:/Users/robbin/Desktop/mgf/ignore/YPIC_Run1_CH2-1.mgf": "YPIC_Run1_CH2-1",
-            "/Users/kims336/Research/Data/QCShew/test.mgf": "test",
-        }
-
-        for test_case in test_cases.keys():
-            assert mzid.MzidReader._get_rawfile_name(test_case) == test_cases[test_case]
 
     # TODO
     def test_get_peptide_spectrum_match(self):

@@ -8,8 +8,8 @@ from typing import Union
 
 from pyteomics import mzid
 
-from psm_utils.io.exceptions import PSMUtilsIOException
 from psm_utils.io._base_classes import ReaderBase, WriterBase
+from psm_utils.io.exceptions import PSMUtilsIOException
 from psm_utils.peptidoform import Peptidoform
 from psm_utils.psm import PeptideSpectrumMatch
 from psm_utils.psm_list import PSMList
@@ -84,211 +84,152 @@ class MzidReader(ReaderBase):
 
         """
         super().__init__(filename, *args, **kwargs)
-        self.source = self._infer_source()
-        self.searchengine_key_dict = self._get_searchengine_specific_keys()
+        self._source = self._infer_source()
+        self._searchengine_key_dict = self._get_searchengine_specific_keys()
 
     def __iter__(self):
         """Iterate over file and return PSMs one-by-one."""
-
-        with mzid.read(str(self.filename.absolute())) as reader:
-
+        with mzid.read(str(self.filename)) as reader:
             for spectrum in reader:
-                spectrum_title = spectrum[self.searchengine_key_dict["spectrum_key"]]
-                rawfile = self._get_rawfile_name(spectrum["location"])
-
-                for psm_dict in spectrum["SpectrumIdentificationItem"]:
-                    if not self.searchengine_key_dict["score_key"]:
-                        self.searchengine_key_dict["score_key"] = self._infer_score(
-                            spectrum["SpectrumIdentificationItem"].keys()
-                        )
+                spectrum_title = spectrum[self._searchengine_key_dict["spectrum_key"]]
+                raw_file = Path(spectrum["location"]).stem
+                for entry in spectrum["SpectrumIdentificationItem"]:
                     psm = self._get_peptide_spectrum_match(
-                        spectrum_title, rawfile, psm_dict
-                    )
+                        spectrum_title, raw_file, entry)
                     yield psm
 
     def read_file(self) -> PSMList:
         """Read full mzid file to PSM list object."""
-
-        with mzid.read(str(self.filename.absolute())) as reader:
-            # Go over each Spectrum that has a match
-            psm_list = []
-            # Go over each PSM
-            for spectrum in reader:
-                spectrum_title = spectrum[self.searchengine_key_dict["spectrum_key"]]
-                rawfile = self._get_rawfile_name(spectrum["location"])
-
-                for psm in spectrum["SpectrumIdentificationItem"]:
-                    if not self.searchengine_key_dict["score_key"]:
-                        self.searchengine_key_dict["score_key"] = self._infer_score(
-                            spectrum["SpectrumIdentificationItem"].keys()
-                        )
-                    psm_list.append(
-                        self._get_peptide_spectrum_match(spectrum_title, rawfile, psm)
-                    )
-
-        return PSMList(psm_list=psm_list)
-
-    def _get_peptide_spectrum_match(
-        self,
-        spectrum_title: str,
-        rawfile: str,
-        spectrum_identification_item: dict[str, Union[str, float, list]],
-    ) -> PeptideSpectrumMatch:
-        """Parse single mzid Record entry to a `PeptideSpectrumMatch`."""
-
-        try:
-            modifications = spectrum_identification_item["Modification"]
-        except KeyError:
-            modifications = []
-        sequence = spectrum_identification_item["PeptideSequence"]
-        peptide = self._parse_peptidoform(sequence, modifications)
-
-        isdecoy, protein_list = self._parse_peptide_evidence_ref(
-            spectrum_identification_item["PeptideEvidenceRef"]
-        )
-        # retention time is often missing from mzid
-        try:
-            rt = float(
-                spectrum_identification_item[self.searchengine_key_dict["rt_key"]]
-            )
-        except KeyError:
-            rt = float("nan")
-
-        psm = PeptideSpectrumMatch(
-            peptide=peptide,
-            spectrum_id=str(spectrum_title),
-            run=str(rawfile),
-            is_decoy=isdecoy,
-            score=float(
-                spectrum_identification_item[self.searchengine_key_dict["score_key"]]
-            ),
-            precursor_charge=int(spectrum_identification_item["chargeState"]),
-            precursor_mz=float(
-                spectrum_identification_item["experimentalMassToCharge"]
-            ),
-            retention_time=rt,
-            protein_list=protein_list,
-            source=self.source,
-            provenance_data=({f"mzid_filename": str(self.filename)}),
-            metadata=self._get_searchengine_specific_metadata(
-                spectrum_identification_item
-            ),
-        )
-        return psm
+        return PSMList(psm_list=[psm for psm in self.__iter__()])
 
     @staticmethod
-    def _parse_peptidoform(seq: str, modification_list: list[dict]):
-        """Parse mzid sequence and modifications to Peptidoform."""
+    def _get_xml_namespace(root_tag):
+        """Get the namespace of the xml root."""
+        m = re.match(r"\{.*\}", root_tag)
+        return m.group(0) if m else ""
 
+    def _infer_source(self):
+        """Get the source of the mzid file."""
+        mzid_xml = ET.parse(self.filename)
+        root = mzid_xml.getroot()
+        name_space = self._get_xml_namespace(root.tag)
+        return root.find(f".//{name_space}AnalysisSoftware").attrib["name"]
+
+    def _get_searchengine_specific_keys(self):
+        """Get searchengine specific keys."""
+        if "PEAKS" in self._source:
+            return {
+                "score_key": "PEAKS:peptideScore",
+                "rt_key": "retention time",
+                "spectrum_key": "spectrumID",
+            }
+        elif self._source == "MS-GF+":
+            return {
+                "score_key": "MS-GF:RawScore",
+                "rt_key": "scan start time",
+                "spectrum_key": "spectrum title",
+            }
+        # if source is not known return standard keys and infer score key
+        return {
+            "score_key": self._infer_score_name(),
+            "rt_key": "retention time",
+            "spectrum_key": "spectrumID",
+        }
+
+    def _infer_score_name(self) -> str:
+        """Infer the score from the known list of PSM scores."""
+        with mzid.read(str(self.filename)) as reader:
+            for spectrum in reader:
+                sii_keys = spectrum["SpectrumIdentificationItem"][0].keys()
+                break
+        for score in STANDARD_SEARCHENGINE_SCORES:
+            if score in sii_keys:
+                return score
+        else:
+            raise UnknownMzidScore("No known score metric found in mzIdentML file.")
+
+    @staticmethod
+    def _parse_peptidoform(seq: str, modification_list: list[dict], charge: int):
+        """Parse mzid sequence and modifications to Peptidoform."""
         peptide = [""] + list(seq) + [""]
 
         # Add modification labels
         for mod in modification_list:
             peptide[int(mod["location"])] += f"[{mod['name']}]"
 
-        # Add dashes between residues and termnin, and join sequence
+        # Add dashes between residues and termini, and join sequence
         peptide[0] = peptide[0] + "-" if peptide[0] else ""
         peptide[-1] = "-" + peptide[-1] if peptide[-1] else ""
         proforma_seq = "".join(peptide)
 
+        # Add charge state
+        proforma_seq += f"/{charge}"
+
         return Peptidoform(proforma_seq)
-
-    def _infer_source(self):
-        """Get the source of the mzid file."""
-
-        mzid_xml = ET.parse(self.filename)
-        root = mzid_xml.getroot()
-        name_space = self._get_xml_namespace(root.tag)
-
-        return root.find(f".//{name_space}AnalysisSoftware").attrib["name"]
-
-    @staticmethod
-    def _get_xml_namespace(root_tag):
-        """Get the namespace of the xml root."""
-
-        m = re.match(r"\{.*\}", root_tag)
-        return m.group(0) if m else ""
 
     @staticmethod
     def _parse_peptide_evidence_ref(peptide_evidence_list: list[dict]):
         """Parse peptide evidence References of PSM."""
-
         isdecoy = peptide_evidence_list[0]["isDecoy"]
-
         protein_list = [
             d["accession"] for d in peptide_evidence_list if "accession" in d.keys()
         ]
-
         return isdecoy, protein_list
 
-    def _get_searchengine_specific_keys(self):
-        """Get searchengine specific keys."""
-
-        if "PEAKS" in self.source:
-            return {
-                "score_key": "PEAKS:peptideScore",
-                "rt_key": "retention time",
-                "spectrum_key": "spectrumID",
-            }
-
-        elif self.source == "MS-GF+":
-            return {
-                "score_key": "MS-GF:RawScore",
-                "rt_key": "scan start time",
-                "spectrum_key": "spectrum title",
-            }
-
-        # if source not known return standard keys and none as score key
-        return {
-            "score_key": None,
-            "rt_key": "retention time",
-            "spectrum_key": "spectrumID",
-        }
-
-    def _get_searchengine_specific_metadata(self, SpectrumIdentificationItem):
+    def _get_searchengine_specific_metadata(self, spectrum_identification_item):
         """Get searchengine specific psm metadata."""
-
+        sii = spectrum_identification_item
         metadata = {
-            "calculatedMassToCharge": SpectrumIdentificationItem[
-                "calculatedMassToCharge"
-            ],
-            "rank": SpectrumIdentificationItem["rank"],
-            "Length": len(SpectrumIdentificationItem["PeptideSequence"]),
+            "calculatedMassToCharge": sii["calculatedMassToCharge"],
+            "rank": sii["rank"],
+            "length": len(sii["PeptideSequence"]),
         }
-        if self.source == "MS-GF+":
-            metadata.update(
-                {
-                    "MS-GF:DeNovoScore": SpectrumIdentificationItem[
-                        "MS-GF:DeNovoScore"
-                    ],
-                    "MS-GF:EValue": SpectrumIdentificationItem["MS-GF:EValue"],
-                    "MS-GF:DeNovoScore": SpectrumIdentificationItem[
-                        "MS-GF:DeNovoScore"
-                    ],
-                    "IsotopeError": SpectrumIdentificationItem["IsotopeError"],
-                }
-            )
+        if self._source == "MS-GF+":
+            metadata.update({
+                "MS-GF:DeNovoScore": sii["MS-GF:DeNovoScore"],
+                "MS-GF:EValue": sii["MS-GF:EValue"],
+                "MS-GF:DeNovoScore": sii["MS-GF:DeNovoScore"],
+                "IsotopeError": sii["IsotopeError"],
+            })
         return metadata
 
-    @staticmethod
-    def _infer_score(identification_keys: list):
-        """Infer the score used when source is not unknown"""
+    def _get_peptide_spectrum_match(
+        self,
+        spectrum_title: str,
+        raw_file: str,
+        spectrum_identification_item: dict[str, Union[str, float, list]],
+    ) -> PeptideSpectrumMatch:
+        """Parse single mzid entry to :py:class:`~psm_utils.peptidoform.Peptidoform`."""
+        sii = spectrum_identification_item
 
-        score = None
-        for score in STANDARD_SEARCHENGINE_SCORES:
-            if score in identification_keys:
-                score_key = score
-                break
-        if not score:
-            raise UnknownMzidScore("No known score metric found in Mzid file")
+        try:
+            modifications = sii["Modification"]
+        except KeyError:
+            modifications = []
+        sequence = sii["PeptideSequence"]
+        peptide = self._parse_peptidoform(sequence, modifications, sii["chargeState"])
+        is_decoy, protein_list = self._parse_peptide_evidence_ref(
+            sii["PeptideEvidenceRef"]
+        )
+        try:
+            rt = float(sii[self._searchengine_key_dict["rt_key"]])
+        except KeyError:
+            rt = float("nan")
 
-        return score_key
-
-    @staticmethod
-    def _get_rawfile_name(file_location: str) -> str:
-        """Get rawfile name out of mzid file location or filename."""
-
-        return Path(file_location).stem
+        psm = PeptideSpectrumMatch(
+            peptide=peptide,
+            spectrum_id=spectrum_title,
+            run=raw_file,
+            is_decoy=is_decoy,
+            score=sii[self._searchengine_key_dict["score_key"]],
+            precursor_mz=sii["experimentalMassToCharge"],
+            retention_time=rt,
+            protein_list=protein_list,
+            source=self._source,
+            provenance_data={"mzid_filename": str(self.filename)},
+            metadata=self._get_searchengine_specific_metadata(sii),
+        )
+        return psm
 
 
 class MzidWriter(WriterBase):

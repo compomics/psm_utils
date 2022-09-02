@@ -51,6 +51,11 @@ class Peptidoform:
         return "".join(pos[0] for pos in self.parsed_sequence)
 
     @property
+    def precursor_charge(self) -> int:
+        """Syntactic sugar for `Peptidoform.properties['charge_state'].charge`."""
+        return self.properties["charge_state"].charge
+
+    @property
     def sequential_composition(self) -> list[mass.Composition]:
         """Atomic compositions of both termini and each (modified) residue."""
         # Get compositions for fixed modifications by amino acid

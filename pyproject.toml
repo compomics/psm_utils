@@ -47,6 +47,10 @@ doc = [
     "sphinx_rtd_theme",
     "sphinx-autobuild",
 ]
+online = [
+    "streamlit",
+    "plotly",
+]
 
 [project.urls]
 GitHub = "https://github.com/compomics/psm_utils"

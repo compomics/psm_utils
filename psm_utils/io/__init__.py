@@ -96,7 +96,7 @@ def read_file(filename: Union[str, Path], *args, filetype: str = "infer", **kwar
 
 def write_file():
     # TODO
-    raise ImplementedError()
+    raise NotImplementedError()
 
 
 def convert(

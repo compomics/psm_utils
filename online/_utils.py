@@ -61,8 +61,8 @@ def pp_plot(psm_df):
         sample = 5000
     else:
         sample = 1.0
-    percent_decoys = np.count_nonzero(psm_df["is_decoy"]) / len(psm_df)
-    if percent_decoys == 0:
+    decoy_ratio = np.count_nonzero(psm_df["is_decoy"]) / len(psm_df)
+    if decoy_ratio == 0:
         raise ValueError("No decoy PSMs found in PSM file.")
     target_scores = psm_df["score"][~psm_df["is_decoy"]]
     decoy_scores = psm_df["score"][psm_df["is_decoy"]]

@@ -3,14 +3,12 @@ from __future__ import annotations
 import logging
 import re
 import xml.etree.ElementTree as ET
-from multiprocessing.sharedctypes import Value
 from pathlib import Path
-from tkinter import scrolledtext
 from typing import Union
 
 from pyteomics import mzid
 
-from psm_utils.exceptions import PSMUtilsException
+from psm_utils.io.exceptions import PSMUtilsIOException
 from psm_utils.io._base_classes import ReaderBase, WriterBase
 from psm_utils.peptidoform import Peptidoform
 from psm_utils.psm import PeptideSpectrumMatch
@@ -56,7 +54,7 @@ STANDARD_SEARCHENGINE_SCORES = [
 
 
 class MzidReader(ReaderBase):
-    def __init__(self, filename: Union[str, Path]) -> None:
+    def __init__(self, filename: Union[str, Path], *args, **kwargs) -> None:
 
         """
         Reader for MZID Record PSM files.
@@ -85,7 +83,7 @@ class MzidReader(ReaderBase):
         >>> psm_list = mzid_reader.read_file()
 
         """
-        super().__init__(filename)
+        super().__init__(filename, *args, **kwargs)
         self.source = self._infer_source()
         self.searchengine_key_dict = self._get_searchengine_specific_keys()
 
@@ -99,8 +97,8 @@ class MzidReader(ReaderBase):
                 rawfile = self._get_rawfile_name(spectrum["location"])
 
                 for psm_dict in spectrum["SpectrumIdentificationItem"]:
-                    if not self.searchengine_key_dict["score"]:
-                        self.searchengine_key_dict["score"] = self._infer_score(
+                    if not self.searchengine_key_dict["score_key"]:
+                        self.searchengine_key_dict["score_key"] = self._infer_score(
                             spectrum["SpectrumIdentificationItem"].keys()
                         )
                     psm = self._get_peptide_spectrum_match(
@@ -120,15 +118,15 @@ class MzidReader(ReaderBase):
                 rawfile = self._get_rawfile_name(spectrum["location"])
 
                 for psm in spectrum["SpectrumIdentificationItem"]:
-                    if not self.searchengine_key_dict["score"]:
-                        self.searchengine_key_dict["score"] = self._infer_score(
+                    if not self.searchengine_key_dict["score_key"]:
+                        self.searchengine_key_dict["score_key"] = self._infer_score(
                             spectrum["SpectrumIdentificationItem"].keys()
                         )
                     psm_list.append(
                         self._get_peptide_spectrum_match(spectrum_title, rawfile, psm)
                     )
 
-        return PSMList(psm_list)
+        return PSMList(psm_list=psm_list)
 
     def _get_peptide_spectrum_match(
         self,
@@ -171,7 +169,7 @@ class MzidReader(ReaderBase):
             retention_time=rt,
             protein_list=protein_list,
             source=self.source,
-            provenance_data=({f"mzid_filename": self.filename}),
+            provenance_data=({f"mzid_filename": str(self.filename)}),
             metadata=self._get_searchengine_specific_metadata(
                 spectrum_identification_item
             ),
@@ -308,7 +306,7 @@ class MzidWriter(WriterBase):
         raise NotImplementedError()
 
 
-class UnknownMzidScore(PSMUtilsException):
+class UnknownMzidScore(PSMUtilsIOException):
     """Exception while handling or parsing peptide modifications."""
 
     pass

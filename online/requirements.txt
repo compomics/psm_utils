@@ -1,0 +1,10 @@
+pyteomics >= 4
+lxml
+psims
+pandas
+numpy
+click
+rich
+pydantic
+streamlit
+plotly

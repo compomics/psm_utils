@@ -108,6 +108,15 @@ psm_utils.io.maxquant
 
 
 
+psm_utils.io.mzid
+#####################
+
+.. automodule:: psm_utils.io.mzid
+   :members:
+   :inherited-members:
+
+
+
 psm_utils.io.peptide_record
 ###########################
 

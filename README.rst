@@ -85,11 +85,15 @@ Supported file formats
 ===================================================================================================================== =============== ===============
  `OpenMS idXML <https://www.openms.de/>`_                                                                              ✅              ❌
  `MaxQuant msms.txt <https://www.maxquant.org/>`_                                                                      ✅              ❌
+ `MS Amanda CSV <https://ms.imp.ac.at/?goto=msamanda>`_                                                                🔧              ❌
+ `mzIdentML <https://psidev.info/mzidentml>`_                                                                          ✅              🔧
  `Peptide Record <https://psm-utils.readthedocs.io/en/latest/api/psm_utils.io/#module-psm_utils.io.peptide_record>`_   ✅              ✅
  `Percolator tab <https://github.com/percolator/percolator/wiki/Interface>`_                                           ✅              ✅
  `TSV <https://psm-utils.readthedocs.io/en/latest/api/psm_utils.io/#module-psm_utils.io.tsv>`_                         ✅              ✅
  `X!Tandem XML <https://www.thegpm.org/tandem/>`_                                                                      ✅              ❌
 ===================================================================================================================== =============== ===============
+
+Legend: ✅ Supported, ❌ Unsupported, 🔧 Work in progress
 
 
 

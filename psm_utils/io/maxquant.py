@@ -52,6 +52,8 @@ class MSMSReader(ReaderBase):
     def __init__(
         self,
         filename: Union[str, Path],
+        *args,
+        **kwargs,
     ) -> None:
         """
         Reader for MaxQuant msms.txt PSM files.
@@ -84,7 +86,7 @@ class MSMSReader(ReaderBase):
 
         """
 
-        super().__init__(filename)
+        super().__init__(filename, *args, **kwargs)
 
         self._rename_mapping = None
         self._mass_error_unit = None
@@ -99,9 +101,6 @@ class MSMSReader(ReaderBase):
                 psm = self._get_peptide_spectrum_match(psm_dict)
                 yield psm
 
-    def __next__(self) -> PeptideSpectrumMatch:
-        return super().__next__()
-
     def read_file(self) -> PSMList:
         """Read full MaxQuant msms.txt PSM file into a PSMList object."""
         psm_list = []
@@ -109,7 +108,7 @@ class MSMSReader(ReaderBase):
             reader = csv.DictReader(msms_in, delimiter="\t")
             for psm_dict in reader:
                 psm_list.append(self._get_peptide_spectrum_match(psm_dict))
-        return PSMList(psm_list)
+        return PSMList(psm_list=psm_list)
 
     def _validate_msms(self) -> None:
         with open(self.filename, "r") as msms_file:

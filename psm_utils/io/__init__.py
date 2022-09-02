@@ -1,5 +1,6 @@
 """Parsers for proteomics search results from various search engines."""
 
+import re
 from pathlib import Path
 from typing import Union
 
@@ -11,28 +12,61 @@ import psm_utils.io.peptide_record as peptide_record
 import psm_utils.io.percolator as percolator
 import psm_utils.io.tsv as tsv
 import psm_utils.io.xtandem as xtandem
+from psm_utils.io.exceptions import PSMUtilsIOException
 
 # TODO: to be completed
-READERS = {
-    "idxml": idxml.IdXMLReader,
-    "msms": maxquant.MSMSReader,
-    "peprec": peptide_record.PeptideRecordReader,
-    "percolator": percolator.PercolatorTabReader,
-    "tsv": tsv.TSVReader,
-    "xtandem": xtandem.XTandemReader,
-}
+FILETYPES = {
+    "idxml": {
+        "reader": idxml.IdXMLReader,
+        "writer": None,
+        "extension": ".idXML",
+        "filename_pattern": r"^.*\.idxml$",
+    },
+    "msms": {
+        "reader": maxquant.MSMSReader,
+        "writer": None,
+        "extension": "_msms.txt",
+        "filename_pattern": r"^msms\.txt$",
+    },
 
-# TODO: to be completed
-WRITERS = {
-    "peprec": peptide_record.PeptideRecordWriter,
-    "percolator": percolator.PercolatorTabWriter,
-    "tsv": tsv.TSVWriter,
-}
+    "peprec": {
+        "reader": peptide_record.PeptideRecordReader,
+        "writer": peptide_record.PeptideRecordWriter,
+        "extension": ".peprec.txt",
+        "filename_pattern": r"(^.*\.peprec(?:\.txt)?$)|(^peprec\.txt$)",
+    },
 
+    "percolator": {
+        "reader": percolator.PercolatorTabReader,
+        "writer": percolator.PercolatorTabWriter,
+        "extension": ".percolator.txt",
+        "filename_pattern": r"^.*\.(?:(?:pin)|(?:pout))$",
+    },
+
+    "tsv": {
+        "reader": tsv.TSVReader,
+        "writer": tsv.TSVWriter,
+        "extension": ".tsv",
+        "filename_pattern": r"^.*\.tsv$",
+    },
+
+    "xtandem": {
+        "reader": xtandem.XTandemReader,
+        "writer": None,
+        "extension": ".t.xml",
+        "filename_pattern": r"^.*\.t\.xml$",
+    },
+}
+READERS = {k: v["reader"] for k, v in FILETYPES.items() if v["reader"]}
+WRITERS = {k: v["writer"] for k, v in FILETYPES.items() if v["writer"]}
 
 def _infer_filetype(filename: str):
-    """Infer filetype from file extension."""
-    raise NotImplementedError()
+    """Infer filetype from filename."""
+    for filetype, properties in FILETYPES.items():
+        if re.fullmatch(properties["filename_pattern"], filename, flags=re.IGNORECASE):
+            return filetype
+    else:
+        raise PSMUtilsIOException("Could not infer filetype.")
 
 
 def read_file(filename: Union[str, Path], *args, filetype: str = "infer", **kwargs):
@@ -44,7 +78,8 @@ def read_file(filename: Union[str, Path], *args, filetype: str = "infer", **kwar
     filename: str
         Path to file.
     filetype: str, optional
-        File type. Any of {#TODO: add list}.
+        File type. Any PSM file type with read support. See
+        :ref:`Supported file formats`.
     *args : tuple
         Additional arguments are passed to the :py:class:`psm_utils.io` reader.
     **kwargs : dict, optional
@@ -57,6 +92,11 @@ def read_file(filename: Union[str, Path], *args, filetype: str = "infer", **kwar
     reader = reader_cls(filename, *args, **kwargs)
     psm_list = reader.read_file()
     return psm_list
+
+
+def write_file():
+    # TODO
+    raise NotImplementedError()
 
 
 def convert(
@@ -76,9 +116,11 @@ def convert(
     output_filename: str
         Path to output file.
     input_filetype: str, optional
-        Input file type. Any of {#TODO: add list}.
+        File type. Any PSM file type with read support. See
+        :ref:`Supported file formats`.
     output_filetype: str, optional
-        Output file type. Any of {#TODO: add list}.
+        File type. Any PSM file type with write support. See
+        :ref:`Supported file formats`.
     show_progressbar: bool, optional
         Show progress bar for conversion process. (default: False)
 
@@ -116,10 +158,18 @@ def convert(
     reader_cls = READERS[input_filetype]
     writer_cls = WRITERS[output_filetype]
 
-    reader = reader_cls(input_filename)
-    writer = writer_cls(output_filename)
+    # Remove file if already exists to avoid appending:
+    if Path(output_filename).is_file():
+        Path(output_filename).unlink()
 
+    reader = reader_cls(input_filename)
     iterator = track(reader) if show_progressbar else reader
 
-    for psm in iterator:
-        writer.write(psm)
+    for psm in reader:
+        example_psm = psm
+        break
+    writer = writer_cls(output_filename, example_psm=example_psm, mode="write")
+
+    with writer:
+        for psm in iterator:
+            writer.write_psm(psm)

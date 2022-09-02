@@ -62,8 +62,8 @@ from psm_utils.psm_list import PSMList
 class TSVReader(ReaderBase):
     """Reader for psm_utils TSV format."""
 
-    def __init__(self, filename: Union[str, Path]) -> None:
-        super().__init__(filename)
+    def __init__(self, filename: Union[str, Path], *args, **kwargs) -> None:
+        super().__init__(filename, *args, **kwargs)
 
     def __iter__(self):
         """Iterate over file and return PSMs one-by-one."""
@@ -74,7 +74,7 @@ class TSVReader(ReaderBase):
 
     def read_file(self) -> PSMList:
         """Read full PSM file into a PSMList object."""
-        return PSMList([psm for psm in self.__iter__()])
+        return PSMList(psm_list=[psm for psm in self.__iter__()])
 
     @staticmethod
     def _parse_entry(entry: dict):
@@ -119,6 +119,8 @@ class TSVWriter(WriterBase):
         self,
         filename: Union[str, Path],
         example_psm: Optional[PeptideSpectrumMatch] = None,
+        *args,
+        **kwargs,
     ):
         """
         Reader for psm_utils TSV format.
@@ -136,7 +138,7 @@ class TSVWriter(WriterBase):
             they are present in other PSMs passed to :py:meth:`write_psm` or
             :py:meth:`write_file`.
         """
-        super().__init__(filename)
+        super().__init__(filename, *args, **kwargs)
 
         self._open_file = None
         self._writer = None
@@ -213,7 +215,7 @@ class TSVWriter(WriterBase):
 
     @staticmethod
     def _psm_to_entry(psm: PeptideSpectrumMatch) -> dict:
-        entry = dataclasses.asdict(psm)
+        entry = psm.__dict__
 
         # Convert Peptidoform to proforma sequence
         entry["peptide"] = entry["peptide"].proforma

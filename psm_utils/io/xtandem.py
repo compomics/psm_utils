@@ -106,7 +106,7 @@ class XTandemReader(ReaderBase):
         with tandem.read(str(self.filename)) as reader:
             for entry in reader:
                 psm_list.append(self._parse_entry(entry))
-        return PSMList(psm_list)
+        return PSMList(psm_list=psm_list)
 
     def _parse_peptidoform(self, peptide_entry, charge: int) -> Peptidoform:
         """Parse X!Tandem XML peptide entry to :py:class:`~psm_utils.peptidoform.Peptidoform`."""
@@ -161,7 +161,7 @@ class XTandemReader(ReaderBase):
             protein_list=[entry["protein"][0]["label"]],
             source="X!Tandem",
             provenance_data={
-                "xtandem_filename": self.filename,
+                "xtandem_filename": str(self.filename),
                 "xtandem_id": entry["id"],
             },
             metadata={

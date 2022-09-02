@@ -1,20 +1,13 @@
 from __future__ import annotations
 
-from dataclasses import field
 from typing import Any, Dict, List, Optional, Union
 
-from pydantic.dataclasses import dataclass
-from pyteomics import proforma
+from pydantic import BaseModel
 
 from psm_utils.peptidoform import Peptidoform
 
 
-class _PydanticConfig:
-    arbitrary_types_allowed = True
-
-
-@dataclass(config=_PydanticConfig)
-class PeptideSpectrumMatch:  # TODO: Rename `PeptideSpectrumMatch` to `PSM`?
+class PeptideSpectrumMatch(BaseModel):  # TODO: Rename `PeptideSpectrumMatch` to `PSM`?
     """
     Data class representing a peptide-spectrum match (PSM).
 
@@ -70,15 +63,21 @@ class PeptideSpectrumMatch:  # TODO: Rename `PeptideSpectrumMatch` to `PSM`?
     spectrum: Optional[Any] = None
     is_decoy: Optional[bool] = None
     score: Optional[float] = None
-    precursor_mz: Optional[float] = field(default=None)
-    retention_time: Optional[float] = field(default=None)
-    protein_list: Optional[List[str]] = field(default=None)
-    source: Optional[str] = field(default=None)
-    provenance_data: Optional[Dict[str, str]] = field(default=None)
-    metadata: Optional[Dict[str, str]] = field(default=None)
-    rescoring_features: Optional[Dict[str, str]] = field(default=None)
+    qvalue: Optional[float] = None
+    pep: Optional[float] = None
+    precursor_mz: Optional[float] = None
+    retention_time: Optional[float] = None
+    protein_list: Optional[List[str]] = None
+    source: Optional[str] = None
+    provenance_data: Optional[Dict[str, str]] = None
+    metadata: Optional[Dict[str, str]] = None
+    rescoring_features: Optional[Dict[str, str]] = None
 
-    def __post_init__(self):
+    class Config:
+        arbitrary_types_allowed = True  # Allow non-pydantic class Peptidoform
+
+    def __init__(self, **data):
+        super().__init__(**data)
         # Parse peptidoform
         if isinstance(self.peptide, str):
             self.peptide = Peptidoform(self.peptide)
@@ -87,19 +86,19 @@ class PeptideSpectrumMatch:  # TODO: Rename `PeptideSpectrumMatch` to `PSM`?
                 f"Peptidoform or str expected for `peptide`, not `{type(self.peptide)}`."
             )
 
-    @property
-    def precursor_charge(self) -> int:
+    def __getitem__(self, item) -> any:
+        #return self.__dict__[item]
+        return getattr(self, item)
+
+    def __setitem__(self, item, value: any) -> None:
+        setattr(self, item, value)
+
+    def get_precursor_charge(self) -> int:
         """Precursor charge, as embedded in :py:attr:`peptide`."""
         try:
             return self.peptide.properties["charge_state"].charge
         except (AttributeError, KeyError):
             return None
-
-    @precursor_charge.setter
-    def precursor_charge(self, charge: Union[str, int]) -> int:
-        if isinstance(charge, str):
-            charge = charge.strip("+")
-        self.peptide.properties["charge_state"] = proforma.ChargeState(charge)
 
     def universal_spectrum_identifier(self, as_url=False) -> str:
         """
@@ -115,17 +114,3 @@ class PeptideSpectrumMatch:  # TODO: Rename `PeptideSpectrumMatch` to `PSM`?
         if as_url:
             usi = "http://proteomecentral.proteomexchange.org/usi/?usi=" + usi
         return usi
-
-    def to_peprec_entry(self) -> dict:
-        entry = {
-            "spec_id": self.spectrum_id,
-            "peptide": self.stripped_sequence,
-            "modifications": self.modifications,
-            "charge": self.precursor_charge,
-            "is_decoy": int(self.is_decoy),
-        }
-        if self.retention_time:
-            entry["observed_retention_time"] = self.retention_time
-        if self.metadata:
-            entry.update(self.metadata)
-        return entry

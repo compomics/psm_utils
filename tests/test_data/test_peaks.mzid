@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<MzIdentML id="MZIDENTML_1" version="1.1.0" xmlns="http://psidev.info/psi/pi/mzIdentML/1.1" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://psidev.info/psi/pi/mzIdentML/1.1 ../../schema/mzIdentML1.1.0.xsd" creationDate="2022-07-04T08:50:00.000+02:00">
+  <cvList xmlns="http://psidev.info/psi/pi/mzIdentML/1.1">
+    <cv id="PSI-MS" uri="http://psidev.cvs.sourceforge.net/viewvc/*checkout*/psidev/psi/psi-ms/mzML/controlledVocabulary/psi-ms.obo" version="2.25.0" fullName="PSI-MS"/>
+    <cv id="UNIMOD" uri="http://www.unimod.org/obo/unimod.obo" fullName="UNIMOD"/>
+    <cv id="UO" uri="http://obo.cvs.sourceforge.net/*checkout*/obo/obo/ontology/phenotype/unit.obo" fullName="UNIT-ONTOLOGY"/>
+  </cvList>
+  <AnalysisSoftwareList xmlns="http://psidev.info/psi/pi/mzIdentML/1.1">
+    <AnalysisSoftware id="ANALYSIS_SOFTWARE_PEAKS_1" name="PEAKS Studio" version="10.5 (2020-02-19)" uri="http://www.bioinformaticssolutions.com/peaks">
+      <ContactRole contact_ref="PERSON_DOC_OWNER">
+        <Role>
+          <cvParam accession="MS:1001267" name="software vendor" cvRef="PSI-MS"/>
+        </Role>
+      </ContactRole>
+      <SoftwareName>
+        <cvParam accession="MS:1001946" name="PEAKS Studio" cvRef="PSI-MS"/>
+      </SoftwareName>
+    </AnalysisSoftware>
+  </AnalysisSoftwareList>
+  <Provider id="PROVIDER" xmlns="http://psidev.info/psi/pi/mzIdentML/1.1">
+    <ContactRole contact_ref="PERSON_DOC_OWNER">
+      <Role>
+        <cvParam accession="MS:1001271" name="researcher" cvRef="PSI-MS"/>
+      </Role>
+    </ContactRole>
+  </Provider>
+  <AuditCollection xmlns="http://psidev.info/psi/pi/mzIdentML/1.1">
+    <Person firstName="firstname" lastName="lastName" id="PERSON_DOC_OWNER">
+      <cvParam accession="MS:1000589" name="contact email" cvRef="PSI-MS" value="support@bioinfor.com"/>
+      <Affiliation organization_ref="ORG_DOC_OWNER"/>
+    </Person>
+    <Organization name="name" id="ORG_DOC_OWNER"/>
+  </AuditCollection>
+</MzIdentML>

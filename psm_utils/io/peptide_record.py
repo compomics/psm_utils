@@ -156,6 +156,8 @@ class PeptideRecordReader(ReaderBase):
     def __init__(
         self,
         filename: Union[str, Path],
+        *args,
+        **kwargs,
     ) -> None:
         """
         Reader for Peptide Record PSM files.
@@ -185,7 +187,7 @@ class PeptideRecordReader(ReaderBase):
 
         """
 
-        super().__init__(filename)
+        super().__init__(filename, *args, **kwargs)
         self._peprec = _PeptideRecord(self.filename)
 
         # Define named tuple for single Peptide Record entries, based on
@@ -212,7 +214,7 @@ class PeptideRecordReader(ReaderBase):
             for row in reader:
                 entry = self.PeprecEntry(**row)
                 psm_list.append(self._entry_to_psm(entry, filename=self.filename))
-        return PSMList(psm_list)
+        return PSMList(psm_list=psm_list)
 
     @staticmethod
     def _entry_to_psm(
@@ -246,7 +248,7 @@ class PeptideRecordReader(ReaderBase):
 
 
 class PeptideRecordWriter(WriterBase):
-    def __init__(self, filename):
+    def __init__(self, filename, *args, **kwargs):
         """
         Writer for Peptide Record PSM files.
 
@@ -256,7 +258,7 @@ class PeptideRecordWriter(WriterBase):
             Path to PSM file
 
         """
-        super().__init__(filename)
+        super().__init__(filename, *args, **kwargs)
         self._open_file = None
         self._writer = None
 
@@ -294,7 +296,7 @@ class PeptideRecordWriter(WriterBase):
             "spec_id": psm.spectrum_id,
             "peptide": sequence,
             "modifications": modifications,
-            "charge": charge if charge else psm.precursor_charge,
+            "charge": charge,
             "label": None if psm.is_decoy is None else -1 if psm.is_decoy else 1,
             "observed_retention_time": psm.retention_time,
             "score": psm.score,
@@ -430,7 +432,7 @@ def proforma_to_peprec(peptidoform: Peptidoform) -> tuple(str, str, Optional[int
             raise InvalidPeprecModificationError(
                 "Multiple modifications per site not supported in Peptide Record format."
             )
-        return "|".join([str(location), mod_list[0].value])
+        return "|".join([str(location), str(mod_list[0].value)])
 
     ms2pip_mods = []
     if peptidoform.properties["n_term"]:

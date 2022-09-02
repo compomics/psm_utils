@@ -38,7 +38,7 @@ class IdXMLReader(ReaderBase):
 
     def read_file(self) -> PSMList:
         """Read full PSM file into a PSMList object."""
-        return PSMList([psm for psm in self.__iter__()])
+        return PSMList(psm_list=[psm for psm in self.__iter__()])
 
     @staticmethod
     def _parse_peptidoform(sequence: str, charge: int):
@@ -67,6 +67,8 @@ class IdXMLReader(ReaderBase):
             return False
         elif target_decoy == "decoy":
             return True
+        elif target_decoy == "target+decoy":
+            return False
         else:
             return None
 

@@ -16,6 +16,8 @@ class ReaderBase(ABC):
     def __init__(
         self,
         filename: Union[str, Path],
+        *args,
+        **kwargs,
     ) -> None:
         """
         Reader for PSM file.
@@ -43,7 +45,7 @@ class ReaderBase(ABC):
 class WriterBase(ABC):
     """Abstract base class for PSM file writers."""
 
-    def __init__(self, filename):
+    def __init__(self, filename, *args, **kwargs):
         super().__init__()
         self.filename = Path(filename)
 

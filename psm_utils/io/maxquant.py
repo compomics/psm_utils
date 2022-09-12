@@ -142,12 +142,13 @@ class MSMSReader(ReaderBase):
             for col in columns
             if col.lower() in required_col
         }
+        print(rename_mapping)
         return rename_mapping
 
     def _set_mass_error_unit(self, columns) -> None:
         """Get mass error unit from DataFrame columns."""
         columns = list(map(lambda col: col.lower(), columns))
-        if "mass error [Da]" in columns:
+        if "mass error [da]" in columns:
             self._mass_error_unit = "Da"
             MSMS_DEFAULT_COLUMNS.extend(["Mass error [Da]", "Mass Deviations [Da]"])
         elif "mass error [ppm]" in columns:

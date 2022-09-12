@@ -7,6 +7,7 @@ import logging
 import re
 from itertools import compress
 from pathlib import Path
+from pickle import NONE
 from typing import Union
 
 import numpy as np
@@ -19,26 +20,17 @@ from psm_utils.psm_list import PSMList
 
 logger = logging.getLogger(__name__)
 
-MSMS_DEFAULT_COLUMNS = [
+MSMS_REQUIRED_COLUMNS = [
     "Raw file",
     "Scan number",
     "Charge",
-    "Length",
-    "Sequence",
     "Modified sequence",
     "Proteins",
-    "Missed cleavages",
-    "Mass",
+    "m/z",
     "Reverse",
     "Retention time",
     "PEP",
     "Score",
-    "Delta score",
-    "Localization prob",
-    "Matches",
-    "Intensities",
-    "Intensity coverage",
-    "id",
 ]
 
 
@@ -84,9 +76,6 @@ class MSMSReader(ReaderBase):
 
         super().__init__(filename, *args, **kwargs)
 
-        self._rename_mapping = None
-        self._mass_error_unit = None
-
         self._validate_msms()
 
     def __iter__(self):
@@ -109,53 +98,19 @@ class MSMSReader(ReaderBase):
     def _validate_msms(self) -> None:
         with open(self.filename, "r") as msms_file:
             msms_reader = csv.DictReader(msms_file, delimiter="\t")
-            self._set_mass_error_unit(msms_reader.fieldnames)
             self._evaluate_columns(msms_reader.fieldnames)
-            self._rename_mapping = self._fix_column_case(msms_reader.fieldnames)
 
     @staticmethod
     def _evaluate_columns(columns) -> bool:
         """Case insensitive column evaluation msms file."""
         columns = list(map(lambda col: col.lower(), columns))
         column_check = [
-            True if col.lower() in columns else False for col in MSMS_DEFAULT_COLUMNS
+            True if col.lower() in columns else False for col in MSMS_REQUIRED_COLUMNS
         ]
-        if all(column_check):
-            return True
-        else:
+        if not all(column_check):
             raise MSMSParsingError(
-                f"Missing columns: {list(compress(MSMS_DEFAULT_COLUMNS, list(~np.array(column_check))))}"
+                f"Missing columns: {list(compress(MSMS_REQUIRED_COLUMNS, list(~np.array(column_check))))}"
             )
-
-    @staticmethod
-    def _fix_column_case(columns: list[str]) -> dict[str, str]:
-        """
-        Create mapping for column names with the correct case.
-
-        Using `_evaluate_columns`, we can load required columns in a case-insensitive
-        manner. As a result, the column name case must be fixed for downstream usage.
-        """
-        case_mapping = {col.lower(): col for col in MSMS_DEFAULT_COLUMNS}
-        required_col = list(map(lambda col: col.lower(), MSMS_DEFAULT_COLUMNS))
-        rename_mapping = {
-            case_mapping[col.lower()]: col
-            for col in columns
-            if col.lower() in required_col
-        }
-        print(rename_mapping)
-        return rename_mapping
-
-    def _set_mass_error_unit(self, columns) -> None:
-        """Get mass error unit from DataFrame columns."""
-        columns = list(map(lambda col: col.lower(), columns))
-        if "mass error [da]" in columns:
-            self._mass_error_unit = "Da"
-            MSMS_DEFAULT_COLUMNS.extend(["Mass error [Da]", "Mass Deviations [Da]"])
-        elif "mass error [ppm]" in columns:
-            self._mass_error_unit = "ppm"
-            MSMS_DEFAULT_COLUMNS.extend(["Mass error [ppm]", "Mass Deviations [ppm]"])
-        else:
-            raise NotImplementedError(f"MSMS.txt mass error unit not supported.")
 
     def _get_peptide_spectrum_match(
         self, psm_dict: dict[str, Union[str, float]]
@@ -173,22 +128,13 @@ class MSMSReader(ReaderBase):
             precursor_mz=float(psm_dict["m/z"]),
             retention_time=float(psm_dict["Retention time"]),
             protein_list=psm_dict["Proteins"].split(";"),
+            pep=psm_dict["PEP"],
             source="msms",
             provenance_data=({"msms_filename": str(self.filename)}),
             metadata={
-                "Delta Score": psm_dict["Delta score"],
-                "Localization prob": psm_dict["Localization prob"],
-                "PepLen": psm_dict["Length"],
-                "Precursor Intensity": psm_dict["Precursor Intensity"],
-                "dM": psm_dict[
-                    self._rename_mapping[f"Mass error [{self._mass_error_unit}]"]
-                ],
-                "Matches": psm_dict["Matches"],
-                "Intensities": psm_dict["Intensities"],
-                "Intensity coverage": psm_dict["Intensity coverage"],
-                f"Mass Deviations [{self._mass_error_unit}]": psm_dict[
-                    self._rename_mapping[f"Mass Deviations [{self._mass_error_unit}]"]
-                ],
+                col: str(psm_dict[col])
+                for col in psm_dict.keys()
+                if col not in MSMS_REQUIRED_COLUMNS
             },
         )
         return psm

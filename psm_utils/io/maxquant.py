@@ -19,7 +19,7 @@ from psm_utils.psm_list import PSMList
 
 logger = logging.getLogger(__name__)
 
-MSMS_DEFAULT_COLUMNS = {
+MSMS_DEFAULT_COLUMNS = [
     "Raw file",
     "Scan number",
     "Charge",
@@ -29,8 +29,6 @@ MSMS_DEFAULT_COLUMNS = {
     "Proteins",
     "Missed cleavages",
     "Mass",
-    "Mass error [Da]",
-    "Mass error [ppm]",
     "Reverse",
     "Retention time",
     "PEP",
@@ -39,11 +37,9 @@ MSMS_DEFAULT_COLUMNS = {
     "Localization prob",
     "Matches",
     "Intensities",
-    "Mass Deviations [Da]",
-    "Mass Deviations [ppm]",
     "Intensity coverage",
     "id",
-}
+]
 
 
 class MSMSReader(ReaderBase):
@@ -113,8 +109,8 @@ class MSMSReader(ReaderBase):
     def _validate_msms(self) -> None:
         with open(self.filename, "r") as msms_file:
             msms_reader = csv.DictReader(msms_file, delimiter="\t")
-            self._evaluate_columns(msms_reader.fieldnames)
             self._set_mass_error_unit(msms_reader.fieldnames)
+            self._evaluate_columns(msms_reader.fieldnames)
             self._rename_mapping = self._fix_column_case(msms_reader.fieldnames)
 
     @staticmethod
@@ -128,7 +124,7 @@ class MSMSReader(ReaderBase):
             return True
         else:
             raise MSMSParsingError(
-                f"Missing columns: {list(compress(columns, column_check))}"
+                f"Missing columns: {list(compress(MSMS_DEFAULT_COLUMNS, list(~np.array(column_check))))}"
             )
 
     @staticmethod
@@ -146,14 +142,18 @@ class MSMSReader(ReaderBase):
             for col in columns
             if col.lower() in required_col
         }
+        print(rename_mapping)
         return rename_mapping
 
     def _set_mass_error_unit(self, columns) -> None:
         """Get mass error unit from DataFrame columns."""
-        if "Mass error [Da]" in columns:
+        columns = list(map(lambda col: col.lower(), columns))
+        if "mass error [da]" in columns:
             self._mass_error_unit = "Da"
-        elif "Mass error [ppm]" in columns:
+            MSMS_DEFAULT_COLUMNS.extend(["Mass error [Da]", "Mass Deviations [Da]"])
+        elif "mass error [ppm]" in columns:
             self._mass_error_unit = "ppm"
+            MSMS_DEFAULT_COLUMNS.extend(["Mass error [ppm]", "Mass Deviations [ppm]"])
         else:
             raise NotImplementedError(f"MSMS.txt mass error unit not supported.")
 
@@ -180,14 +180,14 @@ class MSMSReader(ReaderBase):
                 "Localization prob": psm_dict["Localization prob"],
                 "PepLen": psm_dict["Length"],
                 "Precursor Intensity": psm_dict["Precursor Intensity"],
-                "dM": psm_dict[f"Mass error [{self._mass_error_unit}]"],
+                "dM": psm_dict[
+                    self._rename_mapping[f"Mass error [{self._mass_error_unit}]"]
+                ],
                 "Matches": psm_dict["Matches"],
                 "Intensities": psm_dict["Intensities"],
                 "Intensity coverage": psm_dict["Intensity coverage"],
                 f"Mass Deviations [{self._mass_error_unit}]": psm_dict[
-                    self._rename_mapping[
-                        f"Mass Deviations [{self._mass_error_unit}]"
-                    ]
+                    self._rename_mapping[f"Mass Deviations [{self._mass_error_unit}]"]
                 ],
             },
         )

@@ -95,14 +95,14 @@ class MSAmandaReader(ReaderBase):
         peptide = [""] + [aa.upper() for aa in seq] + [""]
 
         pattern = re.compile(
-            r"(?P<aa>[A-Z])(?P<loc>-term|\d+)\((?P<mod_name>[A-Za-z]+)\|([0-9.]+)\|(variable|fixed)\);?"
+            r"(?P<site>[A-Z])(?P<loc>-term|\d+)\((?P<mod_name>[A-Za-z]+)\|([0-9.]+)\|(variable|fixed)\);?"
         )
 
         for match in pattern.finditer(modifications):
             if match.group("loc") == "-term":
-                if match.group("aa") == "N":
+                if match.group("site") == "N":
                     peptide[0] = peptide[0] + f'[{match.group("mod_name")}]'
-                elif match.group("aa") == "C":
+                elif match.group("site") == "C":
                     peptide[-1] = peptide[-1] + f'[{match.group("mod_name")}]'
             else:
                 peptide[int(match.group("loc"))] = (

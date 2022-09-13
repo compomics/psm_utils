@@ -95,7 +95,7 @@ class MSAmandaReader(ReaderBase):
         peptide = [""] + [aa.upper() for aa in seq] + [""]
 
         pattern = re.compile(
-            r"(?P<site>[A-Z])(?P<loc>-term|\d+)\((?P<mod_name>[A-Za-z]+)\|([0-9.]+)\|(variable|fixed)\);?"
+            r"(?P<site>[A-Z])(?P<loc>-term|\d+)\((?P<mod_name>[A-Za-z]+)\|([-0-9.]+)\|(variable|fixed)\);?"
         )
 
         for match in pattern.finditer(modifications):

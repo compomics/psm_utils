@@ -88,12 +88,7 @@ class MSMSReader(ReaderBase):
 
     def read_file(self) -> PSMList:
         """Read full MaxQuant msms.txt PSM file into a PSMList object."""
-        psm_list = []
-        with open(self.filename) as msms_in:
-            reader = csv.DictReader(msms_in, delimiter="\t")
-            for psm_dict in reader:
-                psm_list.append(self._get_peptide_spectrum_match(psm_dict))
-        return PSMList(psm_list=psm_list)
+        return PSMList(psm_list=[psm for psm in self.__iter__()])
 
     def _validate_msms(self) -> None:
         with open(self.filename, "r") as msms_file:

@@ -7,7 +7,6 @@ import logging
 import re
 from itertools import compress
 from pathlib import Path
-from pickle import NONE
 from typing import Union
 
 import numpy as np

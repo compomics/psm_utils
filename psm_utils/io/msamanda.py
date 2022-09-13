@@ -1,244 +1,120 @@
 """Interface to MS Amanda CSV result files."""
 
+from __future__ import annotations
+
 import logging
-import os
+import csv
 import re
-from functools import cmp_to_key
-from typing import Dict, List, Optional, Tuple, Type, Union
+from pathlib import Path
+from itertools import compress
+from typing import Union
 
-import click
 import numpy as np
-import pandas as pd
 
-from ms2rescore.peptide_record import PeptideRecord
-from ms2rescore._exceptions import ModificationParsingError
+from psm_utils.exceptions import PSMUtilsException
+from psm_utils.io._base_classes import ReaderBase
+from psm_utils.psm import PeptideSpectrumMatch
+from psm_utils.psm_list import PSMList
 
 logger = logging.getLogger(__name__)
 
 
-@pd.api.extensions.register_dataframe_accessor("msamanda")
-class MSAmandaAccessor:
-    """ Pandas extension for MS Amanda csv files """
-
-    default_columns = {
-        'Scan Number', 
-        'Title', 
-        'Sequence', 
-        'Modifications',
-        'Protein Accessions', 
-        'Amanda Score', 
-        'Weighted Probability', 
-        'Rank',
-        'm/z', 
-        'Charge', 
-        'RT', 
-        'Nr of matched peaks', 
-        'Filename'
-    }
-
-    # Constructor
-    def __init__(self,pandas_object) -> None:
-        """ Pandas extenstion for MS Amanda csv files """
-        self._obj = pandas_object
-        self.invalid_amino_acids = r"[BJOUXZ]"
-
-        self.modification_mapping = {}
-        self.fixed_modifications = {}
-
-    @classmethod
-    def from_file(
-        cls,
-        path_to_MSAmanda_file: Union[str,os.PathLike],
-
-    ) -> pd.DataFrame:
-        """  """
-
-        msamanda_df = pd.read_csv(path_to_MSAmanda_file, sep="\t",comment="#")
-
-        msamanda_df = msamanda_df.msamanda.filter_rank1_psms() 
-        msamanda_df = msamanda_df.msamanda.remove_psms_with_invalid_amino_acids()
-
-        return msamanda_df
+REQUIRED_COLUMNS = {
+    "Title",
+    "Sequence",
+    "Modifications",
+    "Protein Accessions",
+    "Amanda Score",
+    "m/z",
+    "Charge",
+    "RT",
+    "Filename",
+}
 
 
-    
-    def filter_rank1_psms(self) -> pd.DataFrame:
-        """ Filters the MS Amanda file for rank 1 PSMs """
-        
-        self._obj = self._obj[self._obj['Rank']==1]
+class MSAmandaReader(ReaderBase):
+    """Reader for psm_utils TSV format."""
 
-        # To ensure only one hit per spectrum
-        self._obj = self._obj.sort_values("Amanda Score", ascending=False)
-        duplicate_indices = self._obj[self._obj.duplicated(["Scan Number"], keep="first")].index
-        self._obj = self._obj.drop(duplicate_indices).sort_index().reset_index()
+    def __init__(self, filename: Union[str, Path], *args, **kwargs) -> None:
+        super().__init__(filename, *args, **kwargs)
 
-        return self._obj
+    def __iter__(self):
+        """Iterate over file and return PSMs one-by-one."""
+        with open(self.filename, "rt") as open_file:
+            if not next(open_file).startswith("#"):
+                open_file.seek(0)
+            reader = csv.DictReader(open_file, delimiter="\t")
+            for psm_dict in reader:
+                yield self._get_peptide_spectrum_match(psm_dict)
 
-    def remove_psms_with_invalid_amino_acids(self) -> pd.DataFrame:
-        """ Removes PSMs that have invalid amino acids """
-
-        invalid_indices = self._obj[self._obj["Sequence"].str.contains(self.invalid_amino_acids, regex=True)].index
-
-        self._obj = self._obj.drop(index=invalid_indices).reset_index(drop=True)
-
-        return self._obj
-    
-    @staticmethod
-    def extract_peprec_mod_notation_elements(mod_tuple,modification_mapping):
-        """ Extracts PEPREC modification notation elements of the tuple and returns them as a list """
-        
-        # Map MSAmanda name to MS²Rescore name
-        if mod_tuple[2] == "Phospho":
-            phospho_name = mod_tuple[2]+mod_tuple[0]
-            mod_name = modification_mapping[phospho_name]
-        else:
-            mod_name = modification_mapping[mod_tuple[2]]
-
-        # If the peptide has (a) modification(s) on the N- or C-terminal
-        if mod_tuple[1] == "-term":
-            if mod_tuple[0] == "N":
-                return ["0", mod_name]
-            elif mod_tuple[0] == "C":
-                return ["-1", mod_name]
-        # If it is any other residue
-        else: 
-            return[mod_tuple[1], mod_name]
+    def read_file(self) -> PSMList:
+        """Read full PSM file into a PSMList object."""
+        return PSMList(psm_list=[psm for psm in self.__iter__()])
 
     @staticmethod
-    def get_peprec_mod_notation_row(mod_tuples_list,modification_mapping):
-        """ Returns a the PEPREC modification notation for one psm """
-        
-        peprec_mod_elements=[]
+    def _evaluate_columns(columns) -> bool:
+        """Case insensitive column evaluation MsAmanda file."""
+        column_check = [True if col in columns else False for col in REQUIRED_COLUMNS]
+        if not all(column_check):
+            raise MSAmandaParsingError(
+                f"Missing columns: {list(compress(REQUIRED_COLUMNS, list(~np.array(column_check))))}"
+            )
 
-        for x in mod_tuples_list:
-            peprec_mod_elements.extend(MSAmandaAccessor.extract_peprec_mod_notation_elements(x,modification_mapping))
+    def _get_peptide_spectrum_match(
+        self, psm_dict: dict[str, Union[str, float]]
+    ) -> PeptideSpectrumMatch:
+        """Return a PeptideSpectrumMatch object from MaxQuant msms.txt PSM file."""
 
-        return "|".join(peprec_mod_elements)
-    
+        psm = PeptideSpectrumMatch(
+            peptide=self._parse_peptidoform(
+                psm_dict["Sequence"], psm_dict["Modifications"], psm_dict["Charge"]
+            ),
+            spectrum_id=psm_dict["Title"],
+            run=psm_dict["Filename"]
+            .replace(".mgf", "")
+            .replace(".raw", "")
+            .replace(".mzml", ""),
+            is_decoy=psm_dict["Protein Accessions"].startswith("REV_"),
+            score=float(psm_dict["Amanda Score"]),
+            precursor_mz=float(psm_dict["m/z"]),
+            retention_time=float(psm_dict["RT"]),
+            protein_list=psm_dict["Protein Accessions"].split(";"),
+            source="MSAmanda",
+            provenance_data=({"MSAmanda_filename": str(self.filename)}),
+            metadata={
+                col: str(psm_dict[col])
+                for col in psm_dict.keys()
+                if col not in REQUIRED_COLUMNS
+            },
+        )
+        return psm
 
-    def get_peprec_modifications(self,modification_mapping) -> List:
-        """ Returns a list of all modification in PEPREC format for the MS Amanda csv file """
+    @staticmethod
+    def _parse_peptidoform(seq, modifications, charge):
+        "Parse MSAmanda sequence, modifications and charge to proforma sequence"
+        peptide = [""] + [aa.upper() for aa in seq] + [""]
 
-        self._obj['Modifications'] = self._obj['Modifications'].fillna('-')
-
-        modifications = self._obj['Modifications'].str.findall(r'([A-Z])(-term|\d+)\(([A-Za-z]+)\|([0-9.]+)\|(variable|fixed)\);?')
-        
-
-        peprec_mod_notations=[]
-
-        for row in modifications:
-            if row: # If the list of the row is not empty 
-                peprec_mod_notations.append(MSAmandaAccessor.get_peprec_mod_notation_row(row,modification_mapping))
-            else:
-                peprec_mod_notations.append('-')
-
-        return peprec_mod_notations
-
-    def get_target_decoy_label(self) -> List:
-
-        """ 
-        Returns a list same length as the number of rows in self.obj_ 
-        indicating whether the psm is a target (1) or decoy (-1) hit 
-
-        """
-        protein_accessions = self._obj['Protein Accessions']
-
-        labels = []
-
-        for row in protein_accessions:
-            if "REV_" in row: # REV_ indicate that it is a decoy hit
-                labels.append(-1)
-            else:
-                labels.append(1)
-
-        return labels
-    
-    def get_protein_list(self) -> List:
-        """
-        Returns a list same length as the number of rows in self.obj_ 
-        indicating whether the psm is a target (1) or decoy (-1) hit
-
-        """
-
-        protein_accessions = self._obj['Protein Accessions']
-
-        protein_accessions_new = []
-
-        for row in protein_accessions:
-            protein_accessions_new.append(row.replace(";","|||"))
-
-        return protein_accessions_new
-
-
-    
-    def to_peprec(self, modification_mapping=None) -> PeptideRecord:
-        """ Get the PeptideRecord from the MS Amanda csv file."""
-
-        if modification_mapping:
-            self.modification_mapping = modification_mapping
-
-        msamanda_peprec_format = pd.DataFrame(
-            columns=[
-                'spec_id',
-                'peptide',
-                'modifications',
-                'charge',
-                'protein_list',
-                'psm_score',
-                'observed_retention_time',
-                'Label'
-            ]
+        pattern = re.compile(
+            r"(?P<aa>[A-Z])(?P<loc>-term|\d+)\((?P<mod_name>[A-Za-z]+)\|([0-9.]+)\|(variable|fixed)\);?"
         )
 
-        # Filling data frame 
-        msamanda_peprec_format['spec_id'] = self._obj['Title']
-        msamanda_peprec_format['peptide'] = self._obj['Sequence'].str.upper()
-        msamanda_peprec_format['modifications'] = self.get_peprec_modifications(modification_mapping)
-        msamanda_peprec_format['charge'] = self._obj['Charge']
-        msamanda_peprec_format['protein_list'] = self.get_protein_list()
-        msamanda_peprec_format['psm_score'] = self._obj['Amanda Score']
-        msamanda_peprec_format['observed_retention_time'] = self._obj['RT']
-        msamanda_peprec_format['Label'] = self.get_target_decoy_label()
+        for match in pattern.finditer(modifications):
+            if match.group("loc") == "-term":
+                if match.group("aa") == "N":
+                    peptide[0] = peptide[0] + f'[{match.group("mod_name")}]'
+                elif match.group("aa") == "C":
+                    peptide[-1] = peptide[-1] + f'[{match.group("mod_name")}]'
+            else:
+                peptide[int(match.group("loc"))] = (
+                    peptide[int(match.group("loc"))] + f'[{match.group("mod_name")}]'
+                )
 
-        
-        return PeptideRecord.from_dataframe(msamanda_peprec_format)
+        peptide[0] = peptide[0] + "-" if peptide[0] else ""
+        peptide[-1] = "-" + peptide[-1] if peptide[-1] else ""
+        proforma_seq = "".join(peptide)
 
-    
-    
-    def get_search_engine_features(self):
-        """ Gets the features from the MS Amanda output file for rescoring by Percolator """
-
-        features = self._obj[[
-            'Scan Number',
-            'Amanda Score',
-            'Weighted Probability',
-            'Charge',
-            'm/z',
-            'RT',
-            'Nr of matched peaks',
-        ]].rename(columns={
-            'Scan Number': 'ScanNumber',
-            'Amanda Score': 'Score',
-            'Weighted Probability':'WeightedProbability',
-            'm/z':'MassOverCharge',
-            'RT':'RetentionTime',
-            'Nr of matched peaks':'NumberOfMatchedPeaks',
-        })
-
-        return features
+        return proforma_seq + f"/{charge}"
 
 
-@click.command()
-@click.argument("input-msamanda")
-@click.argument("output-peprec")
-def main(**kwargs):
-    """ Convert msamanda csv output file to PEPREC """
-    msamanda_df = pd.DataFrame.msamanda.from_file(kwargs["input_psm_report"])
-    peprec = msamanda_df.msamanda.to_peprec()
-    peprec.to_csv(kwargs["output_peprec"])
-
-
-if __name__ == "__main__":
-    main()
-
-
+class MSAmandaParsingError(PSMUtilsException):
+    """Error while parsing MaxQuant msms.txt PSM file."""

@@ -13,6 +13,7 @@ import psm_utils.io.peptide_record as peptide_record
 import psm_utils.io.percolator as percolator
 import psm_utils.io.tsv as tsv
 import psm_utils.io.xtandem as xtandem
+import psm_utils.io.msamanda as msamanda
 from psm_utils.io.exceptions import PSMUtilsIOException
 
 # TODO: to be completed
@@ -58,6 +59,12 @@ FILETYPES = {
         "writer": None,
         "extension": ".t.xml",
         "filename_pattern": r"^.*\.t\.xml$",
+    },
+    "msamanda": {
+        "reader": msamanda.MSAmandaReader,
+        "writer": None,
+        "extension": ".csv",
+        "filename_pattern": r"^.*\.csv$",
     },
 }
 READERS = {k: v["reader"] for k, v in FILETYPES.items() if v["reader"]}

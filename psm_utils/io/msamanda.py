@@ -13,7 +13,7 @@ import numpy as np
 
 from psm_utils.exceptions import PSMUtilsException
 from psm_utils.io._base_classes import ReaderBase
-from psm_utils.psm import PeptideSpectrumMatch
+from psm_utils.psm import PeptideSpectrumMatch, Peptidoform
 from psm_utils.psm_list import PSMList
 
 logger = logging.getLogger(__name__)
@@ -113,7 +113,7 @@ class MSAmandaReader(ReaderBase):
         peptide[-1] = "-" + peptide[-1] if peptide[-1] else ""
         proforma_seq = "".join(peptide)
 
-        return proforma_seq + f"/{charge}"
+        return Peptidoform(proforma_seq + f"/{charge}")
 
 
 class MSAmandaParsingError(PSMUtilsException):

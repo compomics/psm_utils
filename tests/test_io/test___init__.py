@@ -16,11 +16,12 @@ def test__infer_filetype():
         ("name.pin", "percolator"),
         ("name.pout", "percolator"),
         ("name.t.xml", "xtandem"),
+        ("name.csv", "msamanda"),
     ]
     for test_in, expected_out in test_cases:
         assert _infer_filetype(test_in) == expected_out
 
-    test_cases = ["name.txt", "name.idxml.txt", "name.csv", "name.msms.txt", "msms.csv"]
+    test_cases = ["name.txt", "name.idxml.txt", "name.msms.txt"]
     for test_in in test_cases:
         with pytest.raises(PSMUtilsIOException):
             _infer_filetype(test_in)

@@ -70,6 +70,7 @@ FILETYPES = {
 READERS = {k: v["reader"] for k, v in FILETYPES.items() if v["reader"]}
 WRITERS = {k: v["writer"] for k, v in FILETYPES.items() if v["writer"]}
 
+
 def _infer_filetype(filename: str):
     """Infer filetype from filename."""
     for filetype, properties in FILETYPES.items():
@@ -173,7 +174,15 @@ def convert(
         Path(output_filename).unlink()
 
     reader = reader_cls(input_filename)
-    iterator = track(reader) if show_progressbar else reader
+    iterator = (
+        track(
+            reader,
+            show_speed=False,
+            description="[green]Converting file",
+        )
+        if show_progressbar
+        else reader
+    )
 
     for psm in reader:
         example_psm = psm

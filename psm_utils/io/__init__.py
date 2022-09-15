@@ -13,6 +13,7 @@ import psm_utils.io.peptide_record as peptide_record
 import psm_utils.io.percolator as percolator
 import psm_utils.io.tsv as tsv
 import psm_utils.io.xtandem as xtandem
+import psm_utils.io.msamanda as msamanda
 from psm_utils.io.exceptions import PSMUtilsIOException
 
 # TODO: to be completed
@@ -59,9 +60,16 @@ FILETYPES = {
         "extension": ".t.xml",
         "filename_pattern": r"^.*\.t\.xml$",
     },
+    "msamanda": {
+        "reader": msamanda.MSAmandaReader,
+        "writer": None,
+        "extension": ".csv",
+        "filename_pattern": r"^.*\.csv$",
+    },
 }
 READERS = {k: v["reader"] for k, v in FILETYPES.items() if v["reader"]}
 WRITERS = {k: v["writer"] for k, v in FILETYPES.items() if v["writer"]}
+
 
 def _infer_filetype(filename: str):
     """Infer filetype from filename."""
@@ -166,7 +174,15 @@ def convert(
         Path(output_filename).unlink()
 
     reader = reader_cls(input_filename)
-    iterator = track(reader) if show_progressbar else reader
+    iterator = (
+        track(
+            reader,
+            show_speed=False,
+            description="[green]Converting file",
+        )
+        if show_progressbar
+        else reader
+    )
 
     for psm in reader:
         example_psm = psm

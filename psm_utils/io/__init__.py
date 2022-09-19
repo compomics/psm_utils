@@ -32,7 +32,7 @@ FILETYPES = {
     },
     "mzid": {
         "reader": mzid.MzidReader,
-        "writer": None,
+        "writer": mzid.MzidWriter,
         "extension": ".mzid",
         "filename_pattern": r"^.*\.(?:(?:mzidentml)|(?:mzid))$",
     },

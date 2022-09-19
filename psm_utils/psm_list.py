@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 import pyteomics
 from pydantic import BaseModel
+from itertools import compress
 
 from psm_utils.psm import PeptideSpectrumMatch
 
@@ -152,6 +153,29 @@ class PSMList(BaseModel):
         """
         for psm in self.psm_list:
             psm.peptide.rename_modifications(mapping)
+
+    def set_ranks(self):
+        "Set the ranks for all the psm in the psm list"
+
+        def rank_simple(vector):
+            return sorted(range(len(vector)), key=vector.__getitem__)
+
+        spectrum_list = self.__getitem__("spectrum_id")
+        scores = self.__getitem__("score")
+        spectrum_ranks = [None] * len(self.psm_list)
+
+        for spectrum_id in set(spectrum_list):
+            # Get indices of spectrum ids
+            indices = spectrum_list == spectrum_id
+            indices = list(compress(range(len(indices)), indices))
+            # Get corresponding scores
+            spectrum_id_scores = scores[indices]
+            # Get ranks for each score
+            spectrum_id_ranks = rank_simple(spectrum_id_scores)
+            for (index, rank) in zip(indices, spectrum_id_ranks):
+                spectrum_ranks[index] = rank
+
+        self.__setitem__("rank", spectrum_ranks)
 
     @classmethod
     def from_csv(cls) -> "PSMList":

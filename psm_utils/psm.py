@@ -43,6 +43,8 @@ class PeptideSpectrumMatch(BaseModel):  # TODO: Rename `PeptideSpectrumMatch` to
         Retention time.
     protein_list : list[str]
         List of proteins or protein groups associated with peptide.
+    rank : int
+        rank of a psm
     source : str, optional
         PSM file type where PSM was stored. E.g., ``MaxQuant``.
     provenance_data : dict[str, str], optional
@@ -68,6 +70,7 @@ class PeptideSpectrumMatch(BaseModel):  # TODO: Rename `PeptideSpectrumMatch` to
     precursor_mz: Optional[float] = None
     retention_time: Optional[float] = None
     protein_list: Optional[List[str]] = None
+    rank: Optional[int] = None
     source: Optional[str] = None
     provenance_data: Optional[Dict[str, str]] = None
     metadata: Optional[Dict[str, str]] = None
@@ -87,7 +90,7 @@ class PeptideSpectrumMatch(BaseModel):  # TODO: Rename `PeptideSpectrumMatch` to
             )
 
     def __getitem__(self, item) -> any:
-        #return self.__dict__[item]
+        # return self.__dict__[item]
         return getattr(self, item)
 
     def __setitem__(self, item, value: any) -> None:

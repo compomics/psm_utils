@@ -54,6 +54,10 @@ class MSAmandaReader(ReaderBase):
     @staticmethod
     def _evaluate_columns(columns) -> bool:
         """Case insensitive column evaluation MsAmanda file."""
+
+        if "Rank" in columns:
+            REQUIRED_COLUMNS.add("Rank")
+
         column_check = [True if col in columns else False for col in REQUIRED_COLUMNS]
         if not all(column_check):
             raise MSAmandaParsingError(
@@ -87,6 +91,12 @@ class MSAmandaReader(ReaderBase):
                 if col not in REQUIRED_COLUMNS
             },
         )
+
+        try:
+            psm["Rank"] = psm_dict["Rank"]
+        except KeyError():
+            pass
+
         return psm
 
     @staticmethod

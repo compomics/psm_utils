@@ -40,6 +40,15 @@ class Peptidoform:
     def __str__(self) -> str:
         return self.proforma
 
+    def __hash__(self) -> int:
+        return hash(self.proforma)
+
+    def __eq__(self, __o: object) -> bool:
+        try:
+            return self.proforma == __o.proforma
+        except AttributeError:
+            raise NotImplemented("Object is not a Peptidoform")
+
     @property
     def proforma(self) -> str:
         """Peptidoform sequence in ProForma v2 notation."""

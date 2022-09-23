@@ -174,21 +174,26 @@ def convert(
         Path(output_filename).unlink()
 
     reader = reader_cls(input_filename)
-    iterator = (
-        track(
-            reader,
-            show_speed=False,
-            description="[green]Converting file",
+    if output_filetype == "mzid":
+        writer = writer_cls(output_filename)
+        writer.write_file(reader.read_file()[0:100])
+
+    else:
+        iterator = (
+            track(
+                reader,
+                show_speed=False,
+                description="[green]Converting file",
+            )
+            if show_progressbar
+            else reader
         )
-        if show_progressbar
-        else reader
-    )
 
-    for psm in reader:
-        example_psm = psm
-        break
-    writer = writer_cls(output_filename, example_psm=example_psm, mode="write")
+        for psm in reader:
+            example_psm = psm
+            break
+        writer = writer_cls(output_filename, example_psm=example_psm, mode="write")
 
-    with writer:
-        for psm in iterator:
-            writer.write_psm(psm)
+        with writer:
+            for psm in iterator:
+                writer.write_psm(psm)

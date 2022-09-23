@@ -6,13 +6,6 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Optional, Union
 
-from pyopenms import (
-    AASequence,
-    MzIdentMLFile,
-    PeptideEvidence,
-    PeptideHit,
-    PeptideIdentification,
-)
 from pyteomics import mzid
 
 from psm_utils.io._base_classes import ReaderBase, WriterBase
@@ -271,100 +264,22 @@ class MzidWriter(WriterBase):
         super().__init__(filename, *args, **kwargs)
 
         self._writer = None
-        self._peptide_ids = None
-        self._example_psm = example_psm  # Use for writing general information to mzid?
-        # self._protein_ids = None  TODO implement protein ids with fasta file
 
     def __enter__(self) -> MzidWriter:
         # TODO
-        self._writer = MzIdentMLFile()
-        self._peptide_ids = {}
+        self._writer = None
 
     def __exit__(self, *args, **kwargs) -> None:
-        self._writer.store(
-            self.filename, [], list(self._peptide_ids.values())
-        )  # Empty list is for protein ids
+        self._writer.close()
         self._peptide_ids = None
 
     def write_psm(self, psm: PeptideSpectrumMatch):
         """Write a single PSM to a Peptidehit object."""
-
-        # Get peptide id from dict or create new peptide id if no peptide id exists for this spectrum
-        if psm["spectrum_id"] in self._peptide_ids.keys():
-            peptide_id = self._peptide_ids[psm["spectrum_id"]]
-        else:
-            peptide_id = PeptideIdentification()
-            peptide_id.setRT(psm["retention_time"])
-            peptide_id.setMZ(psm["precursor_mz"])
-            peptide_id.setScoreType(psm["source"])  # replace with psm_list object
-            peptide_id.setHigherScoreBetter(True)  # replace with psm_list object
-
-            self._peptide_ids[psm["spectrum_id"]] = peptide_id
-
-        # Create new peptide hit
-        peptide_hit = PeptideHit()
-        peptide_hit.setScore(psm["score"])
-        peptide_hit.setRank(int(psm["Rank"]))  # has to be int
-        peptide_hit.setCharge(psm["peptide"].precursor_charge)
-
-        # add metadata
-        for metadata_key in psm["metadata"].keys():
-            peptide_hit.setMetaValue(metadata_key, psm["metadata"][metadata_key])
-
-        for rescoring_key in psm["rescoring_features"].keys():
-            peptide_hit.setMetaValue(
-                metadata_key, psm["rescoring_features"][rescoring_key]
-            )
-
-        # add sequece to hit
-        peptide = self._parse_proforma_sequence(psm["peptide"].proforma)
-        peptide_hit.setSequence(AASequence.fromString(peptide))
-
-        # Add peptide evidence(s)
-        evidences = []
-        for protein_accession in psm["protein_list"]:
-            ev = PeptideEvidence()
-            ev.setProteinAccession(protein_accession)
-            evidences.append(ev)
-
-        peptide_hit.setPeptideEvidences(evidences)
-        peptide_id.insertHit(peptide_hit)
+        pass
 
     def write_file(self, psm_list: PSMList):
         """Write entire PSMList to mzid file."""
-
-        mzid_file = MzIdentMLFile()
-        for psm in psm_list:
-            self.write_psm(psm)
-
-        mzid_file.store(self.filename, [], list(self._peptide_ids.values()))
-
-    @staticmethod
-    def _parse_proforma_sequence(seq):
-        "Parse proforma sequence to mzid input sequence"
-        charge_pattern = re.compile(r"(\/[\d]+)$")
-        seq = charge_pattern.sub("", seq)
-
-        proforma_pattern = re.compile(
-            r"^(?P<n_term>\[[^-]+\])?(-)?(?P<sequence>[A-z]+)(-)?(?P<c_term>\[.+\])?"
-        )
-        matches = proforma_pattern.match(seq)
-
-        mzid_seq = "".join(
-            filter(
-                None,
-                [
-                    ".",
-                    matches.group("n_term"),
-                    matches.group("sequence"),
-                    ".",
-                    matches.group("c_term"),
-                ],
-            )
-        )
-
-        # TODO check if all square brackets should be change to round ones
-        return mzid_seq.replace("[", "(").replace("]", ")")
+        pass
 
 
 class UnknownMzidScore(PSMUtilsIOException):

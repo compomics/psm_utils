@@ -6,7 +6,9 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Optional, Union
 
-from pyteomics import mzid
+from pyteomics import mzid, mass
+from psims.mzid import MzIdentMLWriter
+
 
 from psm_utils.io._base_classes import ReaderBase, WriterBase
 from psm_utils.io.exceptions import PSMUtilsIOException
@@ -266,20 +268,243 @@ class MzidWriter(WriterBase):
         self._writer = None
 
     def __enter__(self) -> MzidWriter:
-        # TODO
-        self._writer = None
+        pass
 
     def __exit__(self, *args, **kwargs) -> None:
-        self._writer.close()
-        self._peptide_ids = None
+        pass
 
     def write_psm(self, psm: PeptideSpectrumMatch):
         """Write a single PSM to a Peptidehit object."""
-        pass
+        raise NotImplemented("Mzid writer does not support write psm")
 
     def write_file(self, psm_list: PSMList):
         """Write entire PSMList to mzid file."""
-        pass
+        file = open(self.filename, "wb")
+        writer = MzIdentMLWriter(file, close=True)
+
+        with writer:
+            writer.controlled_vocabularies()
+            writer.provenance(
+                software={
+                    "name": "psm_utils",
+                    "uri": "https://github.com/compomics/psm_utils",
+                    "version": "0.0.1",  # function to add automatically
+                }
+            )
+            writer.register("SpectraData", 1)
+            writer.register("SearchDatabase", 1)
+            writer.register("SpectrumIdentificationList", 1)
+            writer.register("SpectrumIdentificationProtocol", 1)
+
+            proteins = set()
+            peptide_ids = set()
+            peptide_evidence_ids = set()
+
+            proteins = {
+                prot
+                for prot_list in list(psm_list["protein_list"])
+                for prot in prot_list
+            }
+
+            spec_id_dict = psm_list.get_psm_dict()
+
+            with writer.sequence_collection():
+                for prot in proteins:
+                    writer.write_db_sequence(prot, None, id=prot, params=[])
+
+                for psm in psm_list:
+                    peptide = psm["peptide"]
+                    if peptide not in peptide_ids:
+                        writer.write_peptide(**self._create_peptide_object(peptide))
+                        peptide_ids.add(peptide)
+
+                    for protein in psm["protein_list"]:
+                        peptide_evidence_id = (
+                            f"PeptideEvidence_{peptide.proforma}_{protein}"
+                        )
+                        if peptide_evidence_id not in peptide_evidence_ids:
+                            peptide_evidence_ids.add(peptide_evidence_id)
+                            writer.write_peptide_evidence(
+                                peptide_id="Peptide_" + peptide.proforma,
+                                db_sequence_id=protein,
+                                id=peptide_evidence_id,
+                                start_position=None,
+                                end_position=None,
+                                is_decoy=psm["is_decoy"],
+                            )
+            with writer.analysis_collection():
+                writer.SpectrumIdentification([1], [1]).write(writer)
+
+            with writer.analysis_protocol_collection():
+                writer.spectrum_identification_protocol()  # build without?
+
+            with writer.data_collection():
+                spectra_data, spectra_data_id_dict = self._transform_spectra_data(
+                    spec_id_dict=spec_id_dict
+                )
+                writer.inputs(
+                    source_files=[],
+                    # search_databases=transform_search_database(), # if fasta file is given we can parse here and add protein information
+                    spectra_data=spectra_data,
+                )
+            with writer.analysis_data():
+                with writer.spectrum_identification_list(id=1):
+                    for collection in spec_id_dict.keys():
+                        for run in spec_id_dict[collection].keys():
+                            spectra_data_id = spectra_data_id_dict[
+                                "/".join(filter(None, [collection, run]))
+                            ]
+                            for spec_id in spec_id_dict[collection][run].keys():
+                                identified_psms = spec_id_dict[collection][run][spec_id]
+                                writer.write_spectrum_identification_result(
+                                    **self._transform_spectrum_identification_result(
+                                        spec_id, identified_psms, spectra_data_id
+                                    )
+                                )
+        try:
+            writer.close()
+        except OSError:
+            pass
+
+    @staticmethod
+    def _create_peptide_object(peptidoform):
+        """Create mzid peptide object from petidoform"""
+
+        parsed_sequence = peptidoform.parsed_sequence
+        properties = peptidoform.properties
+        peptide = peptidoform.sequence
+        modifications = []
+
+        # makes no effort to handle terminal modifications or snps at this time
+        for loc, (aa, mod) in enumerate(parsed_sequence, start=1):
+            if mod:
+                mzid_mod = {
+                    "location": loc,
+                    "name": mod[0].name,  # what with multiple mods on one aa
+                    "monoisotopic_mass_delta": mod[0].mass,
+                }
+                modifications.append(mzid_mod)
+
+        if properties["n_term"]:
+            modifications.append(
+                {
+                    "location": 0,
+                    "name": mod[0].name,  # what with multiple mods on one aa
+                    "monoisotopic_mass_delta": mod[0].mass,
+                }
+            )
+
+        if properties["c_term"]:
+            modifications.append(
+                {
+                    "location": len(peptide) + 1,
+                    "name": mod[0].name,  # what with multiple mods on one aa
+                    "monoisotopic_mass_delta": mod[0].mass,
+                }
+            )
+
+        peptide_object = {
+            "id": "Peptide_" + peptidoform.proforma,
+            "modifications": modifications,
+            "peptide_sequence": peptide,
+        }
+        return peptide_object
+
+    def _transform_search_database(self):
+        """Create mzid databse object"""
+
+        # TODO: Create this and link with protein object when fasta file is provided
+        return {
+            "file_format": "fasta format",
+            "name": "",
+            "id": 1,
+            "location": "",
+            "params": [],
+        }
+
+    @staticmethod
+    def _transform_spectra_data(spec_id_dict: dict):
+        """Get all the unique spectra data from psm list spectrum id dict"""
+
+        collection_run_id_dict = {}
+        spectra_data = []
+        i = 1
+        for collection in spec_id_dict.keys():
+            for run in spec_id_dict[collection].keys():
+                collection_run_id = "/".join(filter(None, [collection, run]))
+
+                if collection_run_id not in collection_run_id_dict.keys():
+                    collection_run_id_dict[collection_run_id] = i
+
+                    spectra_data_object = {
+                        "id": i,
+                        "location": collection_run_id,
+                        "spectrum_id_format": "multiple peak list nativeID format",
+                        # 'file_format': #TODO can we infer this?
+                    }
+
+                spectra_data.append(spectra_data_object)
+        return spectra_data, collection_run_id_dict
+
+    @staticmethod
+    def _transform_spectrum_identification_item(candidate_psm, i=0):
+        """Create mzid spectrum identification item for each candidate psm"""
+
+        peptide = candidate_psm["peptide"].proforma
+        items = []
+        for prot_acc in candidate_psm["protein_list"]:
+            theo_mass = candidate_psm["peptide"].theoretical_mass
+            charge = candidate_psm["peptide"].precursor_charge
+            theo_mz = (theo_mass + (mass.nist_mass["H"][1][0] * charge)) / charge
+            try:
+                exper_mz = candidate_psm["precursor_mz"]
+                # mass_error = abs(theo_mz - exper_mz)
+            except:
+                exper_mz = None
+                # mass_error = None
+
+            candidate_psm_dict = {
+                "charge_state": charge,
+                "peptide_id": f"Peptide_" + peptide,
+                "peptide_evidence_id": f"PeptideEvidence_{peptide}_{prot_acc}",
+                "id": f"SII_{candidate_psm['spectrum_id']}_{peptide}_{prot_acc}",
+                "score": {
+                    "score": candidate_psm["score"]
+                },  # add which search engine score cv param
+                "experimental_mass_to_charge": exper_mz,
+                "calculated_mass_to_charge": theo_mz,
+                "rank": candidate_psm["rank"],
+                "params": [
+                    {x: candidate_psm["metadata"][x]}
+                    for x in candidate_psm["metadata"].keys()
+                ],
+            }
+            items.append(candidate_psm_dict)
+        return items
+
+    def _transform_spectrum_identification_result(
+        self, spec_id, identified_psms, spectra_data_id
+    ):
+        """Create mzid spectrum identification result object for each psm that match the same spectrum"""
+
+        spectrum_id_result = {
+            "id": f"SIR_{spec_id}",
+            "spectrum_id": spec_id,
+            "spectra_data_id": spectra_data_id,
+            "params": [
+                {
+                    "name": "scan start time",
+                    "value": identified_psms[0]["retention_time"],
+                }
+            ],  # add function to determine the unit
+        }
+        identifications = []
+        for i, candidate in enumerate(identified_psms):
+            identifications.extend(
+                self._transform_spectrum_identification_item(candidate, i)
+            )
+        spectrum_id_result["identifications"] = identifications
+        return spectrum_id_result
 
 
 class UnknownMzidScore(PSMUtilsIOException):

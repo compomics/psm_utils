@@ -64,7 +64,7 @@ class PSMList(BaseModel):
         elif isinstance(item, slice):
             return PSMList(psm_list=self.psm_list[item])
         elif isinstance(item, str):
-            return np.array([psm[item] for psm in self.psm_list])
+            return np.array([psm[item] for psm in self.psm_list], dtype=object)
         elif _is_iterable_of_ints(item):
             # Return new PSMList with selection of PSMs by list indices
             return PSMList(psm_list=[self.psm_list[i] for i in item])

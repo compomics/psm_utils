@@ -8,12 +8,12 @@ from rich.progress import track
 
 import psm_utils.io.idxml as idxml
 import psm_utils.io.maxquant as maxquant
+import psm_utils.io.msamanda as msamanda
 import psm_utils.io.mzid as mzid
 import psm_utils.io.peptide_record as peptide_record
 import psm_utils.io.percolator as percolator
 import psm_utils.io.tsv as tsv
 import psm_utils.io.xtandem as xtandem
-import psm_utils.io.msamanda as msamanda
 from psm_utils.io.exceptions import PSMUtilsIOException
 
 # TODO: to be completed
@@ -176,7 +176,9 @@ def convert(
     reader = reader_cls(input_filename)
     if output_filetype == "mzid":
         writer = writer_cls(output_filename)
-        writer.write_file(reader.read_file()[0:100])
+        writer.write_file(
+            reader.read_file(), disable_progressbar=(not show_progressbar)
+        )
 
     else:
         iterator = (

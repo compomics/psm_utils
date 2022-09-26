@@ -8,6 +8,7 @@ from typing import Optional, Union
 
 from pyteomics import mzid, mass
 from psims.mzid import MzIdentMLWriter
+from rich.progress import Progress
 
 
 from psm_utils.io._base_classes import ReaderBase, WriterBase
@@ -277,90 +278,112 @@ class MzidWriter(WriterBase):
         """Write a single PSM to a Peptidehit object."""
         raise NotImplemented("Mzid writer does not support write psm")
 
-    def write_file(self, psm_list: PSMList):
+    def write_file(self, psm_list: PSMList, disable_progressbar: bool = True):
         """Write entire PSMList to mzid file."""
         file = open(self.filename, "wb")
         writer = MzIdentMLWriter(file, close=True)
+        with Progress(disable=disable_progressbar) as progress:
 
-        with writer:
-            writer.controlled_vocabularies()
-            writer.provenance(
-                software={
-                    "name": "psm_utils",
-                    "uri": "https://github.com/compomics/psm_utils",
-                    "version": "0.0.1",  # function to add automatically
+            with writer:
+                writer.controlled_vocabularies()
+                writer.provenance(
+                    software={
+                        "name": "psm_utils",
+                        "uri": "https://github.com/compomics/psm_utils",
+                        "version": "0.0.1",  # function to add automatically
+                    }
+                )
+                writer.register("SpectraData", 1)
+                writer.register("SearchDatabase", 1)
+                writer.register("SpectrumIdentificationList", 1)
+                writer.register("SpectrumIdentificationProtocol", 1)
+
+                proteins = set()
+                peptide_ids = set()
+                peptide_evidence_ids = set()
+
+                proteins = {
+                    prot
+                    for prot_list in list(psm_list["protein_list"])
+                    for prot in prot_list
                 }
-            )
-            writer.register("SpectraData", 1)
-            writer.register("SearchDatabase", 1)
-            writer.register("SpectrumIdentificationList", 1)
-            writer.register("SpectrumIdentificationProtocol", 1)
 
-            proteins = set()
-            peptide_ids = set()
-            peptide_evidence_ids = set()
+                spec_id_dict = psm_list.get_psm_dict()
+                task1 = progress.add_task(
+                    "[cyan]Writing Proteins to mzid", total=len(proteins)
+                )
+                task2 = progress.add_task(
+                    "[cyan]Writing Peptides/PeptideEvidences to mzid",
+                    total=len(psm_list),
+                )
+                task3 = progress.add_task(
+                    "[cyan]Writing SpectrumIdentificationResults to mzid",
+                    total=len(psm_list),
+                )
 
-            proteins = {
-                prot
-                for prot_list in list(psm_list["protein_list"])
-                for prot in prot_list
-            }
+                with writer.sequence_collection():
 
-            spec_id_dict = psm_list.get_psm_dict()
+                    for prot in proteins:
+                        writer.write_db_sequence(prot, None, id=prot, params=[])
+                        progress.update(task1, advance=1)
+                    for psm in psm_list:
+                        peptide = psm["peptide"]
+                        if peptide not in peptide_ids:
+                            writer.write_peptide(**self._create_peptide_object(peptide))
+                            peptide_ids.add(peptide)
 
-            with writer.sequence_collection():
-                for prot in proteins:
-                    writer.write_db_sequence(prot, None, id=prot, params=[])
-
-                for psm in psm_list:
-                    peptide = psm["peptide"]
-                    if peptide not in peptide_ids:
-                        writer.write_peptide(**self._create_peptide_object(peptide))
-                        peptide_ids.add(peptide)
-
-                    for protein in psm["protein_list"]:
-                        peptide_evidence_id = (
-                            f"PeptideEvidence_{peptide.proforma}_{protein}"
-                        )
-                        if peptide_evidence_id not in peptide_evidence_ids:
-                            peptide_evidence_ids.add(peptide_evidence_id)
-                            writer.write_peptide_evidence(
-                                peptide_id="Peptide_" + peptide.proforma,
-                                db_sequence_id=protein,
-                                id=peptide_evidence_id,
-                                start_position=None,
-                                end_position=None,
-                                is_decoy=psm["is_decoy"],
+                        for protein in psm["protein_list"]:
+                            peptide_evidence_id = (
+                                f"PeptideEvidence_{peptide.proforma}_{protein}"
                             )
-            with writer.analysis_collection():
-                writer.SpectrumIdentification([1], [1]).write(writer)
-
-            with writer.analysis_protocol_collection():
-                writer.spectrum_identification_protocol()  # build without?
-
-            with writer.data_collection():
-                spectra_data, spectra_data_id_dict = self._transform_spectra_data(
-                    spec_id_dict=spec_id_dict
-                )
-                writer.inputs(
-                    source_files=[],
-                    # search_databases=transform_search_database(), # if fasta file is given we can parse here and add protein information
-                    spectra_data=spectra_data,
-                )
-            with writer.analysis_data():
-                with writer.spectrum_identification_list(id=1):
-                    for collection in spec_id_dict.keys():
-                        for run in spec_id_dict[collection].keys():
-                            spectra_data_id = spectra_data_id_dict[
-                                "/".join(filter(None, [collection, run]))
-                            ]
-                            for spec_id in spec_id_dict[collection][run].keys():
-                                identified_psms = spec_id_dict[collection][run][spec_id]
-                                writer.write_spectrum_identification_result(
-                                    **self._transform_spectrum_identification_result(
-                                        spec_id, identified_psms, spectra_data_id
-                                    )
+                            if peptide_evidence_id not in peptide_evidence_ids:
+                                peptide_evidence_ids.add(peptide_evidence_id)
+                                writer.write_peptide_evidence(
+                                    peptide_id="Peptide_" + peptide.proforma,
+                                    db_sequence_id=protein,
+                                    id=peptide_evidence_id,
+                                    start_position=None,
+                                    end_position=None,
+                                    is_decoy=psm["is_decoy"],
                                 )
+                        progress.update(task2, advance=1)
+                with writer.analysis_collection():
+                    writer.SpectrumIdentification([1], [1]).write(writer)
+
+                with writer.analysis_protocol_collection():
+                    writer.spectrum_identification_protocol()  # build without?
+
+                with writer.data_collection():
+                    spectra_data, spectra_data_id_dict = self._transform_spectra_data(
+                        spec_id_dict=spec_id_dict
+                    )
+                    writer.inputs(
+                        source_files=[],
+                        # search_databases=transform_search_database(), # if fasta file is given we can parse here and add protein information
+                        spectra_data=spectra_data,
+                    )
+                with writer.analysis_data():
+                    with writer.spectrum_identification_list(id=1):
+                        for collection in spec_id_dict.keys():
+                            for run in spec_id_dict[collection].keys():
+                                spectra_data_id = spectra_data_id_dict[
+                                    "/".join(filter(None, [collection, run]))
+                                ]
+                                for spec_id in spec_id_dict[collection][run].keys():
+                                    identified_psms = spec_id_dict[collection][run][
+                                        spec_id
+                                    ]
+                                    writer.write_spectrum_identification_result(
+                                        **self._transform_spectrum_identification_result(
+                                            spec_id, identified_psms, spectra_data_id
+                                        )
+                                    )
+                                    progress.update(
+                                        task3,
+                                        advance=len(
+                                            spec_id_dict[collection][run][spec_id]
+                                        ),
+                                    )
         try:
             writer.close()
         except OSError:

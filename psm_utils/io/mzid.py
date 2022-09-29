@@ -87,19 +87,29 @@ class MzidReader(ReaderBase):
 
         """
         super().__init__(filename, *args, **kwargs)
+        self._non_metadata_keys = None
+        self._score_key = None
+        self._rt_key = None
+
         self._source = self._infer_source()
-        self._searchengine_key_dict = self._get_searchengine_specific_keys()
 
     def __iter__(self):
         """Iterate over file and return PSMs one-by-one."""
         with mzid.read(str(self.filename)) as reader:
             for spectrum in reader:
-                spectrum_title = spectrum[self._searchengine_key_dict["spectrum_key"]]
+                spectrum_id = spectrum["spectrumID"]
                 raw_file = Path(spectrum["location"]).stem
                 for entry in spectrum["SpectrumIdentificationItem"]:
-                    psm = self._get_peptide_spectrum_match(
-                        spectrum_title, raw_file, entry
-                    )
+                    if not self._non_metadata_keys:
+                        self._get_non_metadata_keys(entry.keys())
+                    try:
+                        psm = self._get_peptide_spectrum_match(
+                            spectrum_id, raw_file, entry, spectrum["spectrum title"]
+                        )
+                    except KeyError:
+                        psm = self._get_peptide_spectrum_match(
+                            spectrum_id, raw_file, entry
+                        )
                     yield psm
 
     def read_file(self) -> PSMList:
@@ -119,35 +129,12 @@ class MzidReader(ReaderBase):
         name_space = self._get_xml_namespace(root.tag)
         return root.find(f".//{name_space}AnalysisSoftware").attrib["name"]
 
-    def _get_searchengine_specific_keys(self):
-        """Get searchengine specific keys."""
-        if "PEAKS" in self._source:
-            return {
-                "score_key": "PEAKS:peptideScore",
-                "rt_key": "retention time",
-                "spectrum_key": "spectrumID",
-            }
-        elif self._source == "MS-GF+":
-            return {
-                "score_key": "MS-GF:RawScore",
-                "rt_key": "scan start time",
-                "spectrum_key": "spectrum title",
-            }
-        # if source is not known return standard keys and infer score key
-        return {
-            "score_key": self._infer_score_name(),
-            "rt_key": "retention time",
-            "spectrum_key": "spectrumID",
-        }
-
-    def _infer_score_name(self) -> str:
+    @staticmethod
+    def _infer_score_name(keys) -> str:
         """Infer the score from the known list of PSM scores."""
-        with mzid.read(str(self.filename)) as reader:
-            for spectrum in reader:
-                sii_keys = spectrum["SpectrumIdentificationItem"][0].keys()
-                break
+
         for score in STANDARD_SEARCHENGINE_SCORES:
-            if score in sii_keys:
+            if score in keys:
                 return score
         else:
             raise UnknownMzidScore("No known score metric found in mzIdentML file.")
@@ -180,30 +167,12 @@ class MzidReader(ReaderBase):
         ]
         return isdecoy, protein_list
 
-    def _get_searchengine_specific_metadata(self, spectrum_identification_item):
-        """Get searchengine specific psm metadata."""
-        sii = spectrum_identification_item
-        metadata = {
-            "calculatedMassToCharge": sii["calculatedMassToCharge"],
-            "rank": sii["rank"],
-            "length": len(sii["PeptideSequence"]),
-        }
-        if self._source == "MS-GF+":
-            metadata.update(
-                {
-                    "MS-GF:DeNovoScore": sii["MS-GF:DeNovoScore"],
-                    "MS-GF:EValue": sii["MS-GF:EValue"],
-                    "MS-GF:DeNovoScore": sii["MS-GF:DeNovoScore"],
-                    "IsotopeError": sii["IsotopeError"],
-                }
-            )
-        return metadata
-
     def _get_peptide_spectrum_match(
         self,
-        spectrum_title: str,
+        spectrum_id: str,
         raw_file: str,
         spectrum_identification_item: dict[str, Union[str, float, list]],
+        spectrum_title: Optional[str] = None,
     ) -> PeptideSpectrumMatch:
         """Parse single mzid entry to :py:class:`~psm_utils.peptidoform.Peptidoform`."""
         sii = spectrum_identification_item
@@ -218,24 +187,65 @@ class MzidReader(ReaderBase):
             sii["PeptideEvidenceRef"]
         )
         try:
-            rt = float(sii[self._searchengine_key_dict["rt_key"]])
+            precursor_mz = sii["experimentalMassToCharge"]
         except KeyError:
+            precursor_mz = None
+
+        if self._rt_key:
+            rt = sii[self._rt_key]
+        else:
             rt = float("nan")
+
+        metadata = {
+            col: str(sii[col])
+            for col in sii.keys()
+            if col not in self._non_metadata_keys
+        }
+        if spectrum_title:
+            metadata["spectrum title"] = spectrum_title
 
         psm = PeptideSpectrumMatch(
             peptide=peptide,
-            spectrum_id=spectrum_title,
+            spectrum_id=spectrum_id,
             run=raw_file,
             is_decoy=is_decoy,
-            score=sii[self._searchengine_key_dict["score_key"]],
-            precursor_mz=sii["experimentalMassToCharge"],
+            score=sii[self._score_key],
+            precursor_mz=precursor_mz,
             retention_time=rt,
             protein_list=protein_list,
+            rank=sii["rank"],
             source=self._source,
             provenance_data={"mzid_filename": str(self.filename)},
-            metadata=self._get_searchengine_specific_metadata(sii),
+            metadata=metadata,
         )
         return psm
+
+    def _get_non_metadata_keys(self, keys: list):
+        """Gather all the keys that should not be written to metadata"""
+
+        # All keys required to create PSM object
+        default_keys = [
+            "chargeState",
+            "rank",
+            "PeptideSequence",
+            "experimentalMassToCharge",
+            "PeptideEvidenceRef",
+            "Modification",
+        ]
+        # Get the score key and add to default keys
+        self._score_key = self._infer_score_name(keys)
+        default_keys.append(self._score_key)
+
+        # Get retention time key
+        for rt_key in ["retention time", "scan start time"]:
+            if rt_key in keys:
+                self._rt_key = rt_key
+                default_keys.append(rt_key)
+                break
+
+        # Keys that are not necessary for metadata
+        self._non_metadata_keys = ["ContactRole", "passThreshold"]
+        self._non_metadata_keys.extend(default_keys)
 
 
 class MzidWriter(WriterBase):

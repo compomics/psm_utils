@@ -184,7 +184,6 @@ def convert(
         iterator = (
             track(
                 reader,
-                show_speed=False,
                 description="[green]Converting file",
             )
             if show_progressbar

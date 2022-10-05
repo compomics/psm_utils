@@ -100,7 +100,10 @@ class StreamlitPageStats(StreamlitPage):
         with st.spinner("Reading PSM file..."):
             # Reading file
             if self.state["use_example_file"]:
-                psm_list = read_file("online\example_data\msms.txt", filetype="msms")
+                psm_list = read_file(
+                    "online/example_data/LFQ_Orbitrap_DDA_Ecoli_01_all.tsv",
+                    filetype="tsv",
+                )
             else:
                 # Infer filetype if required
                 if st.session_state["input_filetype"] == "infer":

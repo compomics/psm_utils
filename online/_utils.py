@@ -48,7 +48,7 @@ def score_histogram(psm_df):
         x="score",
         color="is_decoy",
         barmode="overlay",
-        histnorm="probability density",
+        histnorm="",
         labels={"is_decoy": "PSM type", "False": "target", "True": "decoy"},
         opacity=0.75,
     )
@@ -57,16 +57,13 @@ def score_histogram(psm_df):
 
 def pp_plot(psm_df):
     """Generate PP plot for given PSM dataframe."""
-    if len(psm_df) > 5000:
-        sample = 5000
-    else:
-        sample = 1.0
     decoy_ratio = np.count_nonzero(psm_df["is_decoy"]) / len(psm_df)
     if decoy_ratio == 0:
         raise ValueError("No decoy PSMs found in PSM file.")
     target_scores = psm_df["score"][~psm_df["is_decoy"]]
     decoy_scores = psm_df["score"][psm_df["is_decoy"]]
-    target_scores_sample = psm_df["score"][~psm_df["is_decoy"]].sample(sample)
+    if len(psm_df) > 5000:
+        target_scores_sample = psm_df["score"][~psm_df["is_decoy"]].sample(5000)
     target_ecdf = ECDF(target_scores)(target_scores_sample)
     decoy_ecdf = ECDF(decoy_scores)(target_scores_sample)
 

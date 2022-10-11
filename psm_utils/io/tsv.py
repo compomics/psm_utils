@@ -49,7 +49,6 @@ from __future__ import annotations
 
 import ast
 import csv
-import dataclasses
 from pathlib import Path
 from typing import Optional, Union
 
@@ -188,12 +187,14 @@ class TSVWriter(WriterBase):
             PeptideSpectrumMatch object to write.
 
         """
-        if not self._open_file:
+        entry = self._psm_to_entry(psm)
+        try:
+            self._writer.writerow(entry)
+        except AttributeError:
             raise PSMUtilsIOException(
                 f"`write_psm` method can only be called if `{self.__class__.__qualname__}`"
                 "is opened in context (i.e., using the `with` statement)."
             )
-        self._writer.writerow(self._psm_to_entry(psm))
 
     def write_file(self, psm_list: PSMList):
         """

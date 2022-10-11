@@ -1,3 +1,11 @@
+"""
+Reader and writers for the HUPO-PSI mzIdentML format.
+
+See `psidev.info/mzidentml <https://psidev.info/mzidentml>`_ for more info on the
+format.
+
+"""
+
 from __future__ import annotations
 
 import logging
@@ -6,11 +14,11 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Optional, Union
 
-from pyteomics import mzid, mass
 from psims.mzid import MzIdentMLWriter
+from pyteomics import mzid, proforma
 from rich.progress import Progress
 
-
+from psm_utils import __version__
 from psm_utils.io._base_classes import ReaderBase, WriterBase
 from psm_utils.io.exceptions import PSMUtilsIOException
 from psm_utils.peptidoform import Peptidoform
@@ -19,6 +27,7 @@ from psm_utils.psm_list import PSMList
 
 logger = logging.getLogger(__name__)
 
+# Excerpt from MS:1001143 items (PSM-level search engine specific statistic)
 STANDARD_SEARCHENGINE_SCORES = [
     "Amanda:AmandaScore",
     "Andromeda:score",
@@ -51,7 +60,7 @@ STANDARD_SEARCHENGINE_SCORES = [
     "TopMG:spectral E-Value",
     "X!Tandem:hyperscore",
     "ZCore:probScore:",
-    "Percolator:scrolledtext",
+    "Percolator:score",
     "xi:score",
 ]
 
@@ -60,7 +69,7 @@ class MzidReader(ReaderBase):
     def __init__(self, filename: Union[str, Path], *args, **kwargs) -> None:
 
         """
-        Reader for MZID Record PSM files.
+        Reader for mzIdentML PSM files.
 
         Parameters
         ----------
@@ -254,53 +263,59 @@ class MzidWriter(WriterBase):
     def __init__(
         self,
         filename: Union[str, Path],
-        example_psm: Optional[PeptideSpectrumMatch] = None,
         *args,
         **kwargs,
     ):
         """
-        Writer for psm_utils MZID format.
+        Writer for mzIdentML PSM files.
 
         Parameters
         ----------
         filename: str, Pathlib.Path
             Path to PSM file.
-        example_psm: psm_utils.psm.PeptideSpectrumMatch, optional
-            Example PSM, required to extract the column names when writing to a new
-            file. Should contain all fields that are to be written to the PSM file,
-            i.e., all items in the :py:attr:`provenance_data`, :py:attr:`metadata`, and
-            :py:attr:`rescoring_features` attributes. In other words, items that are
-            not present in the example PSM will not be written to the file, even though
-            they are present in other PSMs passed to :py:meth:`write_psm` or
-            :py:meth:`write_file`.
+
+        Notes
+        -----
+        Unlike other psm_utils.io writer classes, :py:class:`MzidWriter` does not
+        support writing a single PSM to a file with the :py:meth:`write_psm` method.
+        Only writing a full PSMList to a file at once with the :py:meth:`write_file`
+        method is currently supported.
+
         """
         super().__init__(filename, *args, **kwargs)
 
         self._writer = None
 
     def __enter__(self) -> MzidWriter:
-        pass
+        return self
 
     def __exit__(self, *args, **kwargs) -> None:
         pass
 
     def write_psm(self, psm: PeptideSpectrumMatch):
-        """Write a single PSM to a Peptidehit object."""
-        raise NotImplemented("Mzid writer does not support write psm")
+        """
+        Write a single PSM to the PSM file.
 
-    def write_file(self, psm_list: PSMList, disable_progressbar: bool = True):
+        This method is currently not supported (see Notes).
+
+        Raises
+        ------
+        NotImplementedError
+            MzidWriter currently does not support write_psm.
+        """
+        raise NotImplementedError("MzidWriter currently does not support write_psm.")
+
+    def write_file(self, psm_list: PSMList, show_progressbar: bool = False):
         """Write entire PSMList to mzid file."""
         file = open(self.filename, "wb")
-        writer = MzIdentMLWriter(file, close=True)
-        with Progress(disable=disable_progressbar) as progress:
-
-            with writer:
+        with Progress(disable=(not show_progressbar)) as progress:
+            with MzIdentMLWriter(file, close=True) as writer:
                 writer.controlled_vocabularies()
                 writer.provenance(
                     software={
                         "name": "psm_utils",
                         "uri": "https://github.com/compomics/psm_utils",
-                        "version": "0.0.1",  # function to add automatically
+                        "version": __version__,
                     }
                 )
                 writer.register("SpectraData", 1)
@@ -323,16 +338,15 @@ class MzidWriter(WriterBase):
                     "[cyan]Writing Proteins to mzid", total=len(proteins)
                 )
                 task2 = progress.add_task(
-                    "[cyan]Writing Peptides/PeptideEvidences to mzid",
+                    "[cyan]Writing Peptide and PeptideEvidence items",
                     total=len(psm_list),
                 )
                 task3 = progress.add_task(
-                    "[cyan]Writing SpectrumIdentificationResults to mzid",
+                    "[cyan]Writing SpectrumIdentificationResults",
                     total=len(psm_list),
                 )
 
                 with writer.sequence_collection():
-
                     for prot in proteins:
                         writer.write_db_sequence(prot, None, id=prot, params=[])
                         progress.update(task1, advance=1)
@@ -372,6 +386,7 @@ class MzidWriter(WriterBase):
                         # search_databases=transform_search_database(), # if fasta file is given we can parse here and add protein information
                         spectra_data=spectra_data,
                     )
+
                 with writer.analysis_data():
                     with writer.spectrum_identification_list(id=1):
                         for collection in spec_id_dict.keys():
@@ -394,58 +409,53 @@ class MzidWriter(WriterBase):
                                             spec_id_dict[collection][run][spec_id]
                                         ),
                                     )
-        try:
-            writer.close()
-        except OSError:
-            pass
 
     @staticmethod
     def _create_peptide_object(peptidoform):
-        """Create mzid peptide object from petidoform"""
+        """Create mzid peptide object from Peptidoform."""
 
-        parsed_sequence = peptidoform.parsed_sequence
-        properties = peptidoform.properties
-        peptide = peptidoform.sequence
+        def parse_modifications(modifications: list[proforma.TagBase], location: int):
+            modification_list = []
+            if modifications:
+                for mod in modifications:
+                    try:
+                        modification_list.append(
+                            {
+                                "location": location,
+                                "name": mod.name,
+                                "monoisotopic_mass_delta": mod.mass,
+                            }
+                        )
+                    except AttributeError:
+                        modification_list.append(
+                            {
+                                "location": location,
+                                "monoisotopic_mass_delta": mod.mass,
+                            }
+                        )
+            return modification_list
+
+        # Parse modifications
         modifications = []
-
-        # makes no effort to handle terminal modifications or snps at this time
-        for loc, (aa, mod) in enumerate(parsed_sequence, start=1):
-            if mod:
-                mzid_mod = {
-                    "location": loc,
-                    "name": mod[0].name,  # what with multiple mods on one aa
-                    "monoisotopic_mass_delta": mod[0].mass,
-                }
-                modifications.append(mzid_mod)
-
-        if properties["n_term"]:
-            modifications.append(
-                {
-                    "location": 0,
-                    "name": mod[0].name,  # what with multiple mods on one aa
-                    "monoisotopic_mass_delta": mod[0].mass,
-                }
+        for loc, (aa, mods) in enumerate(peptidoform.parsed_sequence, start=1):
+            modifications.extend(parse_modifications(mods, loc))
+        modifications.extend(parse_modifications(peptidoform.properties["n_term"], 0))
+        modifications.extend(
+            parse_modifications(
+                peptidoform.properties["c_term"], len(peptidoform.sequence) + 1
             )
-
-        if properties["c_term"]:
-            modifications.append(
-                {
-                    "location": len(peptide) + 1,
-                    "name": mod[0].name,  # what with multiple mods on one aa
-                    "monoisotopic_mass_delta": mod[0].mass,
-                }
-            )
+        )
 
         peptide_object = {
             "id": "Peptide_" + peptidoform.proforma,
+            "peptide_sequence": peptidoform.sequence,
             "modifications": modifications,
-            "peptide_sequence": peptide,
         }
+
         return peptide_object
 
     def _transform_search_database(self):
-        """Create mzid databse object"""
-
+        """Create mzid database object."""
         # TODO: Create this and link with protein object when fasta file is provided
         return {
             "file_format": "fasta format",
@@ -457,69 +467,55 @@ class MzidWriter(WriterBase):
 
     @staticmethod
     def _transform_spectra_data(spec_id_dict: dict):
-        """Get all the unique spectra data from psm list spectrum id dict"""
-
+        """Get all the unique spectra data from PSMList spectrum id dict."""
         collection_run_id_dict = {}
         spectra_data = []
         i = 1
         for collection in spec_id_dict.keys():
             for run in spec_id_dict[collection].keys():
                 collection_run_id = "/".join(filter(None, [collection, run]))
-
                 if collection_run_id not in collection_run_id_dict.keys():
                     collection_run_id_dict[collection_run_id] = i
-
                     spectra_data_object = {
                         "id": i,
                         "location": collection_run_id,
                         "spectrum_id_format": "multiple peak list nativeID format",
                         # 'file_format': #TODO can we infer this?
                     }
-
                 spectra_data.append(spectra_data_object)
         return spectra_data, collection_run_id_dict
 
     @staticmethod
     def _transform_spectrum_identification_item(candidate_psm, i=0):
-        """Create mzid spectrum identification item for each candidate psm"""
-
+        """Create SpectrumIdentificationItem for each candidate PSM."""
         peptide = candidate_psm["peptide"].proforma
+        if candidate_psm["metadata"]:
+            params = [{k: v} for k, v in candidate_psm["metadata"].items()]
+        else:
+            params = []
+        candidate_psm_dict = {
+            "charge_state": candidate_psm["peptide"].precursor_charge,
+            "peptide_id": f"Peptide_" + peptide,
+            # TODO: add which search engine score cv param
+            "score": {"score": candidate_psm["score"]},
+            "experimental_mass_to_charge": candidate_psm["precursor_mz"],
+            "calculated_mass_to_charge": candidate_psm["peptide"].theoretical_mz,
+            "rank": candidate_psm["rank"],
+            "params": params,
+        }
         items = []
         for prot_acc in candidate_psm["protein_list"]:
-            theo_mass = candidate_psm["peptide"].theoretical_mass
-            charge = candidate_psm["peptide"].precursor_charge
-            theo_mz = (theo_mass + (mass.nist_mass["H"][1][0] * charge)) / charge
-            try:
-                exper_mz = candidate_psm["precursor_mz"]
-                # mass_error = abs(theo_mz - exper_mz)
-            except:
-                exper_mz = None
-                # mass_error = None
-
-            candidate_psm_dict = {
-                "charge_state": charge,
-                "peptide_id": f"Peptide_" + peptide,
+            protein_specific_items = {
                 "peptide_evidence_id": f"PeptideEvidence_{peptide}_{prot_acc}",
                 "id": f"SII_{candidate_psm['spectrum_id']}_{peptide}_{prot_acc}",
-                "score": {
-                    "score": candidate_psm["score"]
-                },  # add which search engine score cv param
-                "experimental_mass_to_charge": exper_mz,
-                "calculated_mass_to_charge": theo_mz,
-                "rank": candidate_psm["rank"],
-                "params": [
-                    {x: candidate_psm["metadata"][x]}
-                    for x in candidate_psm["metadata"].keys()
-                ],
             }
-            items.append(candidate_psm_dict)
+            items.append(dict(candidate_psm_dict, **protein_specific_items))
         return items
 
     def _transform_spectrum_identification_result(
         self, spec_id, identified_psms, spectra_data_id
     ):
-        """Create mzid spectrum identification result object for each psm that match the same spectrum"""
-
+        """Create mzid SpectrumIdentificationResult object for PSMs that match the same spectrum."""
         spectrum_id_result = {
             "id": f"SIR_{spec_id}",
             "spectrum_id": spec_id,

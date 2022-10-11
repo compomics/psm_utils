@@ -98,10 +98,7 @@ class PeptideSpectrumMatch(BaseModel):  # TODO: Rename `PeptideSpectrumMatch` to
 
     def get_precursor_charge(self) -> int:
         """Precursor charge, as embedded in :py:attr:`peptide`."""
-        try:
-            return self.peptide.properties["charge_state"].charge
-        except (AttributeError, KeyError):
-            return None
+        return self.peptide.precursor_charge
 
     def universal_spectrum_identifier(self, as_url=False) -> str:
         """

@@ -321,12 +321,14 @@ class PeptideRecordWriter(WriterBase):
         >>>     writer.write_psm(psm)
 
         """
-        if not self._open_file:
+        entry = self._psm_to_entry(psm)
+        try:
+            self._writer.writerow(entry)
+        except AttributeError:
             raise PSMUtilsIOException(
-                "`write_psm` method can only be called if `PeptideRecordWriter` is "
-                "opened in context (i.e., using the `with` statement)."
+                f"`write_psm` method can only be called if `{self.__class__.__qualname__}`"
+                "is opened in context (i.e., using the `with` statement)."
             )
-        self._writer.writerow(self._psm_to_entry(psm))
 
     # TODO: Rename to `write_psm_list`? (also for other writers)
     # TODO: Support appending to existing file?

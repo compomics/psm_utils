@@ -60,10 +60,13 @@ class PSMList(BaseModel):
     ) -> Union[PeptideSpectrumMatch, list[PeptideSpectrumMatch]]:
         # TODO: Expand usage? E.g. index by spectrum_id? Return new PSMList for slice?
         if isinstance(item, int):
+            # Return single PSM by index
             return self.psm_list[item]
         elif isinstance(item, slice):
+            # Return new PSMList from slice
             return PSMList(psm_list=self.psm_list[item])
         elif isinstance(item, str):
+            # Return PSM property as array across full PSMList
             return np.array([psm[item] for psm in self.psm_list], dtype=object)
         elif _is_iterable_of_ints(item):
             # Return new PSMList with selection of PSMs by list indices

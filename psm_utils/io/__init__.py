@@ -65,7 +65,7 @@ FILETYPES = {
         "reader": msamanda.MSAmandaReader,
         "writer": None,
         "extension": ".csv",
-        "filename_pattern": r"^.*\.csv$",
+        "filename_pattern": r"^.*(?:_|\.)msamanda.csv$",
     },
 }
 READERS = {k: v["reader"] for k, v in FILETYPES.items() if v["reader"]}
@@ -75,7 +75,9 @@ WRITERS = {k: v["writer"] for k, v in FILETYPES.items() if v["writer"]}
 def _infer_filetype(filename: str):
     """Infer filetype from filename."""
     for filetype, properties in FILETYPES.items():
-        if re.fullmatch(properties["filename_pattern"], str(filename), flags=re.IGNORECASE):
+        if re.fullmatch(
+            properties["filename_pattern"], str(filename), flags=re.IGNORECASE
+        ):
             return filetype
     else:
         raise PSMUtilsIOException("Could not infer filetype.")

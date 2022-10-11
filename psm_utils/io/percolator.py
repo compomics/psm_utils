@@ -174,7 +174,7 @@ class PercolatorTabReader(ReaderBase):
             k: v for k, v in entry.items() if k not in self.non_feature_columns
         }
         charge = self._parse_charge(entry)
-        peptide = self._parse_peptidoform(entry["peptide"], charge)
+        peptidoform = self._parse_peptidoform(entry["peptide"], charge)
         protein_list = (
             entry["proteins"].split(self._protein_separator)
             if "proteins" in entry
@@ -183,7 +183,7 @@ class PercolatorTabReader(ReaderBase):
             else None
         )
         psm = PeptideSpectrumMatch(
-            peptide=peptide,
+            peptidoform=peptidoform,
             spectrum_id=entry[self.id_column],
             is_decoy=is_decoy,
             score=float(entry[self.score_column.lower()])
@@ -312,7 +312,9 @@ class PercolatorTabWriter(WriterBase):
 
     def write_file(self, psm_list: PSMList):
         """Write an entire PSMList to the PSM file."""
-        with open(self.filename, "wt", newline="") as f:
+        with _PercolatorTabIO(
+            self.filename, "wt", newline="", protein_separator=self._protein_separator
+        ) as f:
             writer = csv.DictWriter(f, fieldnames=self._columns, delimiter="\t")
             writer.writeheader()
             for psm in psm_list:

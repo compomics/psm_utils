@@ -18,6 +18,6 @@ class TestPeptidoform:
         ]
 
         for test_case_in, expected_out in test_cases:
-            peptide = Peptidoform(test_case_in)
-            peptide.rename_modifications(label_mapping)
-            assert peptide.proforma == expected_out
+            peptidoform = Peptidoform(test_case_in)
+            peptidoform.rename_modifications(label_mapping)
+            assert peptidoform.proforma == expected_out

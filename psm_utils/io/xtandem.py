@@ -150,7 +150,7 @@ class XTandemReader(ReaderBase):
         """Parse X!Tandem XML entry to :py:class:`~psm_utils.psm.PeptideSpectrumMatch`."""
         peptide_entry = entry["protein"][0]["peptide"]
         psm = PeptideSpectrumMatch(
-            peptide=self._parse_peptidoform(peptide_entry, entry["z"]),
+            peptidoform=self._parse_peptidoform(peptide_entry, entry["z"]),
             spectrum_id=entry["support"]["fragment ion mass spectrum"]["note"].split(
                 " "
             )[0],

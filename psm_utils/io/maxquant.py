@@ -112,7 +112,7 @@ class MSMSReader(ReaderBase):
         """Return a PeptideSpectrumMatch object from MaxQuant msms.txt PSM file."""
 
         psm = PeptideSpectrumMatch(
-            peptide=self._parse_peptidoform(
+            peptidoform=self._parse_peptidoform(
                 psm_dict["Modified sequence"], psm_dict["Charge"]
             ),
             spectrum_id=psm_dict["Scan number"],

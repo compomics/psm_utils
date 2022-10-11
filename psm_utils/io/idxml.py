@@ -75,7 +75,7 @@ class IdXMLReader(ReaderBase):
     def _parse_psm(self, entry: dict, peptide_hit: dict) -> PeptideSpectrumMatch:
         """Parse idXML PSM to :py:class:`~psm_utils.psm.PeptideSpectrumMatch`."""
         return PeptideSpectrumMatch(
-            peptide=self._parse_peptidoform(
+            peptidoform=self._parse_peptidoform(
                 peptide_hit["sequence"], peptide_hit["charge"]
             ),
             spectrum_id=entry["spectrum_reference"],

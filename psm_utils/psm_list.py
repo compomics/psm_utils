@@ -26,9 +26,9 @@ class PSMList(BaseModel):
     Initiate a :py:class:`PSMList` from a list of PeptideSpectrumMatch objects:
 
     >>> psm_list = PSMList(psm_list=[
-    ...     PeptideSpectrumMatch(peptide="ACDK", spectrum_id=1),
-    ...     PeptideSpectrumMatch(peptide="CDEFR", spectrum_id=2),
-    ...     PeptideSpectrumMatch(peptide="DEM[Oxidation]K", spectrum_id=3),
+    ...     PeptideSpectrumMatch(peptidoform="ACDK", spectrum_id=1),
+    ...     PeptideSpectrumMatch(peptidoform="CDEFR", spectrum_id=2),
+    ...     PeptideSpectrumMatch(peptidoform="DEM[Oxidation]K", spectrum_id=3),
     ... ])
 
     :py:class:`PSMList` directly supports iteration:

@@ -132,7 +132,7 @@ class Peptidoform:
 
     @property
     def composition(self) -> mass.Composition:
-        """Atomic composition of the full (modified) peptide."""
+        """Atomic composition of the full peptidoform."""
         comp = mass.Composition()
         for position_comp in self.sequential_composition:
             comp += position_comp
@@ -213,7 +213,7 @@ class Peptidoform:
 
     @property
     def theoretical_mass(self) -> float:
-        """Monoisotopic mass of the full uncharged (modified) peptide."""
+        """Monoisotopic mass of the full uncharged peptidoform."""
         mass = sum(self.sequential_theoretical_mass)
         for tag in self.properties["labile_modifications"]:
             try:
@@ -233,7 +233,7 @@ class Peptidoform:
 
     @property
     def theoretical_mz(self) -> Union[float, None]:
-        """Monoisotopic mz of the full (modified) peptide."""
+        """Monoisotopic mz of the full peptidoform."""
         if self.precursor_charge:
             return (
                 self.theoretical_mass
@@ -255,12 +255,12 @@ class Peptidoform:
 
         Examples
         --------
-        >>> peptide = Peptidoform('[Acedyl]-AC[Carbamidomedyl]DEFGHIK')
-        >>> peptide.rename_modifications({
+        >>> peptidoform = Peptidoform('[Acedyl]-AC[Carbamidomedyl]DEFGHIK')
+        >>> peptidoform.rename_modifications({
         ...     "Acedyl": "Acetyl",
         ...     "Carbamidomedyl": "Carbamidomethyl"
         ... })
-        >>> peptide.proforma
+        >>> peptidoform.proforma
         '[Acetyl]-AC[Carbamidomethyl]DEFGHIK'
 
         """

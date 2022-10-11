@@ -237,7 +237,7 @@ class PeptideRecordReader(ReaderBase):
             is_decoy = None
 
         return PeptideSpectrumMatch(
-            peptide=proforma,
+            peptidoform=proforma,
             spectrum_id=entry.spec_id,
             is_decoy=is_decoy,
             retention_time=entry.observed_retention_time,

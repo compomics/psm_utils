@@ -174,7 +174,7 @@ class PeptideRecordReader(ReaderBase):
 
         >>> from psm_utils.io.peptide_record import PeptideRecordReader
         >>> for psm in PeptideRecordReader("peprec.txt"):
-        ...     print(psm.peptide.proforma)
+        ...     print(psm.peptidoform.proforma)
         ACDEK
         AC[Carbamidomethyl]DEFGR
         [Acetyl]-AC[Carbamidomethyl]DEFGHIK
@@ -291,7 +291,7 @@ class PeptideRecordWriter(WriterBase):
 
     @staticmethod
     def _psm_to_entry(psm: PeptideSpectrumMatch) -> dict:
-        sequence, modifications, charge = proforma_to_peprec(psm.peptide)
+        sequence, modifications, charge = proforma_to_peprec(psm.peptidoform)
         return {
             "spec_id": psm.spectrum_id,
             "peptide": sequence,

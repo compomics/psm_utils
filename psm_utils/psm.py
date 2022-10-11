@@ -7,7 +7,7 @@ from pydantic import BaseModel
 from psm_utils.peptidoform import Peptidoform
 
 
-class PeptideSpectrumMatch(BaseModel):  # TODO: Rename `PeptideSpectrumMatch` to `PSM`?
+class PeptideSpectrumMatch(BaseModel):
     """
     Data class representing a peptide-spectrum match (PSM).
 
@@ -17,7 +17,7 @@ class PeptideSpectrumMatch(BaseModel):  # TODO: Rename `PeptideSpectrumMatch` to
 
     Parameters
     ----------
-    peptide : Peptidoform, str
+    peptidoform : Peptidoform, str
         Peptidoform object or string in ProForma v2 notation.
     spectrum_id : str, int
         Spectrum identifier as used in spectrum file (e.g., mzML or MGF),
@@ -57,7 +57,7 @@ class PeptideSpectrumMatch(BaseModel):  # TODO: Rename `PeptideSpectrumMatch` to
 
     """
 
-    peptide: Union[Peptidoform, str]
+    peptidoform: Union[Peptidoform, str]
     spectrum_id: Union[int, str]
     run: Optional[str] = None
     collection: Optional[str] = None
@@ -77,28 +77,27 @@ class PeptideSpectrumMatch(BaseModel):  # TODO: Rename `PeptideSpectrumMatch` to
     rescoring_features: Optional[Dict[str, str]] = None
 
     class Config:
-        arbitrary_types_allowed = True  # Allow non-pydantic class Peptidoform
+        arbitrary_types_allowed = True  # Allows non-pydantic class Peptidoform
 
     def __init__(self, **data):
         super().__init__(**data)
         # Parse peptidoform
-        if isinstance(self.peptide, str):
-            self.peptide = Peptidoform(self.peptide)
-        elif not isinstance(self.peptide, Peptidoform):
+        if isinstance(self.peptidoform, str):
+            self.peptidoform = Peptidoform(self.peptidoform)
+        elif not isinstance(self.peptidoform, Peptidoform):
             raise TypeError(
-                f"Peptidoform or str expected for `peptide`, not `{type(self.peptide)}`."
+                f"Peptidoform or str expected for `peptidoform`, not `{type(self.peptidoform)}`."
             )
 
     def __getitem__(self, item) -> any:
-        # return self.__dict__[item]
         return getattr(self, item)
 
     def __setitem__(self, item, value: any) -> None:
         setattr(self, item, value)
 
     def get_precursor_charge(self) -> int:
-        """Precursor charge, as embedded in :py:attr:`peptide`."""
-        return self.peptide.precursor_charge
+        """Precursor charge, as embedded in :py:attr:`peptidoform`."""
+        return self.peptidoform.precursor_charge
 
     def universal_spectrum_identifier(self, as_url=False) -> str:
         """
@@ -110,7 +109,7 @@ class PeptideSpectrumMatch(BaseModel):  # TODO: Rename `PeptideSpectrumMatch` to
             Return URL to proteomeXchange.org USI aggregator.
         """
         # TODO: Support nativeID spectrum flag
-        usi = f"mzspec:{self.collection}:{self.run}:scan:{self.spectrum_id}:{self.peptide}"
+        usi = f"mzspec:{self.collection}:{self.run}:scan:{self.spectrum_id}:{self.peptidoform}"
         if as_url:
             usi = "http://proteomecentral.proteomexchange.org/usi/?usi=" + usi
         return usi

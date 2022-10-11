@@ -77,7 +77,7 @@ class XTandemReader(ReaderBase):
 
         >>> from psm_utils.io.xtandem import XTandemReader
         >>> for psm in XTandemReader("pyro.t.xml"):
-        ...     print(psm.peptide.proforma)
+        ...     print(psm.peptidoform.proforma)
         WFEELSK
         NDVPLVGGK
         GANLGEMTNAGIPVPPGFC[+57.022]VTAEAYK

@@ -59,7 +59,7 @@ class MSMSReader(ReaderBase):
 
         >>> from psm_utils.io.maxquant import MSMSReader
         >>> for psm in MSMSReader("msms.txt"):
-        ...     print(psm.peptide.proforma)
+        ...     print(psm.peptidoform.proforma)
         WFEELSK
         NDVPLVGGK
         GANLGEMTNAGIPVPPGFC[+57.022]VTAEAYK

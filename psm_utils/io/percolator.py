@@ -325,7 +325,7 @@ class PercolatorTabWriter(WriterBase):
                 "PSMId": psm.spectrum_id,
                 "Label": None if psm.is_decoy is None else -1 if psm.is_decoy else 1,
                 "ScanNr": None,  # TODO
-                "Peptide": psm.peptide.proforma,
+                "Peptide": psm.peptidoform.proforma,
                 "Proteins": self._protein_separator.join(psm.protein_list)
                 if psm.protein_list
                 else None,
@@ -341,7 +341,7 @@ class PercolatorTabWriter(WriterBase):
                 "score": psm.score,
                 "q-value": psm.qvalue,
                 "posterior_error_prob": psm.pep,
-                "peptide": psm.peptide.proforma,
+                "peptide": psm.peptidoform.proforma,
                 "proteinIds": self._protein_separator.join(psm.protein_list)
                 if psm.protein_list
                 else None,

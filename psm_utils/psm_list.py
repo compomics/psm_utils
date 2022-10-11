@@ -1,13 +1,13 @@
 from __future__ import annotations
 
 import re
+from itertools import compress
 from typing import Iterable, List, Sequence, Union
 
 import numpy as np
 import pandas as pd
 import pyteomics
 from pydantic import BaseModel
-from itertools import compress
 
 from psm_utils.psm import PeptideSpectrumMatch
 
@@ -34,14 +34,14 @@ class PSMList(BaseModel):
     :py:class:`PSMList` directly supports iteration:
 
     >>> for psm in psm_list:
-    ...     print(psm.peptide.theoretical_mass)
+    ...     print(psm.peptidoform.theoretical_mass)
     436.12639936491996
     512.1576994932
     454.15222018994
 
     :py:class:`PSMList` supports indexing and slicing:
 
-    >>> psm_list[1].peptide.theoretical_mass
+    >>> psm_list[1].peptidoform.theoretical_mass
     512.1576994932
 
 
@@ -206,7 +206,7 @@ class PSMList(BaseModel):
 
         """
         for psm in self.psm_list:
-            psm.peptide.rename_modifications(mapping)
+            psm.peptidoform.rename_modifications(mapping)
 
     def set_ranks(self):
         "Set the ranks for all the psm in the psm list"

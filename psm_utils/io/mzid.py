@@ -83,7 +83,7 @@ class MzidReader(ReaderBase):
 
         >>> from psm_utils.io.mzid import MzidReader
         >>> for psm in MzidReader("peptides_1_1_0.mzid"):
-        ...     print(psm.peptide.proforma)
+        ...     print(psm.peptidoform.proforma)
         ACDEK
         AC[Carbamidomethyl]DEFGR
         [Acetyl]-AC[Carbamidomethyl]DEFGHIK

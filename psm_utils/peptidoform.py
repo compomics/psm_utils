@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Union
+
 from pyteomics import mass, proforma
 
 from psm_utils.exceptions import PSMUtilsException
@@ -40,6 +42,15 @@ class Peptidoform:
     def __str__(self) -> str:
         return self.proforma
 
+    def __hash__(self) -> int:
+        return hash(self.proforma)
+
+    def __eq__(self, __o: object) -> bool:
+        try:
+            return self.proforma == __o.proforma
+        except AttributeError:
+            raise NotImplemented("Object is not a Peptidoform")
+
     @property
     def proforma(self) -> str:
         """Peptidoform sequence in ProForma v2 notation."""
@@ -53,7 +64,10 @@ class Peptidoform:
     @property
     def precursor_charge(self) -> int:
         """Syntactic sugar for `Peptidoform.properties['charge_state'].charge`."""
-        return self.properties["charge_state"].charge
+        try:
+            return self.properties["charge_state"].charge
+        except (AttributeError, KeyError):
+            return None
 
     @property
     def sequential_composition(self) -> list[mass.Composition]:
@@ -216,6 +230,17 @@ class Peptidoform:
                     f"Cannot resolve mass for modification {tag.value}."
                 )
         return mass
+
+    @property
+    def theoretical_mz(self) -> Union[float, None]:
+        """Monoisotopic mz of the full (modified) peptide."""
+        if self.precursor_charge:
+            return (
+                self.theoretical_mass
+                + (mass.nist_mass["H"][1][0] * self.precursor_charge)
+            ) / self.precursor_charge
+        else:
+            return None
 
     def rename_modifications(self, mapping: dict[str, str]) -> None:
         """

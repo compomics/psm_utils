@@ -7,6 +7,7 @@ import numpy as np
 import pandas as pd
 import pyteomics
 from pydantic import BaseModel
+from itertools import compress
 
 from psm_utils.psm import PeptideSpectrumMatch
 
@@ -59,17 +60,71 @@ class PSMList(BaseModel):
     ) -> Union[PeptideSpectrumMatch, list[PeptideSpectrumMatch]]:
         # TODO: Expand usage? E.g. index by spectrum_id? Return new PSMList for slice?
         if isinstance(item, int):
+            # Return single PSM by index
             return self.psm_list[item]
         elif isinstance(item, slice):
+            # Return new PSMList from slice
             return PSMList(psm_list=self.psm_list[item])
         elif isinstance(item, str):
-            return np.array([psm[item] for psm in self.psm_list])
+            # Return PSM property as array across full PSMList
+            return np.array([psm[item] for psm in self.psm_list], dtype=object)
+        elif _is_iterable_of_ints(item):
+            # Return new PSMList with selection of PSMs by list indices
+            return PSMList(psm_list=[self.psm_list[i] for i in item])
+        elif _is_iterable_of_strings(item):
+            # Return 2D numpy array of multiple PSM properties along full PSMList
+            return np.array([self[inner_item] for inner_item in item]).transpose()
+        else:
+            raise TypeError(f"Unsupported indexing type: {type(item)}")
 
     def __setitem__(self, item, values: Sequence) -> None:
         if not len(values) == len(self):
             raise ValueError(f"Expected value with same length as PSMList: {len(self)}")
         for value, psm in zip(values, self):
             psm[item] = value
+
+    @property
+    def collections(self) -> list:
+        """List of collections in :py:class:`PSMList`."""
+        if (self["collection"] != None).any():
+            return list(np.unique(self["collection"]))
+        else:
+            return [None]
+
+    @property
+    def runs(self) -> list:
+        """List of runs in :py:class:`PSMList`."""
+        if (self["run"] != None).any():
+            return list(np.unique(self["run"]))
+        else:
+            return [None]
+
+    def get_psm_dict(self):
+        """Get nested dictionary of PSMs by collection, run, and spectrum_id."""
+        psm_dict = {}
+        for psm in self:
+            try:
+                psm_dict[psm.collection][psm.run][psm.spectrum_id].append(psm)
+            except KeyError:
+                try:
+                    psm_dict[psm.collection][psm.run][psm.spectrum_id] = [psm]
+                except KeyError:
+                    try:
+                        psm_dict[psm.collection][psm.run] = {psm.spectrum_id: [psm]}
+                    except KeyError:
+                        psm_dict[psm.collection] = {psm.run: {psm.spectrum_id: [psm]}}
+        return psm_dict
+
+    def get_rank1_psms(self, lower_score_better=False) -> PSMList:
+        """Return new PSMList with only first-rank PSMs"""
+        columns = ["collection", "run", "spectrum_id", "score"]
+        df_rank1 = (
+            pd.DataFrame(self[columns], columns=columns)
+            .sort_values("score", ascending=lower_score_better)
+            .drop_duplicates(["collection", "run", "spectrum_id"])
+        )
+        first_rank_indices = df_rank1.index
+        return self[first_rank_indices]
 
     def find_decoys(self, decoy_pattern: str) -> None:
         """
@@ -153,6 +208,29 @@ class PSMList(BaseModel):
         for psm in self.psm_list:
             psm.peptide.rename_modifications(mapping)
 
+    def set_ranks(self):
+        "Set the ranks for all the psm in the psm list"
+
+        def rank_simple(vector):
+            return sorted(range(len(vector)), key=vector.__getitem__)
+
+        spectrum_list = self.__getitem__("spectrum_id")
+        scores = self.__getitem__("score")
+        spectrum_ranks = [None] * len(self.psm_list)
+
+        for spectrum_id in set(spectrum_list):
+            # Get indices of spectrum ids
+            indices = spectrum_list == spectrum_id
+            indices = list(compress(range(len(indices)), indices))
+            # Get corresponding scores
+            spectrum_id_scores = scores[indices]
+            # Get ranks for each score
+            spectrum_id_ranks = rank_simple(spectrum_id_scores)
+            for (index, rank) in zip(indices, spectrum_id_ranks):
+                spectrum_ranks[index] = rank
+
+        self.__setitem__("rank", spectrum_ranks)
+
     @classmethod
     def from_csv(cls) -> "PSMList":
         """Read PSMList from comma-separated values file."""
@@ -165,3 +243,23 @@ class PSMList(BaseModel):
     def to_dataframe(self) -> pd.DataFrame:
         """Convert :py:class:`PSMList` to :py:class:`pandas.DataFrame`."""
         return pd.DataFrame.from_records([psm.__dict__ for psm in self])
+
+
+def _is_iterable_of_ints(obj):
+    try:
+        if not all(isinstance(x, int) for x in obj):
+            return False
+        else:
+            return True
+    except (TypeError, ValueError):
+        return False
+
+
+def _is_iterable_of_strings(obj):
+    try:
+        if not all(isinstance(x, str) for x in obj):
+            return False
+        else:
+            return True
+    except (TypeError, ValueError):
+        return False

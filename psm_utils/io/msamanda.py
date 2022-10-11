@@ -19,7 +19,7 @@ from psm_utils.psm_list import PSMList
 logger = logging.getLogger(__name__)
 
 
-REQUIRED_COLUMNS = {
+REQUIRED_COLUMNS = [
     "Title",
     "Sequence",
     "Modifications",
@@ -29,7 +29,7 @@ REQUIRED_COLUMNS = {
     "Charge",
     "RT",
     "Filename",
-}
+]
 
 
 class MSAmandaReader(ReaderBase):
@@ -40,10 +40,12 @@ class MSAmandaReader(ReaderBase):
 
     def __iter__(self):
         """Iterate over file and return PSMs one-by-one."""
+
         with open(self.filename, "rt") as open_file:
             if not next(open_file).startswith("#"):
                 open_file.seek(0)
             reader = csv.DictReader(open_file, delimiter="\t")
+            self._evaluate_columns(reader.fieldnames)
             for psm_dict in reader:
                 yield self._get_peptide_spectrum_match(psm_dict)
 
@@ -54,6 +56,10 @@ class MSAmandaReader(ReaderBase):
     @staticmethod
     def _evaluate_columns(columns) -> bool:
         """Case insensitive column evaluation MsAmanda file."""
+
+        if "Rank" in columns:
+            REQUIRED_COLUMNS.append("Rank")
+
         column_check = [True if col in columns else False for col in REQUIRED_COLUMNS]
         if not all(column_check):
             raise MSAmandaParsingError(
@@ -87,6 +93,12 @@ class MSAmandaReader(ReaderBase):
                 if col not in REQUIRED_COLUMNS
             },
         )
+
+        try:
+            psm["rank"] = psm_dict["Rank"]
+        except KeyError:
+            pass
+
         return psm
 
     @staticmethod

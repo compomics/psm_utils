@@ -26,7 +26,6 @@ from rich.logging import RichHandler
 
 import psm_utils.io
 
-
 logger = logging.getLogger(__name__)
 
 

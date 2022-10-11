@@ -301,12 +301,13 @@ class PercolatorTabWriter(WriterBase):
 
     def write_psm(self, psm: PeptideSpectrumMatch):
         """Write a single PSM to the PSM file."""
+        entry = self._psm_to_entry(psm)
         try:
-            self._writer.writerow(self._psm_to_entry(psm))
+            self._writer.writerow(entry)
         except AttributeError:
             raise PSMUtilsIOException(
-                "`write_psm` method can only be called if `PercolatorTabWriter` is "
-                "opened in context (i.e., using the `with` statement)."
+                f"`write_psm` method can only be called if `{self.__class__.__qualname__}`"
+                "is opened in context (i.e., using the `with` statement)."
             )
 
     def write_file(self, psm_list: PSMList):

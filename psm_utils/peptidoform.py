@@ -253,15 +253,19 @@ class Peptidoform:
             requires renaming. Modification labels that are not in the mapping will not
             be renamed.
 
+        See also
+        --------
+        psm_utils.psm_list.PSMList.rename_modifications
+
         Examples
         --------
-        >>> peptidoform = Peptidoform('[Acedyl]-AC[Carbamidomedyl]DEFGHIK')
+        >>> peptidoform = Peptidoform('[ac]-PEPTC[cmm]IDEK')
         >>> peptidoform.rename_modifications({
-        ...     "Acedyl": "Acetyl",
-        ...     "Carbamidomedyl": "Carbamidomethyl"
+        ...     "ac": "Acetyl",
+        ...     "cmm": "Carbamidomethyl"
         ... })
         >>> peptidoform.proforma
-        '[Acetyl]-AC[Carbamidomethyl]DEFGHIK'
+        '[Acetyl]-PEPTC[Carbamidomethyl]IDEK'
 
         """
 
@@ -292,6 +296,76 @@ class Peptidoform:
                 self.properties[mod_type] = _rename_modification_list(
                     self.properties[mod_type]
                 )
+
+    def add_fixed_modifications(self, modification_rules: list[tuple[str, list[str]]]):
+        """
+        Add fixed modifications to peptidoform.
+
+        Add modification rules for fixed modifications to peptidoform. These will be
+        added in the "fixed modifications" notation, at the front of the ProForma
+        sequence.
+
+        See also
+        --------
+        psm_utils.peptidoform.Peptidoform.add_fixed_modifications
+
+        Examples
+        --------
+        >>> peptidoform = Peptidoform("ATPEILTCNSIGCLK")
+        >>> peptidoform.add_fixed_modifications([("Carbamidomethyl", ["C"])])
+        >>> peptidoform.proforma
+        '<[Carbamidomethyl]@C>ATPEILTCNSIGCLK'
+
+        """
+        modification_rules = [
+            proforma.ModificationRule(proforma.process_tag_tokens(mod), targets)
+            for mod, targets in modification_rules
+        ]
+        if self.properties["fixed_modifications"]:
+            self.properties["fixed_modifications"].extend(modification_rules)
+        else:
+            self.properties["fixed_modifications"] = modification_rules
+
+    def apply_fixed_modifications(self):
+        """
+        Apply ProForma fixed modifications as sequential modifications.
+
+        Applies all modifications that are encoded as fixed in the ProForma notation
+        (once at the beginning of the sequence) as modifications throughout the
+        sequence at each affected amino acid residue.
+
+        See also
+        --------
+        psm_utils.peptidoform.Peptidoform.apply_fixed_modifications
+
+        Examples
+        --------
+        >>> peptidoform = Peptidoform('<[Carbamidomethyl]@C>ATPEILTCNSIGCLK')
+        >>> peptidoform.apply_fixed_modifications()
+        >>> peptidoform.proforma
+        'ATPEILTC[Carbamidomethyl]NSIGC[Carbamidomethyl]LK'
+
+        """
+        if self.properties["fixed_modifications"]:
+            # Setup target_aa -> modification_list dictionary
+            rule_dict = {}
+            for rule in self.properties["fixed_modifications"]:
+                for target_aa in rule.targets:
+                    try:
+                        rule_dict[target_aa].append(rule.modification_tag)
+                    except KeyError:
+                        rule_dict[target_aa] = [rule.modification_tag]
+
+            # Apply modifications to sequence
+            for i, (aa, site_mods) in enumerate(self.parsed_sequence):
+                if aa in rule_dict:
+                    if site_mods:
+                        self.parsed_sequence[i] = (aa, site_mods + rule_dict[aa])
+                    else:
+                        self.parsed_sequence[i] = (aa, rule_dict[aa])
+
+            # Remove fixed modifications
+            self.properties["fixed_modifications"] = None
 
 
 class PeptidoformException(PSMUtilsException):

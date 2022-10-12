@@ -6,7 +6,7 @@ from typing import Iterable, List, Sequence, Union
 
 import numpy as np
 import pandas as pd
-import pyteomics
+from pyteomics import proforma, auxiliary
 from pydantic import BaseModel
 
 from psm_utils.psm import PSM
@@ -176,7 +176,7 @@ class PSMList(BaseModel):
                     f"Cannot calculate q-values if not all PSMs have `{key}` assigned."
                 )
 
-        qvalues = pyteomics.auxiliary.qvalues(
+        qvalues = auxiliary.qvalues(
             self,
             key="score",
             is_decoy="is_decoy",
@@ -202,13 +202,64 @@ class PSMList(BaseModel):
             requires renaming. Modification labels that are not in the mapping will not
             be renamed.
 
+        See also
+        --------
+        psm_utils.peptidoform.Peptidoform.rename_modifications
+
         """
         for psm in self.psm_list:
             psm.peptidoform.rename_modifications(mapping)
 
-    def set_ranks(self):
-        "Set the ranks for all the psm in the psm list"
+    def add_fixed_modifications(self, modification_rules: list[tuple[str, list[str]]]):
+        """
+        Add fixed modifications to all PSM peptidoforms in :py:class:`PSMList`.
 
+        Add modification rules for fixed modifications to peptidoform. These will be
+        added in the "fixed modifications" notation, at the front of the ProForma
+        sequence.
+
+        See also
+        --------
+        psm_utils.peptidoform.Peptidoform.add_fixed_modifications
+
+        Examples
+        --------
+        >>> psm_list.add_fixed_modifications([("Carbamidomethyl", ["C"])])
+
+        """
+        modification_rules = [
+            proforma.ModificationRule(proforma.process_tag_tokens(mod), targets)
+            for mod, targets in modification_rules
+        ]
+        for psm in self.psm_list:
+            if psm.peptidoform.properties["fixed_modifications"]:
+                psm.peptidoform.properties["fixed_modifications"].extend(
+                    modification_rules
+                )
+            else:
+                psm.peptidoform.properties["fixed_modifications"] = modification_rules
+
+    def apply_fixed_modifications(self):
+        """
+        Apply ProForma fixed modifications as sequential modifications.
+
+        Applies :py:meth:`psm_utils.peptidoform.Peptidoform.apply_fixed_modifications`
+        on all PSM peptidoforms in the :py:class:`PSMList`.
+
+        See also
+        --------
+        psm_utils.peptidoform.Peptidoform.apply_fixed_modifications
+
+        Examples
+        --------
+        >>> psm_list.apply_fixed_modifications()
+
+        """
+        for psm in self.psm_list:
+            psm.peptidoform.apply_fixed_modifications()
+
+    def set_ranks(self):
+        """Set identification ranks for all PSMs in :py:class:`PSMList`."""
         def rank_simple(vector):
             return sorted(range(len(vector)), key=vector.__getitem__)
 
@@ -228,15 +279,6 @@ class PSMList(BaseModel):
                 spectrum_ranks[index] = rank
 
         self.__setitem__("rank", spectrum_ranks)
-
-    @classmethod
-    def from_csv(cls) -> "PSMList":
-        """Read PSMList from comma-separated values file."""
-        raise NotImplementedError
-
-    def to_csv(self) -> None:  # Or "to_dataframe"?
-        """Write PSMList to comma-separated values file."""
-        raise NotImplementedError
 
     def to_dataframe(self) -> pd.DataFrame:
         """Convert :py:class:`PSMList` to :py:class:`pandas.DataFrame`."""

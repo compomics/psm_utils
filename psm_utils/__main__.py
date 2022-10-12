@@ -1,17 +1,19 @@
 """
 Command line interface to psm_utils.
 
-File conversion
-***************
+Convert
+*******
 
 :py:mod:`psm_utils` can convert one PSM file type into another. Simply run the ``psm_utils``
 command with the ``convert`` subcommand and specify the input and output filenames. By
 default, the file types will be inferred from the filename and extensions. File types
-can also be specified with the ``input-type`` and ``output-type`` options.
+can also be specified with the ``input-filetype`` and ``output-filetype`` options.
+
+For instance:
 
 .. code-block:: sh
 
-    psm_utils convert --input-filetype maxquant --output-filetype mzid <input_filename> <output_filename>
+    psm_utils convert --input-filetype=maxquant --output-filetype=mzid msms.txt msms_converted.mzid
 
 
 Run ``psm_utils convert --help`` for an overview of all parameters.

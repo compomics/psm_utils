@@ -197,7 +197,7 @@ class StreamlitPageStats(StreamlitPage):
             psm_df[["spectrum_id", "run", "collection"]].drop_duplicates().shape[0]
         )
         n_psms = psm_df.shape[0]
-        n_peptidoforms = psm_df["peptide"].apply(lambda x: x.proforma).unique().shape[0]
+        n_peptidoforms = psm_df["peptidoform"].apply(lambda x: x.proforma).unique().shape[0]
         percent_decoys = np.count_nonzero(psm_list["is_decoy"]) / len(psm_list)
 
         row_1 = st.columns(3)
@@ -227,9 +227,9 @@ class StreamlitPageStats(StreamlitPage):
                 .shape[0]
             )
             n_psms = psm_df_filtered.shape[0]
-            n_peptides = psm_df["peptide"].apply(lambda x: x.sequence).unique().shape[0]
+            n_peptides = psm_df["peptidoform"].apply(lambda x: x.sequence).unique().shape[0]
             n_peptidoforms = (
-                psm_df_filtered["peptide"].apply(lambda x: x.proforma).unique().shape[0]
+                psm_df_filtered["peptidoform"].apply(lambda x: x.proforma).unique().shape[0]
             )
 
             row_3 = st.columns(4)

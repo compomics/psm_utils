@@ -12,7 +12,7 @@ a field contains the delimiter. Peptidoforms are written in the `HUPO-PSI ProFor
 <https://psidev.info/proforma>`_ notation.
 
 Required and optional columns equate to the required and optional attributes of
-:py:class:`~psm_utils.psm.PeptideSpectrumMatch`. Dictionary items in
+:py:class:`~psm_utils.psm.PSM`. Dictionary items in
 :py:attr:`provenance_data`, :py:attr:`metadata`, and :py:attr:`rescoring_features`
 are flattened to separate columns, each with their column names prefixed with
 ``provenance:``, ``meta:``, and ``rescoring:``, respectively.
@@ -23,7 +23,7 @@ are flattened to separate columns, each with their column names prefixed with
 .. code-block::
     :caption: Minimal :py:mod:`psm_utils` TSV file
 
-    peptide	spectrum_id
+    peptidoform	spectrum_id
     RNVIDKVAK/2	1
     KHLEQHPK/2	2
     ...
@@ -31,14 +31,14 @@ are flattened to separate columns, each with their column names prefixed with
 .. code-block::
     :caption: Recommended :py:mod:`psm_utils` TSV file, compatible with `HUPO-PSI Universal Spectrum Identifier <https://www.psidev.info/usi>`_
 
-    peptide	spectrum_id	run	collection
+    peptidoform	spectrum_id	run	collection
     VLHPLEGAVVIIFK/2	17555	Adult_Frontalcortex_bRP_Elite_85_f09	PXD000561
     ...
 
 .. code-block::
     :caption: Full :py:mod:`psm_utils` TSV file, converted from a Percolator Tab file
 
-    peptide	spectrum_id	run	collection	spectrum	is_decoy	score	precursor_mz	retention_time	protein_list	source	provenance:filename	rescoring:ExpMass	rescoring:CalcMass	rescoring:hyperscore	rescoring:deltaScore	rescoring:frac_ion_b	rescoring:frac_ion_y	rescoring:Mass	rescoring:dM	rescoring:absdM	rescoring:PepLen	rescoring:Charge2	rescoring:Charge3	rescoring:Charge4	rescoring:enzN	rescoring:enzC	rescoring:enzInt
+    peptidoform	spectrum_id	run	collection	spectrum	is_decoy	score	precursor_mz	retention_time	protein_list	source	provenance:filename	rescoring:ExpMass	rescoring:CalcMass	rescoring:hyperscore	rescoring:deltaScore	rescoring:frac_ion_b	rescoring:frac_ion_y	rescoring:Mass	rescoring:dM	rescoring:absdM	rescoring:PepLen	rescoring:Charge2	rescoring:Charge3	rescoring:Charge4	rescoring:enzN	rescoring:enzC	rescoring:enzInt
     RNVIDKVAK/2	_3_2_1				False	20.3	1042.64		['DECOY_sp|Q8U0H4_REVERSED|RTCB_PYRFU-tRNA-splicing-ligase-RtcB-OS=Pyrococcus-furiosus...']	percolator	pyro.t.xml.pin	1042.64	1042.64	20.3	6.6	0.444444	0.333333	1042.64	0.0003	0.0003	9	1	0	0	1	0	1
     KHLEQHPK/2	_4_2_1				False	26.5	1016.56		['sp|Q8TZD9|RS15_PYRFU-30S-ribosomal-protein-S15-OS=Pyrococcus-furiosus-(strain-ATCC...']	percolator	pyro.t.xml.pin	1016.56	1016.56	26.5	18.5	0.375	0.75	1016.56	0.001	0.001	8	1	0	0	1	0	0
     ...
@@ -54,7 +54,7 @@ from typing import Optional, Union
 
 from psm_utils.io._base_classes import ReaderBase, WriterBase
 from psm_utils.io.exceptions import PSMUtilsIOException
-from psm_utils.psm import PeptideSpectrumMatch
+from psm_utils.psm import PSM
 from psm_utils.psm_list import PSMList
 
 
@@ -69,7 +69,7 @@ class TSVReader(ReaderBase):
         with open(self.filename, "rt") as open_file:
             reader = csv.DictReader(open_file, delimiter="\t")
             for row in reader:
-                yield PeptideSpectrumMatch(**self._parse_entry(row))
+                yield PSM(**self._parse_entry(row))
 
     def read_file(self) -> PSMList:
         """Read full PSM file into a PSMList object."""
@@ -77,7 +77,7 @@ class TSVReader(ReaderBase):
 
     @staticmethod
     def _parse_entry(entry: dict):
-        """Parse single TSV entry to :py:class:`~psm_utils.psm.PeptideSpectrumMatch`."""
+        """Parse single TSV entry to :py:class:`~psm_utils.psm.PSM`."""
         # Replace empty strings with None
         entry = {k: v if v else None for k, v in entry.items()}
 
@@ -117,7 +117,7 @@ class TSVWriter(WriterBase):
     def __init__(
         self,
         filename: Union[str, Path],
-        example_psm: Optional[PeptideSpectrumMatch] = None,
+        example_psm: Optional[PSM] = None,
         *args,
         **kwargs,
     ):
@@ -128,7 +128,7 @@ class TSVWriter(WriterBase):
         ----------
         filename: str, Pathlib.Path
             Path to PSM file.
-        example_psm: psm_utils.psm.PeptideSpectrumMatch, optional
+        example_psm: psm_utils.psm.PSM, optional
             Example PSM, required to extract the column names when writing to a new
             file. Should contain all fields that are to be written to the PSM file,
             i.e., all items in the :py:attr:`provenance_data`, :py:attr:`metadata`, and
@@ -177,14 +177,14 @@ class TSVWriter(WriterBase):
         self._open_file = None
         self._writer = None
 
-    def write_psm(self, psm: PeptideSpectrumMatch):
+    def write_psm(self, psm: PSM):
         """
         Write a single PSM to new or existing PSM file.
 
         Parameters
         ----------
-        psm: PeptideSpectrumMatch
-            PeptideSpectrumMatch object to write.
+        psm: PSM
+            PSM object to write.
 
         """
         entry = self._psm_to_entry(psm)
@@ -215,11 +215,11 @@ class TSVWriter(WriterBase):
                 writer.writerow(self._psm_to_entry(psm))
 
     @staticmethod
-    def _psm_to_entry(psm: PeptideSpectrumMatch) -> dict:
-        entry = psm.__dict__
+    def _psm_to_entry(psm: PSM) -> dict:
+        entry = psm.__dict__.copy()
 
         # Convert Peptidoform to proforma sequence
-        entry["peptide"] = entry["peptide"].proforma
+        entry["peptidoform"] = psm.peptidoform.proforma
 
         # Drop spectrum
         del entry["spectrum"]

@@ -6,7 +6,7 @@ Notes
 -----
 
 * idXML supports multiple peptide hits (identifications) per spectrum. Each peptide hit
-  is parsed as an individual :py:class:`~psm_utils.psm.PeptideSpectrumMatch` object.
+  is parsed as an individual :py:class:`~psm_utils.psm.PSM` object.
 
 """
 
@@ -17,9 +17,8 @@ import re
 
 from pyteomics.openms import idxml
 
-from psm_utils.exceptions import PSMUtilsException
 from psm_utils.io._base_classes import ReaderBase
-from psm_utils.psm import PeptideSpectrumMatch
+from psm_utils.psm import PSM
 from psm_utils.psm_list import PSMList
 
 # Patterns to match open and closed round/square brackets
@@ -72,10 +71,10 @@ class IdXMLReader(ReaderBase):
         else:
             return None
 
-    def _parse_psm(self, entry: dict, peptide_hit: dict) -> PeptideSpectrumMatch:
-        """Parse idXML PSM to :py:class:`~psm_utils.psm.PeptideSpectrumMatch`."""
-        return PeptideSpectrumMatch(
-            peptide=self._parse_peptidoform(
+    def _parse_psm(self, entry: dict, peptide_hit: dict) -> PSM:
+        """Parse idXML PSM to :py:class:`~psm_utils.psm.PSM`."""
+        return PSM(
+            peptidoform=self._parse_peptidoform(
                 peptide_hit["sequence"], peptide_hit["charge"]
             ),
             spectrum_id=entry["spectrum_reference"],

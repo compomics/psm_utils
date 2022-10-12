@@ -53,7 +53,7 @@ from pyteomics import mass, tandem
 from psm_utils.exceptions import PSMUtilsException
 from psm_utils.io._base_classes import ReaderBase
 from psm_utils.peptidoform import Peptidoform
-from psm_utils.psm import PeptideSpectrumMatch
+from psm_utils.psm import PSM
 from psm_utils.psm_list import PSMList
 
 
@@ -77,7 +77,7 @@ class XTandemReader(ReaderBase):
 
         >>> from psm_utils.io.xtandem import XTandemReader
         >>> for psm in XTandemReader("pyro.t.xml"):
-        ...     print(psm.peptide.proforma)
+        ...     print(psm.peptidoform.proforma)
         WFEELSK
         NDVPLVGGK
         GANLGEMTNAGIPVPPGFC[+57.022]VTAEAYK
@@ -146,11 +146,11 @@ class XTandemReader(ReaderBase):
 
         return Peptidoform(proforma_seq)
 
-    def _parse_entry(self, entry) -> PeptideSpectrumMatch:
-        """Parse X!Tandem XML entry to :py:class:`~psm_utils.psm.PeptideSpectrumMatch`."""
+    def _parse_entry(self, entry) -> PSM:
+        """Parse X!Tandem XML entry to :py:class:`~psm_utils.psm.PSM`."""
         peptide_entry = entry["protein"][0]["peptide"]
-        psm = PeptideSpectrumMatch(
-            peptide=self._parse_peptidoform(peptide_entry, entry["z"]),
+        psm = PSM(
+            peptidoform=self._parse_peptidoform(peptide_entry, entry["z"]),
             spectrum_id=entry["support"]["fragment ion mass spectrum"]["note"].split(
                 " "
             )[0],

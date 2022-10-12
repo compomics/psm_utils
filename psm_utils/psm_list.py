@@ -1,64 +1,72 @@
 from __future__ import annotations
 
 import re
+from itertools import compress
 from typing import Iterable, List, Sequence, Union
 
 import numpy as np
 import pandas as pd
-import pyteomics
 from pydantic import BaseModel
-from itertools import compress
+from pyteomics import auxiliary, proforma
 
-from psm_utils.psm import PeptideSpectrumMatch
+from psm_utils.psm import PSM
 
 
 class PSMList(BaseModel):
-    """
-    Data class representing a list of PSMs.
+    """Data class representing a list of PSMs."""
 
-    Parameters
-    ----------
-    psm_list : list[PeptideSpectrumMatch]
-        List of PeptideSpectrumMatch instances.
+    psm_list: List[PSM]
 
-    Examples
-    --------
-    Initiate a :py:class:`PSMList` from a list of PeptideSpectrumMatch objects:
+    def __init__(__pydantic_self__, **data) -> None:
+        """
+        Data class representing a list of PSMs, with some useful functionality.
 
-    >>> psm_list = PSMList(psm_list=[
-    ...     PeptideSpectrumMatch(peptide="ACDK", spectrum_id=1),
-    ...     PeptideSpectrumMatch(peptide="CDEFR", spectrum_id=2),
-    ...     PeptideSpectrumMatch(peptide="DEM[Oxidation]K", spectrum_id=3),
-    ... ])
+        Parameters
+        ----------
+        psm_list : list[PSM]
+            List of PSM instances.
 
-    :py:class:`PSMList` directly supports iteration:
+        Examples
+        --------
+        Initiate a :py:class:`PSMList` from a list of PSM objects:
 
-    >>> for psm in psm_list:
-    ...     print(psm.peptide.theoretical_mass)
-    436.12639936491996
-    512.1576994932
-    454.15222018994
+        >>> psm_list = PSMList(psm_list=[
+        ...     PSM(peptidoform="ACDK", spectrum_id=1, score=140.2),
+        ...     PSM(peptidoform="CDEFR", spectrum_id=2, score=132.9),
+        ...     PSM(peptidoform="DEM[Oxidation]K", spectrum_id=3, score=55.7),
+        ... ])
 
-    :py:class:`PSMList` supports indexing and slicing:
+        :py:class:`PSMList` directly supports iteration:
 
-    >>> psm_list[1].peptide.theoretical_mass
-    512.1576994932
+        >>> for psm in psm_list:
+        ...     print(psm.peptidoform.theoretical_mass)
+        436.12639936491996
+        512.1576994932
+        454.15222018994
+
+        :py:class:`PSMList` supports indexing and slicing:
+
+        >>> psm_list[1].peptidoform
+        Peptidoform('CDEFR')
+        >>> psm_list_subset_1 = psm_list[0:1]
+        >>> psm_list_subset_2 = psm_list[[0,2]]
+
+        :py:class:`PSM` properties can be accessed as a single Numpy array:
+
+        >>> psm_list["score"]
+        array([140.2, 132.9, 55.7], dtype=object)
+
+        """
+        super().__init__(**data)
 
 
-    """
-
-    psm_list: List[PeptideSpectrumMatch]
-
-    def __iter__(self) -> Iterable[PeptideSpectrumMatch]:
+    def __iter__(self) -> Iterable[PSM]:
         return self.psm_list.__iter__()
 
     def __len__(self) -> int:
         return self.psm_list.__len__()
 
-    def __getitem__(
-        self, item
-    ) -> Union[PeptideSpectrumMatch, list[PeptideSpectrumMatch]]:
-        # TODO: Expand usage? E.g. index by spectrum_id? Return new PSMList for slice?
+    def __getitem__(self, item) -> Union[PSM, list[PSM]]:
         if isinstance(item, int):
             # Return single PSM by index
             return self.psm_list[item]
@@ -131,9 +139,9 @@ class PSMList(BaseModel):
         Use regular expression pattern to find decoy PSMs by protein name(s).
 
         This method allows a regular expression pattern to be applied on
-        :py:obj:`~psm_utils.psm.PeptideSpectrumMatch`
-        :py:attr:`~psm_utils.psm.PeptideSpectrumMatch.protein_list` items to set the
-        :py:attr:`~psm_utils.psm.PeptideSpectrumMatch.is_decoy` attribute.
+        :py:obj:`~psm_utils.psm.PSM`
+        :py:attr:`~psm_utils.psm.PSM.protein_list` items to set the
+        :py:attr:`~psm_utils.psm.PSM.is_decoy` attribute.
         Decoy protein entries are commonly marked with a prefix or suffix, e.g.
         ``DECOY_``, or ``_REVERSED``. If ``decoy_pattern`` matches to a substring of all
         entries in :py:attr:`protein_list`, the PSM is interpreted as a decoy. Existing
@@ -178,7 +186,7 @@ class PSMList(BaseModel):
                     f"Cannot calculate q-values if not all PSMs have `{key}` assigned."
                 )
 
-        qvalues = pyteomics.auxiliary.qvalues(
+        qvalues = auxiliary.qvalues(
             self,
             key="score",
             is_decoy="is_decoy",
@@ -204,13 +212,64 @@ class PSMList(BaseModel):
             requires renaming. Modification labels that are not in the mapping will not
             be renamed.
 
+        See also
+        --------
+        psm_utils.peptidoform.Peptidoform.rename_modifications
+
         """
         for psm in self.psm_list:
-            psm.peptide.rename_modifications(mapping)
+            psm.peptidoform.rename_modifications(mapping)
+
+    def add_fixed_modifications(self, modification_rules: list[tuple[str, list[str]]]):
+        """
+        Add fixed modifications to all PSM peptidoforms in :py:class:`PSMList`.
+
+        Add modification rules for fixed modifications to peptidoform. These will be
+        added in the "fixed modifications" notation, at the front of the ProForma
+        sequence.
+
+        See also
+        --------
+        psm_utils.peptidoform.Peptidoform.add_fixed_modifications
+
+        Examples
+        --------
+        >>> psm_list.add_fixed_modifications([("Carbamidomethyl", ["C"])])
+
+        """
+        modification_rules = [
+            proforma.ModificationRule(proforma.process_tag_tokens(mod), targets)
+            for mod, targets in modification_rules
+        ]
+        for psm in self.psm_list:
+            if psm.peptidoform.properties["fixed_modifications"]:
+                psm.peptidoform.properties["fixed_modifications"].extend(
+                    modification_rules
+                )
+            else:
+                psm.peptidoform.properties["fixed_modifications"] = modification_rules
+
+    def apply_fixed_modifications(self):
+        """
+        Apply ProForma fixed modifications as sequential modifications.
+
+        Applies :py:meth:`psm_utils.peptidoform.Peptidoform.apply_fixed_modifications`
+        on all PSM peptidoforms in the :py:class:`PSMList`.
+
+        See also
+        --------
+        psm_utils.peptidoform.Peptidoform.apply_fixed_modifications
+
+        Examples
+        --------
+        >>> psm_list.apply_fixed_modifications()
+
+        """
+        for psm in self.psm_list:
+            psm.peptidoform.apply_fixed_modifications()
 
     def set_ranks(self):
-        "Set the ranks for all the psm in the psm list"
-
+        """Set identification ranks for all PSMs in :py:class:`PSMList`."""
         def rank_simple(vector):
             return sorted(range(len(vector)), key=vector.__getitem__)
 
@@ -230,15 +289,6 @@ class PSMList(BaseModel):
                 spectrum_ranks[index] = rank
 
         self.__setitem__("rank", spectrum_ranks)
-
-    @classmethod
-    def from_csv(cls) -> "PSMList":
-        """Read PSMList from comma-separated values file."""
-        raise NotImplementedError
-
-    def to_csv(self) -> None:  # Or "to_dataframe"?
-        """Write PSMList to comma-separated values file."""
-        raise NotImplementedError
 
     def to_dataframe(self) -> pd.DataFrame:
         """Convert :py:class:`PSMList` to :py:class:`pandas.DataFrame`."""

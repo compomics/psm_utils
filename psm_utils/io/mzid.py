@@ -22,7 +22,7 @@ from psm_utils import __version__
 from psm_utils.io._base_classes import ReaderBase, WriterBase
 from psm_utils.io.exceptions import PSMUtilsIOException
 from psm_utils.peptidoform import Peptidoform
-from psm_utils.psm import PeptideSpectrumMatch
+from psm_utils.psm import PSM
 from psm_utils.psm_list import PSMList
 
 logger = logging.getLogger(__name__)
@@ -83,7 +83,7 @@ class MzidReader(ReaderBase):
 
         >>> from psm_utils.io.mzid import MzidReader
         >>> for psm in MzidReader("peptides_1_1_0.mzid"):
-        ...     print(psm.peptide.proforma)
+        ...     print(psm.peptidoform.proforma)
         ACDEK
         AC[Carbamidomethyl]DEFGR
         [Acetyl]-AC[Carbamidomethyl]DEFGHIK
@@ -182,7 +182,7 @@ class MzidReader(ReaderBase):
         raw_file: str,
         spectrum_identification_item: dict[str, Union[str, float, list]],
         spectrum_title: Optional[str] = None,
-    ) -> PeptideSpectrumMatch:
+    ) -> PSM:
         """Parse single mzid entry to :py:class:`~psm_utils.peptidoform.Peptidoform`."""
         sii = spectrum_identification_item
 
@@ -191,7 +191,9 @@ class MzidReader(ReaderBase):
         except KeyError:
             modifications = []
         sequence = sii["PeptideSequence"]
-        peptide = self._parse_peptidoform(sequence, modifications, sii["chargeState"])
+        peptidoform = self._parse_peptidoform(
+            sequence, modifications, sii["chargeState"]
+        )
         is_decoy, protein_list = self._parse_peptide_evidence_ref(
             sii["PeptideEvidenceRef"]
         )
@@ -213,8 +215,8 @@ class MzidReader(ReaderBase):
         if spectrum_title:
             metadata["spectrum title"] = spectrum_title
 
-        psm = PeptideSpectrumMatch(
-            peptide=peptide,
+        psm = PSM(
+            peptidoform=peptidoform,
             spectrum_id=spectrum_id,
             run=raw_file,
             is_decoy=is_decoy,
@@ -263,6 +265,7 @@ class MzidWriter(WriterBase):
     def __init__(
         self,
         filename: Union[str, Path],
+        show_progressbar: bool = False,
         *args,
         **kwargs,
     ):
@@ -273,6 +276,8 @@ class MzidWriter(WriterBase):
         ----------
         filename: str, Pathlib.Path
             Path to PSM file.
+        show_progressbar: bool, optional
+            Show progress bar for conversion process. (default: False)
 
         Notes
         -----
@@ -283,7 +288,7 @@ class MzidWriter(WriterBase):
 
         """
         super().__init__(filename, *args, **kwargs)
-
+        self.show_progressbar = show_progressbar
         self._writer = None
 
     def __enter__(self) -> MzidWriter:
@@ -292,7 +297,7 @@ class MzidWriter(WriterBase):
     def __exit__(self, *args, **kwargs) -> None:
         pass
 
-    def write_psm(self, psm: PeptideSpectrumMatch):
+    def write_psm(self, psm: PSM):
         """
         Write a single PSM to the PSM file.
 
@@ -305,10 +310,10 @@ class MzidWriter(WriterBase):
         """
         raise NotImplementedError("MzidWriter currently does not support write_psm.")
 
-    def write_file(self, psm_list: PSMList, show_progressbar: bool = False):
+    def write_file(self, psm_list: PSMList):
         """Write entire PSMList to mzid file."""
         file = open(self.filename, "wb")
-        with Progress(disable=(not show_progressbar)) as progress:
+        with Progress(disable=(not self.show_progressbar)) as progress:
             with MzIdentMLWriter(file, close=True) as writer:
                 writer.controlled_vocabularies()
                 writer.provenance(
@@ -351,7 +356,7 @@ class MzidWriter(WriterBase):
                         writer.write_db_sequence(prot, None, id=prot, params=[])
                         progress.update(task1, advance=1)
                     for psm in psm_list:
-                        peptide = psm["peptide"]
+                        peptide = psm["peptidoform"]
                         if peptide not in peptide_ids:
                             writer.write_peptide(**self._create_peptide_object(peptide))
                             peptide_ids.add(peptide)
@@ -488,18 +493,18 @@ class MzidWriter(WriterBase):
     @staticmethod
     def _transform_spectrum_identification_item(candidate_psm, i=0):
         """Create SpectrumIdentificationItem for each candidate PSM."""
-        peptide = candidate_psm["peptide"].proforma
+        peptide = candidate_psm["peptidoform"].proforma
         if candidate_psm["metadata"]:
             params = [{k: v} for k, v in candidate_psm["metadata"].items()]
         else:
             params = []
         candidate_psm_dict = {
-            "charge_state": candidate_psm["peptide"].precursor_charge,
+            "charge_state": candidate_psm["peptidoform"].precursor_charge,
             "peptide_id": f"Peptide_" + peptide,
             # TODO: add which search engine score cv param
             "score": {"score": candidate_psm["score"]},
             "experimental_mass_to_charge": candidate_psm["precursor_mz"],
-            "calculated_mass_to_charge": candidate_psm["peptide"].theoretical_mz,
+            "calculated_mass_to_charge": candidate_psm["peptidoform"].theoretical_mz,
             "rank": candidate_psm["rank"],
             "params": params,
         }

@@ -4,9 +4,9 @@ from psm_utils.io.tsv import TSVReader, TSVWriter
 
 test_cases = [
     (
-        {"peptide": "ACDE", "spectrum_id": "1"},
+        {"peptidoform": "ACDE", "spectrum_id": "1"},
         {
-            "peptide": "ACDE",
+            "peptidoform": "ACDE",
             "spectrum_id": "1",
             "provenance_data": {},
             "metadata": {},
@@ -14,9 +14,9 @@ test_cases = [
         },
     ),
     (
-        {"peptide": "ACDE", "spectrum_id": "1", "provenance:test": "value"},
+        {"peptidoform": "ACDE", "spectrum_id": "1", "provenance:test": "value"},
         {
-            "peptide": "ACDE",
+            "peptidoform": "ACDE",
             "spectrum_id": "1",
             "provenance_data": {"test": "value"},
             "metadata": {},

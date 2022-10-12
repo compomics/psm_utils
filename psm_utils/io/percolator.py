@@ -25,7 +25,7 @@ from typing import Iterable, Optional, Union
 from psm_utils.io._base_classes import ReaderBase, WriterBase
 from psm_utils.io.exceptions import PSMUtilsIOException
 from psm_utils.peptidoform import Peptidoform
-from psm_utils.psm import PeptideSpectrumMatch
+from psm_utils.psm import PSM
 from psm_utils.psm_list import PSMList
 
 
@@ -45,9 +45,9 @@ class PercolatorTabReader(ReaderBase):
         As the score, retention time, and precursor m/z are often embedded as feature
         columns, but not with a fixed column name, their respective column names need to
         be provided as parameters to the class. If not provided, these properties will
-        not be added to the resulting :py:class:`~psm_utils.psm.PeptideSpectrumMatch`.
+        not be added to the resulting :py:class:`~psm_utils.psm.PSM`.
         Nevertheless, they will still be added to its
-        :py:attr:`~psm_utils.psm.PeptideSpectrumMatch.rescoring_features` property
+        :py:attr:`~psm_utils.psm.PSM.rescoring_features` property
         dictionary, along with the other features.
 
         Parameters
@@ -100,7 +100,7 @@ class PercolatorTabReader(ReaderBase):
                     f"`{self.filename}`."
                 )
 
-    def __iter__(self) -> Iterable[PeptideSpectrumMatch]:
+    def __iter__(self) -> Iterable[PSM]:
         """Iterate over file and return PSMs one-by-one."""
         with _PercolatorTabIO(
             self.filename, "rt", protein_separator=self._protein_separator
@@ -167,14 +167,14 @@ class PercolatorTabReader(ReaderBase):
             return None
 
     def _parse_entry(self, entry):
-        """Parse Percolator TSV entry to PeptideSpectrumMatch."""
+        """Parse Percolator TSV entry to PSM."""
         label = entry["label"] if "label" in entry else None
         is_decoy = True if label == "-1" else False if label == "1" else None
         rescoring_features = {
             k: v for k, v in entry.items() if k not in self.non_feature_columns
         }
         charge = self._parse_charge(entry)
-        peptide = self._parse_peptidoform(entry["peptide"], charge)
+        peptidoform = self._parse_peptidoform(entry["peptide"], charge)
         protein_list = (
             entry["proteins"].split(self._protein_separator)
             if "proteins" in entry
@@ -182,8 +182,8 @@ class PercolatorTabReader(ReaderBase):
             if "proteinids" in entry
             else None
         )
-        psm = PeptideSpectrumMatch(
-            peptide=peptide,
+        psm = PSM(
+            peptidoform=peptidoform,
             spectrum_id=entry[self.id_column],
             is_decoy=is_decoy,
             score=float(entry[self.score_column.lower()])
@@ -232,7 +232,7 @@ class PercolatorTabWriter(WriterBase):
         feature_names: list[str], optional
             List of feature names to extract from PSMs and write to file. List values
             should correspond to keys in the
-            :py:class:`~psm_utils.psm.PeptideSpectrumMatch.rescoring_features` property.
+            :py:class:`~psm_utils.psm.PSM.rescoring_features` property.
             If :py:const:`None`, no rescoring features will be written to the file. If appending to
             an existing file, the existing header will be used to determine the feature
             names. Only has effect with ``pin`` style.
@@ -299,7 +299,7 @@ class PercolatorTabWriter(WriterBase):
         self._open_file = None
         self._writer = None
 
-    def write_psm(self, psm: PeptideSpectrumMatch):
+    def write_psm(self, psm: PSM):
         """Write a single PSM to the PSM file."""
         entry = self._psm_to_entry(psm)
         try:
@@ -312,20 +312,22 @@ class PercolatorTabWriter(WriterBase):
 
     def write_file(self, psm_list: PSMList):
         """Write an entire PSMList to the PSM file."""
-        with open(self.filename, "wt", newline="") as f:
+        with _PercolatorTabIO(
+            self.filename, "wt", newline="", protein_separator=self._protein_separator
+        ) as f:
             writer = csv.DictWriter(f, fieldnames=self._columns, delimiter="\t")
             writer.writeheader()
             for psm in psm_list:
                 writer.writerow(self._psm_to_entry(psm))
 
-    def _psm_to_entry(self, psm: PeptideSpectrumMatch):
-        """Parse PeptideSpectrumMatch to Percolator Tab entry."""
+    def _psm_to_entry(self, psm: PSM):
+        """Parse PSM to Percolator Tab entry."""
         if self.style == "pin":
             entry = {
                 "PSMId": psm.spectrum_id,
                 "Label": None if psm.is_decoy is None else -1 if psm.is_decoy else 1,
                 "ScanNr": None,  # TODO
-                "Peptide": psm.peptide.proforma,
+                "Peptide": psm.peptidoform.proforma,
                 "Proteins": self._protein_separator.join(psm.protein_list)
                 if psm.protein_list
                 else None,
@@ -341,7 +343,7 @@ class PercolatorTabWriter(WriterBase):
                 "score": psm.score,
                 "q-value": psm.qvalue,
                 "posterior_error_prob": psm.pep,
-                "peptide": psm.peptide.proforma,
+                "peptide": psm.peptidoform.proforma,
                 "proteinIds": self._protein_separator.join(psm.protein_list)
                 if psm.protein_list
                 else None,

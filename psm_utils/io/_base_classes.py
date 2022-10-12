@@ -6,7 +6,7 @@ from abc import ABC, abstractmethod
 from pathlib import Path
 from typing import Union
 
-from psm_utils.psm import PeptideSpectrumMatch
+from psm_utils.psm import PSM
 from psm_utils.psm_list import PSMList
 
 
@@ -50,7 +50,7 @@ class WriterBase(ABC):
         self.filename = Path(filename)
 
     @abstractmethod
-    def write_psm(self, psm: PeptideSpectrumMatch):
+    def write_psm(self, psm: PSM):
         """Write a single PSM to the PSM file."""
 
     @abstractmethod

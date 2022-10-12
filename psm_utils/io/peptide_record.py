@@ -57,7 +57,7 @@ import pandas as pd
 from psm_utils.io._base_classes import ReaderBase, WriterBase
 from psm_utils.io.exceptions import PSMUtilsIOException
 from psm_utils.peptidoform import Peptidoform
-from psm_utils.psm import PeptideSpectrumMatch
+from psm_utils.psm import PSM
 from psm_utils.psm_list import PSMList
 
 
@@ -174,7 +174,7 @@ class PeptideRecordReader(ReaderBase):
 
         >>> from psm_utils.io.peptide_record import PeptideRecordReader
         >>> for psm in PeptideRecordReader("peprec.txt"):
-        ...     print(psm.peptide.proforma)
+        ...     print(psm.peptidoform.proforma)
         ACDEK
         AC[Carbamidomethyl]DEFGR
         [Acetyl]-AC[Carbamidomethyl]DEFGHIK
@@ -197,7 +197,7 @@ class PeptideRecordReader(ReaderBase):
             "PeprecEntry", columns, defaults=[None for _ in columns]
         )
 
-    def __iter__(self) -> Iterable[PeptideSpectrumMatch]:
+    def __iter__(self) -> Iterable[PSM]:
         """Iterate over file and return PSMs one-by-one."""
         with open(self.filename, "rt") as open_file:
             reader = csv.DictReader(open_file, delimiter=self._peprec.separator)
@@ -217,10 +217,8 @@ class PeptideRecordReader(ReaderBase):
         return PSMList(psm_list=psm_list)
 
     @staticmethod
-    def _entry_to_psm(
-        entry: NamedTuple, filename: Optional[str] = None
-    ) -> PeptideSpectrumMatch:
-        """Parse single Peptide Record entry to `PeptideSpectrumMatch`."""
+    def _entry_to_psm(entry: NamedTuple, filename: Optional[str] = None) -> PSM:
+        """Parse single Peptide Record entry to `PSM`."""
         # Parse sequence and modifications
         proforma = peprec_to_proforma(entry.peptide, entry.modifications, entry.charge)
 
@@ -236,8 +234,8 @@ class PeptideRecordReader(ReaderBase):
         else:
             is_decoy = None
 
-        return PeptideSpectrumMatch(
-            peptide=proforma,
+        return PSM(
+            peptidoform=proforma,
             spectrum_id=entry.spec_id,
             is_decoy=is_decoy,
             retention_time=entry.observed_retention_time,
@@ -290,8 +288,8 @@ class PeptideRecordWriter(WriterBase):
         self._writer = None
 
     @staticmethod
-    def _psm_to_entry(psm: PeptideSpectrumMatch) -> dict:
-        sequence, modifications, charge = proforma_to_peprec(psm.peptide)
+    def _psm_to_entry(psm: PSM) -> dict:
+        sequence, modifications, charge = proforma_to_peprec(psm.peptidoform)
         return {
             "spec_id": psm.spectrum_id,
             "peptide": sequence,
@@ -302,14 +300,14 @@ class PeptideRecordWriter(WriterBase):
             "score": psm.score,
         }
 
-    def write_psm(self, psm: PeptideSpectrumMatch):
+    def write_psm(self, psm: PSM):
         """
         Write a single PSM to new or existing Peptide Record PSM file.
 
         Parameters
         ----------
-        psm: PeptideSpectrumMatch
-            PeptideSpectrumMatch object to write.
+        psm: PSM
+            PSM object to write.
 
         Examples
         --------

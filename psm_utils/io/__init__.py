@@ -2,6 +2,7 @@
 
 import re
 from pathlib import Path
+from tempfile import NamedTemporaryFile
 from typing import Union
 
 from rich.progress import track
@@ -16,6 +17,7 @@ import psm_utils.io.tsv as tsv
 import psm_utils.io.xtandem as xtandem
 from psm_utils.io._base_classes import WriterBase
 from psm_utils.io.exceptions import PSMUtilsIOException
+from psm_utils.psm_list import PSMList
 
 # TODO: to be completed
 FILETYPES = {
@@ -86,8 +88,11 @@ def _infer_filetype(filename: str):
 def _supports_write_psm(writer: WriterBase):
     """Check if writer supports write_psm method."""
     try:
-        with writer("dummy_file.txt") as writer_instance:
-            writer_instance.write_psm(None)
+        with NamedTemporaryFile(delete=False) as temp_file:
+            with writer(temp_file.name) as writer_instance:
+                temp_file.close()
+                writer_instance.write_psm(None)
+                temp_file.delete()
     except NotImplementedError:
         supports_write_psm = False
     except AttributeError:  # `None` is not valid PSM
@@ -122,9 +127,52 @@ def read_file(filename: Union[str, Path], *args, filetype: str = "infer", **kwar
     return psm_list
 
 
-def write_file():
-    # TODO
-    raise NotImplementedError()
+def write_file(
+    psm_list: PSMList,
+    filename: Union[str, Path],
+    *args,
+    filetype: str = "infer",
+    show_progressbar: bool = False,
+    **kwargs
+):
+    """
+    Write :py:class:`~psm_utils.psmlist.PSMList` to PSM file.
+
+    Parameters
+    ----------
+    psm_list: PSMList
+        PSM list to be written.
+    filename: str
+        Path to file.
+    filetype: str, optional
+        File type. Any PSM file type with read support. See
+        :ref:`Supported file formats`.
+    show_progressbar: bool, optional
+        Show progress bar for conversion process. (default: False)
+    *args : tuple
+        Additional arguments are passed to the :py:class:`psm_utils.io` writer.
+    **kwargs : dict, optional
+        Additional keyword arguments are passed to the :py:class:`psm_utils.io` writer.
+    """
+    if filetype == "infer":
+        filetype = _infer_filetype(filename)
+    writer_cls = WRITERS[filetype]
+
+    # Remove file if already exists to avoid appending:
+    if Path(filename).is_file():
+        Path(filename).unlink()
+
+    # Get example PSM, instantiate writer, write
+    example_psm = psm_list[0]
+    with writer_cls(
+        filename,
+        *args,
+        example_psm=example_psm,
+        mode="write",
+        show_progressbar=show_progressbar,
+        **kwargs,
+    ) as writer:
+        writer.write_file(psm_list)
 
 
 def convert(
@@ -173,7 +221,7 @@ def convert(
     ... )
 
     Note that filetypes can only be inferred for select specific file names and/or
-    extensions, such as ``msms.txt`` or `*.peprec`.
+    extensions, such as ``msms.txt`` or ``*.peprec``.
 
     """
 

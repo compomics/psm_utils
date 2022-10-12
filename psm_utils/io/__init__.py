@@ -2,6 +2,7 @@
 
 import re
 from pathlib import Path
+from tempfile import NamedTemporaryFile
 from typing import Union
 
 from rich.progress import track
@@ -87,8 +88,11 @@ def _infer_filetype(filename: str):
 def _supports_write_psm(writer: WriterBase):
     """Check if writer supports write_psm method."""
     try:
-        with writer("dummy_file.txt") as writer_instance:
-            writer_instance.write_psm(None)
+        with NamedTemporaryFile(delete=False) as temp_file:
+            with writer(temp_file.name) as writer_instance:
+                temp_file.close()
+                writer_instance.write_psm(None)
+                temp_file.delete()
     except NotImplementedError:
         supports_write_psm = False
     except AttributeError:  # `None` is not valid PSM

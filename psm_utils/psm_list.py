@@ -6,48 +6,59 @@ from typing import Iterable, List, Sequence, Union
 
 import numpy as np
 import pandas as pd
-from pyteomics import proforma, auxiliary
 from pydantic import BaseModel
+from pyteomics import auxiliary, proforma
 
 from psm_utils.psm import PSM
 
 
 class PSMList(BaseModel):
-    """
-    Data class representing a list of PSMs.
-
-    Parameters
-    ----------
-    psm_list : list[PSM]
-        List of PSM instances.
-
-    Examples
-    --------
-    Initiate a :py:class:`PSMList` from a list of PSM objects:
-
-    >>> psm_list = PSMList(psm_list=[
-    ...     PSM(peptidoform="ACDK", spectrum_id=1),
-    ...     PSM(peptidoform="CDEFR", spectrum_id=2),
-    ...     PSM(peptidoform="DEM[Oxidation]K", spectrum_id=3),
-    ... ])
-
-    :py:class:`PSMList` directly supports iteration:
-
-    >>> for psm in psm_list:
-    ...     print(psm.peptidoform.theoretical_mass)
-    436.12639936491996
-    512.1576994932
-    454.15222018994
-
-    :py:class:`PSMList` supports indexing and slicing:
-
-    >>> psm_list[1].peptidoform.theoretical_mass
-    512.1576994932
-
-
-    """
+    """Data class representing a list of PSMs."""
 
     psm_list: List[PSM]
+
+    def __init__(__pydantic_self__, **data) -> None:
+        """
+        Data class representing a list of PSMs, with some useful functionality.
+
+        Parameters
+        ----------
+        psm_list : list[PSM]
+            List of PSM instances.
+
+        Examples
+        --------
+        Initiate a :py:class:`PSMList` from a list of PSM objects:
+
+        >>> psm_list = PSMList(psm_list=[
+        ...     PSM(peptidoform="ACDK", spectrum_id=1, score=140.2),
+        ...     PSM(peptidoform="CDEFR", spectrum_id=2, score=132.9),
+        ...     PSM(peptidoform="DEM[Oxidation]K", spectrum_id=3, score=55.7),
+        ... ])
+
+        :py:class:`PSMList` directly supports iteration:
+
+        >>> for psm in psm_list:
+        ...     print(psm.peptidoform.theoretical_mass)
+        436.12639936491996
+        512.1576994932
+        454.15222018994
+
+        :py:class:`PSMList` supports indexing and slicing:
+
+        >>> psm_list[1].peptidoform
+        Peptidoform('CDEFR')
+        >>> psm_list_subset_1 = psm_list[0:1]
+        >>> psm_list_subset_2 = psm_list[[0,2]]
+
+        :py:class:`PSM` properties can be accessed as a single Numpy array:
+
+        >>> psm_list["score"]
+        array([140.2, 132.9, 55.7], dtype=object)
+
+        """
+        super().__init__(**data)
+
 
     def __iter__(self) -> Iterable[PSM]:
         return self.psm_list.__iter__()
@@ -56,7 +67,6 @@ class PSMList(BaseModel):
         return self.psm_list.__len__()
 
     def __getitem__(self, item) -> Union[PSM, list[PSM]]:
-        # TODO: Expand usage? E.g. index by spectrum_id? Return new PSMList for slice?
         if isinstance(item, int):
             # Return single PSM by index
             return self.psm_list[item]

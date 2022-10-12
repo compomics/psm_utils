@@ -221,7 +221,7 @@ def convert(
     ... )
 
     Note that filetypes can only be inferred for select specific file names and/or
-    extensions, such as ``msms.txt`` or `*.peprec`.
+    extensions, such as ``msms.txt`` or ``*.peprec``.
 
     """
 

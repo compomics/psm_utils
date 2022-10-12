@@ -21,6 +21,12 @@ class Peptidoform:
         proforma_sequence : str
             Peptidoform sequence in ProForma v2 notation.
 
+        Examples
+        --------
+        >>> peptidoform = Peptidoform("ACDM[Oxidation]EK")
+        >>> peptidoform.theoretical_mass
+        711.2567622919099
+
         Attributes
         ----------
         parsed_sequence : list

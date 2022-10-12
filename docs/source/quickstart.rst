@@ -36,7 +36,7 @@ notation and supports several peptide-related operations, e.g.:
 
 
 PSM
-####################
+###
 
 :py:class:`~psm_utils.psm.PSM` links a
 :py:class:`~psm_utils.peptidoform.Peptidoform` to a specific spectrum where it
@@ -94,5 +94,3 @@ object, with peptidoforms parsed into the ProForma notation:
 
 Take a look at the :doc:`Python API Reference <api/psm_utils>` for details, more examples, and additional
 information on the supported file formats.
-
-

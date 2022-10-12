@@ -11,7 +11,7 @@ notation and supports several peptide-related operations, e.g.:
 
 .. code-block:: python
 
-   >>> from psm_utils import Peptidoform, PeptideSpectrumMatch, PSMList
+   >>> from psm_utils import Peptidoform, PSM, PSMList
    >>> peptidoform = Peptidoform("ACDEK/2")
    >>> peptidoform.theoretical_mass
    564.2213546837
@@ -35,18 +35,18 @@ notation and supports several peptide-related operations, e.g.:
    Composition({'H': 1, 'O': 1})]
 
 
-PeptideSpectrumMatch
+PSM
 ####################
 
-:py:class:`~psm_utils.psm.PeptideSpectrumMatch` links a
+:py:class:`~psm_utils.psm.PSM` links a
 :py:class:`~psm_utils.peptidoform.Peptidoform` to a specific spectrum where it
-was (putatively) identified. A :py:class:`~psm_utils.psm.PeptideSpectrumMatch`
+was (putatively) identified. A :py:class:`~psm_utils.psm.PSM`
 therefore contains the peptidoform, spectrum (meta)data, and peptide-spectrum
 match information:
 
 .. code-block:: python
 
-   >>> psm = PeptideSpectrumMatch(
+   >>> psm = PSM(
    ...     peptidoform=Peptidoform("VLHPLEGAVVIIFK/2"),
    ...     spectrum_id=17555,
    ...     run="Adult_Frontalcortex_bRP_Elite_85_f09",
@@ -71,7 +71,7 @@ object, with peptidoforms parsed into the ProForma notation:
    >>> from psm_utils.io import read_file
    >>> psm_list = read_file("data/QExHF04054_tandem.idXML", filetype="idxml")
    >>> psm_list[0]
-   PeptideSpectrumMatch(
+   PSM(
       peptidoform=Peptidoform('QSGD[Ammonium]E[Ammonium]SYC[Carbamidomethyl]E[Ammonium]R/2'),
       spectrum_id='controllerType=0 controllerNumber=1 scan=4941',
       run=None,

@@ -22,7 +22,7 @@ from psm_utils import __version__
 from psm_utils.io._base_classes import ReaderBase, WriterBase
 from psm_utils.io.exceptions import PSMUtilsIOException
 from psm_utils.peptidoform import Peptidoform
-from psm_utils.psm import PeptideSpectrumMatch
+from psm_utils.psm import PSM
 from psm_utils.psm_list import PSMList
 
 logger = logging.getLogger(__name__)
@@ -182,7 +182,7 @@ class MzidReader(ReaderBase):
         raw_file: str,
         spectrum_identification_item: dict[str, Union[str, float, list]],
         spectrum_title: Optional[str] = None,
-    ) -> PeptideSpectrumMatch:
+    ) -> PSM:
         """Parse single mzid entry to :py:class:`~psm_utils.peptidoform.Peptidoform`."""
         sii = spectrum_identification_item
 
@@ -191,7 +191,9 @@ class MzidReader(ReaderBase):
         except KeyError:
             modifications = []
         sequence = sii["PeptideSequence"]
-        peptidoform = self._parse_peptidoform(sequence, modifications, sii["chargeState"])
+        peptidoform = self._parse_peptidoform(
+            sequence, modifications, sii["chargeState"]
+        )
         is_decoy, protein_list = self._parse_peptide_evidence_ref(
             sii["PeptideEvidenceRef"]
         )
@@ -213,7 +215,7 @@ class MzidReader(ReaderBase):
         if spectrum_title:
             metadata["spectrum title"] = spectrum_title
 
-        psm = PeptideSpectrumMatch(
+        psm = PSM(
             peptidoform=peptidoform,
             spectrum_id=spectrum_id,
             run=raw_file,
@@ -295,7 +297,7 @@ class MzidWriter(WriterBase):
     def __exit__(self, *args, **kwargs) -> None:
         pass
 
-    def write_psm(self, psm: PeptideSpectrumMatch):
+    def write_psm(self, psm: PSM):
         """
         Write a single PSM to the PSM file.
 

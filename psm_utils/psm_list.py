@@ -9,7 +9,7 @@ import pandas as pd
 import pyteomics
 from pydantic import BaseModel
 
-from psm_utils.psm import PeptideSpectrumMatch
+from psm_utils.psm import PSM
 
 
 class PSMList(BaseModel):
@@ -18,17 +18,17 @@ class PSMList(BaseModel):
 
     Parameters
     ----------
-    psm_list : list[PeptideSpectrumMatch]
-        List of PeptideSpectrumMatch instances.
+    psm_list : list[PSM]
+        List of PSM instances.
 
     Examples
     --------
-    Initiate a :py:class:`PSMList` from a list of PeptideSpectrumMatch objects:
+    Initiate a :py:class:`PSMList` from a list of PSM objects:
 
     >>> psm_list = PSMList(psm_list=[
-    ...     PeptideSpectrumMatch(peptidoform="ACDK", spectrum_id=1),
-    ...     PeptideSpectrumMatch(peptidoform="CDEFR", spectrum_id=2),
-    ...     PeptideSpectrumMatch(peptidoform="DEM[Oxidation]K", spectrum_id=3),
+    ...     PSM(peptidoform="ACDK", spectrum_id=1),
+    ...     PSM(peptidoform="CDEFR", spectrum_id=2),
+    ...     PSM(peptidoform="DEM[Oxidation]K", spectrum_id=3),
     ... ])
 
     :py:class:`PSMList` directly supports iteration:
@@ -47,17 +47,15 @@ class PSMList(BaseModel):
 
     """
 
-    psm_list: List[PeptideSpectrumMatch]
+    psm_list: List[PSM]
 
-    def __iter__(self) -> Iterable[PeptideSpectrumMatch]:
+    def __iter__(self) -> Iterable[PSM]:
         return self.psm_list.__iter__()
 
     def __len__(self) -> int:
         return self.psm_list.__len__()
 
-    def __getitem__(
-        self, item
-    ) -> Union[PeptideSpectrumMatch, list[PeptideSpectrumMatch]]:
+    def __getitem__(self, item) -> Union[PSM, list[PSM]]:
         # TODO: Expand usage? E.g. index by spectrum_id? Return new PSMList for slice?
         if isinstance(item, int):
             # Return single PSM by index
@@ -131,9 +129,9 @@ class PSMList(BaseModel):
         Use regular expression pattern to find decoy PSMs by protein name(s).
 
         This method allows a regular expression pattern to be applied on
-        :py:obj:`~psm_utils.psm.PeptideSpectrumMatch`
-        :py:attr:`~psm_utils.psm.PeptideSpectrumMatch.protein_list` items to set the
-        :py:attr:`~psm_utils.psm.PeptideSpectrumMatch.is_decoy` attribute.
+        :py:obj:`~psm_utils.psm.PSM`
+        :py:attr:`~psm_utils.psm.PSM.protein_list` items to set the
+        :py:attr:`~psm_utils.psm.PSM.is_decoy` attribute.
         Decoy protein entries are commonly marked with a prefix or suffix, e.g.
         ``DECOY_``, or ``_REVERSED``. If ``decoy_pattern`` matches to a substring of all
         entries in :py:attr:`protein_list`, the PSM is interpreted as a decoy. Existing

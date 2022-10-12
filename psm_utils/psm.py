@@ -7,7 +7,7 @@ from pydantic import BaseModel
 from psm_utils.peptidoform import Peptidoform
 
 
-class PeptideSpectrumMatch(BaseModel):
+class PSM(BaseModel):
     """
     Data class representing a peptide-spectrum match (PSM).
 
@@ -101,7 +101,7 @@ class PeptideSpectrumMatch(BaseModel):
 
     def universal_spectrum_identifier(self, as_url=False) -> str:
         """
-        Compile USI for PeptideSpectrumMatch.
+        Compile USI for PSM.
 
         Parameters
         ----------

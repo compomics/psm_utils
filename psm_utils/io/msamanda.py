@@ -13,7 +13,7 @@ import numpy as np
 
 from psm_utils.exceptions import PSMUtilsException
 from psm_utils.io._base_classes import ReaderBase
-from psm_utils.psm import PeptideSpectrumMatch, Peptidoform
+from psm_utils.psm import PSM, Peptidoform
 from psm_utils.psm_list import PSMList
 
 logger = logging.getLogger(__name__)
@@ -68,10 +68,10 @@ class MSAmandaReader(ReaderBase):
 
     def _get_peptide_spectrum_match(
         self, psm_dict: dict[str, Union[str, float]]
-    ) -> PeptideSpectrumMatch:
-        """Return a PeptideSpectrumMatch object from MaxQuant msms.txt PSM file."""
+    ) -> PSM:
+        """Return a PSM object from MaxQuant msms.txt PSM file."""
 
-        psm = PeptideSpectrumMatch(
+        psm = PSM(
             peptidoform=self._parse_peptidoform(
                 psm_dict["Sequence"], psm_dict["Modifications"], psm_dict["Charge"]
             ),

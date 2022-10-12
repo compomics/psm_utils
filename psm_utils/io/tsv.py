@@ -12,7 +12,7 @@ a field contains the delimiter. Peptidoforms are written in the `HUPO-PSI ProFor
 <https://psidev.info/proforma>`_ notation.
 
 Required and optional columns equate to the required and optional attributes of
-:py:class:`~psm_utils.psm.PeptideSpectrumMatch`. Dictionary items in
+:py:class:`~psm_utils.psm.PSM`. Dictionary items in
 :py:attr:`provenance_data`, :py:attr:`metadata`, and :py:attr:`rescoring_features`
 are flattened to separate columns, each with their column names prefixed with
 ``provenance:``, ``meta:``, and ``rescoring:``, respectively.
@@ -54,7 +54,7 @@ from typing import Optional, Union
 
 from psm_utils.io._base_classes import ReaderBase, WriterBase
 from psm_utils.io.exceptions import PSMUtilsIOException
-from psm_utils.psm import PeptideSpectrumMatch
+from psm_utils.psm import PSM
 from psm_utils.psm_list import PSMList
 
 
@@ -69,7 +69,7 @@ class TSVReader(ReaderBase):
         with open(self.filename, "rt") as open_file:
             reader = csv.DictReader(open_file, delimiter="\t")
             for row in reader:
-                yield PeptideSpectrumMatch(**self._parse_entry(row))
+                yield PSM(**self._parse_entry(row))
 
     def read_file(self) -> PSMList:
         """Read full PSM file into a PSMList object."""
@@ -77,7 +77,7 @@ class TSVReader(ReaderBase):
 
     @staticmethod
     def _parse_entry(entry: dict):
-        """Parse single TSV entry to :py:class:`~psm_utils.psm.PeptideSpectrumMatch`."""
+        """Parse single TSV entry to :py:class:`~psm_utils.psm.PSM`."""
         # Replace empty strings with None
         entry = {k: v if v else None for k, v in entry.items()}
 
@@ -117,7 +117,7 @@ class TSVWriter(WriterBase):
     def __init__(
         self,
         filename: Union[str, Path],
-        example_psm: Optional[PeptideSpectrumMatch] = None,
+        example_psm: Optional[PSM] = None,
         *args,
         **kwargs,
     ):
@@ -128,7 +128,7 @@ class TSVWriter(WriterBase):
         ----------
         filename: str, Pathlib.Path
             Path to PSM file.
-        example_psm: psm_utils.psm.PeptideSpectrumMatch, optional
+        example_psm: psm_utils.psm.PSM, optional
             Example PSM, required to extract the column names when writing to a new
             file. Should contain all fields that are to be written to the PSM file,
             i.e., all items in the :py:attr:`provenance_data`, :py:attr:`metadata`, and
@@ -177,14 +177,14 @@ class TSVWriter(WriterBase):
         self._open_file = None
         self._writer = None
 
-    def write_psm(self, psm: PeptideSpectrumMatch):
+    def write_psm(self, psm: PSM):
         """
         Write a single PSM to new or existing PSM file.
 
         Parameters
         ----------
-        psm: PeptideSpectrumMatch
-            PeptideSpectrumMatch object to write.
+        psm: PSM
+            PSM object to write.
 
         """
         entry = self._psm_to_entry(psm)
@@ -215,7 +215,7 @@ class TSVWriter(WriterBase):
                 writer.writerow(self._psm_to_entry(psm))
 
     @staticmethod
-    def _psm_to_entry(psm: PeptideSpectrumMatch) -> dict:
+    def _psm_to_entry(psm: PSM) -> dict:
         entry = psm.__dict__.copy()
 
         # Convert Peptidoform to proforma sequence

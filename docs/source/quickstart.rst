@@ -6,8 +6,9 @@ Peptidoform
 ###########
 
 :py:class:`~psm_utils.peptidoform.Peptidoform` accepts peptidoforms (combination
-of peptide, modifications, and — optionally — charge state) in ProForma 2.0
-notation and supports several peptide-related operations, e.g.:
+of peptide, modifications, and — optionally — charge state) in `ProForma 2.0
+notation <https://github.com/HUPO-PSI/ProForma/>`_ and supports several peptide-related
+operations, e.g.:
 
 .. code-block:: python
 
@@ -54,8 +55,11 @@ match information:
    ...     is_decoy=False,
    ...     precursor_mz=767.9714,
    ... )
-   >>> psm.universal_spectrum_identifier()
+   >>> psm.get_usi()
    mzspec:PXD000561:Adult_Frontalcortex_bRP_Elite_85_f09:scan:17555:VLHPLEGAVVIIFK/2
+
+The spectrum can be retrieved by the USI through the ProteomeXchange USI aggregator:
+http://proteomecentral.proteomexchange.org/usi/?usi=mzspec:PXD000561:Adult_Frontalcortex_bRP_Elite_85_f09:scan:17555:VLHPLEGAVVIIFK/2
 
 
 PSMList and psm_utils.io
@@ -91,6 +95,101 @@ object, with peptidoforms parsed into the ProForma notation:
       },
       rescoring_features=None
    )
+
+
+Handling peptide modifications
+##############################
+
+
+Supported notations
+*******************
+
+:py:class:`~psm_utils.peptidoform.Peptidoform` accepts all supported
+`ProForma 2.0 <https://github.com/HUPO-PSI/ProForma/>`_ modification types and
+notations, through the :py:mod:`pyteomics.proforma` module. However, for some
+functionality, such as the :py:attr:`~psm_utils.peptidoform.Peptidoform.composition` and
+:py:attr:`~psm_utils.peptidoform.Peptidoform.mass` properties, the modification
+composition and mass, respectively, should be resolvable. This can be achieved in
+multiple ways:
+
+Using a controlled vocabulary identifier or name, such as PSI-MOD or Unimod:
+
+>>> Peptidoform("AC[UNIMOD:4]DEK").theoretical_mass
+621.24282637892
+
+>>> Peptidoform("AC[U:4]DEK").theoretical_mass
+621.24282637892
+
+>>> Peptidoform("AC[U:Carbamidomethyl]DEK").theoretical_mass
+621.24282637892
+
+
+Using a molecular formula or mass shift:
+
+>>> Peptidoform("AC[Formula:H3C2NO]DEK/2").theoretical_mass
+621.24282637892
+
+>>> Peptidoform("AC[+57.021464]DEK/2").theoretical_mass
+621.24282637892
+
+
+A drawback of using the mass shift is that the composition is not be resolvable:
+
+>>> Peptidoform("AC[+57.021464]DEK/2").composition
+[...]
+ModificationException: Cannot resolve composition for modification 57.021464.
+
+
+Renaming modifications
+**********************
+
+Often search engines use specific, arbitrary names for modifications. In that case,
+properties such as their mass or composition will not be resolvable.
+
+>>> from psm_utils.io import read_file
+>>> psm_list = read_file("msms.txt")
+>>> psm_list["peptidoform"]
+array([Peptidoform('AAAAAAALQAK/2'),
+       Peptidoform('[ac]-AAAAAEQQQFYLLLGNLLSPDNVVR/3'),
+       Peptidoform('[ac]-AAAAAEQQQFYLLLGNLLSPDNVVRK/3'), ...,
+       Peptidoform('YYYLPLVSN[de]PK/2'),
+       Peptidoform('YYYLTNVERLEELESDLK/3'), Peptidoform('YYYNGFYLLWI/3')],
+      dtype=object)
+
+To address this issue, modifications can be renamed:
+
+>>> psm_list.rename_modifications({
+    "ac": "U:Acetylation",
+    "ox": "U:Oxidation",
+    "de": "U:Deamidation",
+    "gl": "U:Gln->pyro-Glu",
+})
+>>> psm_list["peptidoform"]
+array([Peptidoform('AAAAAAALQAK/2'),
+       Peptidoform('[UNIMOD:Acetylation]-AAAAAEQQQFYLLLGNLLSPDNVVR/3'),
+       Peptidoform('[UNIMOD:Acetylation]-AAAAAEQQQFYLLLGNLLSPDNVVRK/3'),
+       ..., Peptidoform('YYYLPLVSN[UNIMOD:Deamidation]PK/2'),
+       Peptidoform('YYYLTNVERLEELESDLK/3'), Peptidoform('YYYNGFYLLWI/3')],
+      dtype=object)
+
+
+Handling fixed modifications
+****************************
+
+Additionally, fixed modifications that are not already part of the search engine output
+can be added and applied across the sequence:
+
+>>> psm_list[19].peptidoform
+Peptidoform('AAAPAPEEEMDECEQALAAEPK/2')
+
+>>> psm_list.add_fixed_modifications([("Carbamidomethyl", ["C"])])
+>>> psm_list[19].peptidoform
+Peptidoform('<[Carbamidomethyl]@C>AAAPAPEEEMDECEQALAAEPK/2')
+
+>>> psm_list.apply_fixed_modifications()
+>>> psm_list[19].peptidoform
+Peptidoform('AAAPAPEEEMDEC[Carbamidomethyl]EQALAAEPK/2')
+
 
 Take a look at the :doc:`Python API Reference <api/psm_utils>` for details, more examples, and additional
 information on the supported file formats.

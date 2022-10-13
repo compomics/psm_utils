@@ -59,17 +59,44 @@ class Peptidoform:
 
     @property
     def proforma(self) -> str:
-        """Peptidoform sequence in ProForma v2 notation."""
+        """
+        Peptidoform sequence in ProForma v2 notation.
+
+        Examples
+        --------
+        >>> Peptidoform("AC[U:4]DEK/2").proforma
+        'AC[UNIMOD:4]DEK/2'
+
+        """
         return proforma.to_proforma(self.parsed_sequence, **self.properties)
 
     @property
     def sequence(self) -> str:
-        """Stripped peptide sequence."""
+        """
+        Stripped peptide sequence (modifications removed).
+
+        Examples
+        --------
+        >>> Peptidoform("AC[U:4]DEK/2").sequence
+        'ACDEK'
+
+        """
         return "".join(pos[0] for pos in self.parsed_sequence)
 
     @property
-    def precursor_charge(self) -> int:
-        """Syntactic sugar for `Peptidoform.properties['charge_state'].charge`."""
+    def precursor_charge(self) -> Union[int, None]:
+        """
+        Returns the charge state as integer or :py:const:`None` if no charge assigned.
+
+        Examples
+        --------
+        >>> Peptidoform("ACDEK/2").precursor_charge
+        2
+
+        >>> Peptidoform("ACDEK").precursor_charge
+        None
+
+        """
         try:
             return self.properties["charge_state"].charge
         except (AttributeError, KeyError):
@@ -77,7 +104,24 @@ class Peptidoform:
 
     @property
     def sequential_composition(self) -> list[mass.Composition]:
-        """Atomic compositions of both termini and each (modified) residue."""
+        """
+        Atomic compositions of both termini and each residue, including modifications.
+
+        Includes N- and C-terminal, fixed, and sequential modifications. Does not
+        include labile or unlocalized modifications.
+
+        Examples
+        --------
+        >>> Peptidoform("ACDEK/2").sequential_composition
+        [Composition({'H': 1}),
+        Composition({'H': 5, 'C': 3, 'O': 1, 'N': 1}),
+        Composition({'H': 5, 'C': 3, 'S': 1, 'O': 1, 'N': 1}),
+        Composition({'H': 5, 'C': 4, 'O': 3, 'N': 1}),
+        Composition({'H': 7, 'C': 5, 'O': 3, 'N': 1}),
+        Composition({'H': 12, 'C': 6, 'N': 2, 'O': 1}),
+        Composition({'H': 1, 'O': 1})]
+
+        """
         # Get compositions for fixed modifications by amino acid
         fixed_rules = {}
         for rule in self.properties["fixed_modifications"]:
@@ -138,7 +182,17 @@ class Peptidoform:
 
     @property
     def composition(self) -> mass.Composition:
-        """Atomic composition of the full peptidoform."""
+        """
+        Atomic composition of the full peptidoform.
+
+        Includes all modifications, also labile and unlocalized.
+
+        Examples
+        --------
+        >>> Peptidoform("ACDEK/2").composition
+        Composition({'H': 36, 'C': 21, 'O': 10, 'N': 6, 'S': 1})
+
+        """
         comp = mass.Composition()
         for position_comp in self.sequential_composition:
             comp += position_comp
@@ -160,7 +214,24 @@ class Peptidoform:
 
     @property
     def sequential_theoretical_mass(self) -> float:
-        """Monoisotopic mass of both termini and each (modified) residue."""
+        """
+        Monoisotopic mass of both termini and each (modified) residue.
+
+        Includes N- and C-terminal, fixed, and sequential modifications. Does not
+        include labile or unlocalized modifications.
+
+        Examples
+        --------
+        >>> Peptidoform("ACDEK/2").sequential_theoretical_mass
+        [1.00782503207,
+        71.03711378471,
+        103.00918478471,
+        115.02694302383001,
+        129.04259308796998,
+        128.09496301399997,
+        17.002739651629998]
+
+        """
         fixed_rules = {}
         for rule in self.properties["fixed_modifications"]:
             for aa in rule.targets:
@@ -219,7 +290,16 @@ class Peptidoform:
 
     @property
     def theoretical_mass(self) -> float:
-        """Monoisotopic mass of the full uncharged peptidoform."""
+        """Monoisotopic mass of the full uncharged peptidoform.
+
+        Includes all modifications, also labile and unlocalized.
+
+        Examples
+        --------
+        >>> Peptidoform("ACDEK/2").theoretical_mass
+        564.22136237892
+
+        """
         mass = sum(self.sequential_theoretical_mass)
         for tag in self.properties["labile_modifications"]:
             try:
@@ -239,7 +319,20 @@ class Peptidoform:
 
     @property
     def theoretical_mz(self) -> Union[float, None]:
-        """Monoisotopic mz of the full peptidoform."""
+        """
+        Monoisotopic mass-to-charge ratio of the full peptidoform.
+
+        Includes all modifications, also labile and unlocalized.
+
+        Examples
+        --------
+        >>> Peptidoform("ACDEK/2").theoretical_mz
+        283.11850622153
+
+        >>> Peptidoform("AC[+57.021464]DEK/2").theoretical_mz
+        311.62923822153
+
+        """
         if self.precursor_charge:
             return (
                 self.theoretical_mass

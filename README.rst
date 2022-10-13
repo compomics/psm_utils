@@ -51,7 +51,7 @@ It is mainly developed to be used in Python packages developed at
 `MS²Rescore <https://github.com/compomics/ms2rescore>`_,
 but can be useful to anyone dealing with PSMs and PSM files. Moreover, it
 provides an easy-to-use CLI and
-`web server <https://compomics-psm-utils-onlinehome-4j4frp.streamlitapp.com/>`_ to
+`web server <https://psm-utils.streamlitapp.com/>`_ to
 convert search engine results from
 one PSM file format into another.
 
@@ -104,9 +104,9 @@ psm_utils online
 
 .. image:: https://static.streamlit.io/badges/streamlit_badge_black_white.svg
    :alt: Open in streamlit
-   :target: https://compomics-psm-utils-onlinehome-4j4frp.streamlitapp.com/
+   :target: https://psm-utils.streamlitapp.com/
 
-`psm_utils online <https://compomics-psm-utils-onlinehome-4j4frp.streamlitapp.com/>`_
+`psm_utils online <https://psm-utils.streamlitapp.com/>`_
 is a Streamlit-based web server built on top of the psm_utils Python package. It allows
 you to easily retrieve proteomics PSM statistics for any supported PSM file type, and to
 convert search engine results from one PSM file format into  another. Click the badge

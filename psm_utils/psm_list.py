@@ -39,22 +39,25 @@ class PSMList(BaseModel):
         :py:class:`PSMList` directly supports iteration:
 
         >>> for psm in psm_list:
-        ...     print(psm.peptidoform.theoretical_mass)
-        436.12639936491996
-        512.1576994932
-        454.15222018994
-
-        :py:class:`PSMList` supports indexing and slicing:
-
-        >>> psm_list[1].peptidoform
-        Peptidoform('CDEFR')
-        >>> psm_list_subset_1 = psm_list[0:1]
-        >>> psm_list_subset_2 = psm_list[[0,2]]
+        ...     print(psm.peptidoform.score)
+        140.2
+        132.9
+        55.7
 
         :py:class:`PSM` properties can be accessed as a single Numpy array:
 
         >>> psm_list["score"]
         array([140.2, 132.9, 55.7], dtype=object)
+
+        :py:class:`PSMList` supports indexing and slicing:
+
+        >>> psm_list_subset = psm_list[0:2]
+        >>> psm_list_subset["score"]
+        array([140.2, 132.9], dtype=object)
+
+        >>> psm_list_subset = psm_list[0, 2]
+        >>> psm_list_subset["score"]
+        array([140.2, 55.7], dtype=object)
 
         """
         super().__init__(**data)

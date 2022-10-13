@@ -100,9 +100,9 @@ class PSM(BaseModel):
         """Precursor charge, as embedded in :py:attr:`PSM.peptidoform`."""
         return self.peptidoform.precursor_charge
 
-    def universal_spectrum_identifier(self, as_url=False) -> str:
+    def get_usi(self, as_url=False) -> str:
         """
-        Compile USI for PSM.
+        Compile Universal Spectrum Identifier for :py:class:`~psm_utils.psm.PSM`.
 
         Parameters
         ----------

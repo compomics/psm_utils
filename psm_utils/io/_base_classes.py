@@ -32,6 +32,12 @@ class ReaderBase(ABC):
 
         self.filename = Path(filename)
 
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args, **kwargs):
+        pass
+
     @abstractmethod
     def __iter__(self):
         raise NotImplementedError()
@@ -48,6 +54,12 @@ class WriterBase(ABC):
     def __init__(self, filename, *args, **kwargs):
         super().__init__()
         self.filename = Path(filename)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, *args, **kwargs):
+        pass
 
     @abstractmethod
     def write_psm(self, psm: PSM):

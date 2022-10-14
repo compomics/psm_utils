@@ -93,13 +93,9 @@ Release workflow
     #. Update the changelog (if not already done) in ``CHANGELOG.md`` according to
        `Keep a Changelog <https://keepachangelog.com/en/1.0.0/>`_.
     #. Merge all final changes with the ``main`` branch.
-    #. On ``main``, set a new tag with the version number, e.g. ``git tag v0.1.5``.
-    #. Push to GitHub, with the tag: ``git push; git push --tags``.
+    #. Create a new release on GitHub.
 
-- When a new tag is pushed to (or made on) GitHub that matches ``v*``, the
-  following GitHub Actions are triggered:
-
-    #. The Python package is build and published to PyPI.
-    #. Using the `Git Release <https://github.com/marketplace/actions/git-release>`_
-       action, a new GitHub release is made with the changes that are listed in
-       ``CHANGELOG.md``.
+- When a new GitHub release is made, the `Publish` GitHub Action is automatically
+  triggered to build the Python package and publish it to PyPI. Upon a new PyPI release,
+  the Bioconda automations will automatically update the Bioconda package. However,
+  if dependencies are changed, the conda recipe will have to be updated accordingly.

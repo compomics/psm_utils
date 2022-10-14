@@ -68,7 +68,10 @@ PSMList and psm_utils.io
 The :py:mod:`psm_utils.io` subpackage contains readers and writers for various
 PSM file formats (see :ref:`Supported file formats`). Each reader parses the
 specific PSM file format into a unified :py:class:`~psm_utils.psm_list.PSMList`
-object, with peptidoforms parsed into the ProForma notation:
+object, with peptidoforms parsed into the ProForma notation. Use the high-level
+:py:func:`psm_utils.io.read_file`, :py:func:`psm_utils.io.write_file`, and
+:py:func:`psm_utils.io.convert` functions to easily read, write, and convert
+PSM files:
 
 .. code-block:: python
 
@@ -95,6 +98,43 @@ object, with peptidoforms parsed into the ProForma notation:
       },
       rescoring_features=None
    )
+
+
+Alternatively, the more low-level file format-specific reader and writer classes can be
+used. Each reader has a :py:meth:`read_file` function:
+
+>>> from psm_utils.io.mzid import MzidReader
+>>> psm_list = MzidReader("psms.mzid").read_file()
+>>> psm_list[0].peptidoform
+Peptidoform('GLTEGLHGFHVHEFGDNTAGC[Carbamidomethyl]TSAGPHFNPLSR/4')
+
+
+And all readers support iteration over PSMs:
+
+>>> for psm in MzidReader("psms.mzid"):
+...     print(psm.peptidoform.proforma)
+ACDEK
+AC[Carbamidomethyl]DEFGR
+[Acetyl]-AC[Carbamidomethyl]DEFGHIK
+[...]
+
+
+Similarly, writers can write single PSMs to a file:
+
+>>> from psm_utils.io.tsv import TSVWriter
+>>> with TSVWriter("psm_list.tsv", example_psm=psm_list[0]) as writer:
+...     writer.write_psm(psm_list[0])
+
+
+And writers can write entire PSM lists at once:
+
+>>> with TSVWriter("psm_list.tsv", example_psm=psm_list[0]) as writer:
+...     writer.write_file(psm_list)
+
+
+Take a look at the :doc:`Python API Reference <api/psm_utils>` for details, more
+examples, and additional information on the supported file formats.
+
 
 
 Handling peptide modifications
@@ -189,7 +229,3 @@ Peptidoform('<[Carbamidomethyl]@C>AAAPAPEEEMDECEQALAAEPK/2')
 >>> psm_list.apply_fixed_modifications()
 >>> psm_list[19].peptidoform
 Peptidoform('AAAPAPEEEMDEC[Carbamidomethyl]EQALAAEPK/2')
-
-
-Take a look at the :doc:`Python API Reference <api/psm_utils>` for details, more examples, and additional
-information on the supported file formats.

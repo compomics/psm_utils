@@ -371,10 +371,18 @@ class Peptidoform:
         def _rename_modification_list(mods):
             new_mods = []
             for mod in mods:
-                if mod.value in mapping:
-                    new_mods.append(proforma.process_tag_tokens(mapping[mod.value]))
-                else:
-                    new_mods.append(mod)
+                try:
+                    if mod.value in mapping:
+                        new_mods.append(proforma.process_tag_tokens(mapping[mod.value]))
+                except AttributeError:
+                    if isinstance(mod, proforma.ModificationRule):
+                        if mod.modification_tag.value in mapping:
+                            mod.modification_tag = proforma.process_tag_tokens(
+                                mapping[mod.modification_tag.value]
+                            )
+                        new_mods.append(mod)
+                    else:
+                        mod.value  # re-raise AttributeError
             return new_mods
 
         # Sequential modifications
@@ -464,7 +472,7 @@ class Peptidoform:
                         self.parsed_sequence[i] = (aa, rule_dict[aa])
 
             # Remove fixed modifications
-            self.properties["fixed_modifications"] = None
+            self.properties["fixed_modifications"] = []
 
 
 class PeptidoformException(PSMUtilsException):

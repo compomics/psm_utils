@@ -151,9 +151,7 @@ class XTandemReader(ReaderBase):
         peptide_entry = entry["protein"][0]["peptide"]
         psm = PSM(
             peptidoform=self._parse_peptidoform(peptide_entry, entry["z"]),
-            spectrum_id=entry["support"]["fragment ion mass spectrum"]["note"].split(
-                " "
-            )[0],
+            spectrum_id=entry["support"]["fragment ion mass spectrum"]["note"],
             is_decoy=entry["protein"][0]["label"].startswith(self.decoy_prefix),
             score=-np.log(peptide_entry["expect"]),
             precursor_mz=entry["mh"] - mass.nist_mass["H"][0][0],

@@ -1,20 +1,17 @@
-from cProfile import label
-
 from psm_utils.peptidoform import Peptidoform
 
 
 class TestPeptidoform:
     def test_rename_modifications(self):
-        label_mapping = {
-            "Acedyl": "Acetyl",
-            "Carbamidomedyl": "Carbamidomethyl"
-        }
+        label_mapping = {"ac": "Acetyl", "cm": "Carbamidomethyl"}
 
         test_cases = [
             ("ACDEFGHIK", "ACDEFGHIK"),
-            ("[Acedyl]-AC[Carbamidomedyl]DEFGHIK", "[Acetyl]-AC[Carbamidomethyl]DEFGHIK"),
-            ("[Acedyl]-AC[Carbamidomethyl]DEFGHIK", "[Acetyl]-AC[Carbamidomethyl]DEFGHIK"),
-            ("[Acetyl]-AC[Carbamidomedyl]DEFGHIK", "[Acetyl]-AC[Carbamidomethyl]DEFGHIK"),
+            ("[ac]-AC[cm]DEFGHIK", "[Acetyl]-AC[Carbamidomethyl]DEFGHIK"),
+            ("[ac]-AC[Carbamidomethyl]DEFGHIK", "[Acetyl]-AC[Carbamidomethyl]DEFGHIK"),
+            ("[Acetyl]-AC[cm]DEFGHIK", "[Acetyl]-AC[Carbamidomethyl]DEFGHIK"),
+            ("<[cm]@C>[Acetyl]-ACDEFGHIK", "<[Carbamidomethyl]@C>[Acetyl]-ACDEFGHIK"),
+            ("<[Carbamidomethyl]@C>[ac]-ACDEFGHIK", "<[Carbamidomethyl]@C>[Acetyl]-ACDEFGHIK"),
         ]
 
         for test_case_in, expected_out in test_cases:

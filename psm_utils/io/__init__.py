@@ -111,7 +111,7 @@ def read_file(filename: Union[str, Path], *args, filetype: str = "infer", **kwar
     filename: str
         Path to file.
     filetype: str, optional
-        File type. Any PSM file type with read support. See
+        File type. Any PSM file type with read support. See psm_utils tag in
         :ref:`Supported file formats`.
     *args : tuple
         Additional arguments are passed to the :py:class:`psm_utils.io` reader.
@@ -145,7 +145,7 @@ def write_file(
     filename: str
         Path to file.
     filetype: str, optional
-        File type. Any PSM file type with read support. See
+        File type. Any PSM file type with read support. See psm_utils tag in
         :ref:`Supported file formats`.
     show_progressbar: bool, optional
         Show progress bar for conversion process. (default: False)
@@ -192,10 +192,10 @@ def convert(
     output_filename: str
         Path to output file.
     input_filetype: str, optional
-        File type. Any PSM file type with read support. See
+        File type. Any PSM file type with read support. See psm_utils tag in
         :ref:`Supported file formats`.
     output_filetype: str, optional
-        File type. Any PSM file type with write support. See
+        File type. Any PSM file type with write support. See psm_utils tag in
         :ref:`Supported file formats`.
     show_progressbar: bool, optional
         Show progress bar for conversion process. (default: False)
@@ -261,8 +261,8 @@ def convert(
 
     # First read full PSM list, then write file at once
     elif writer_cls == mzid.MzidWriter:
-        writer = writer_cls(output_filename)
-        writer.write_file(reader.read_file(), show_progressbar=show_progressbar)
+        writer = writer_cls(output_filename, show_progressbar=show_progressbar)
+        writer.write_file(reader.read_file())
     else:
         writer = writer_cls(output_filename)
         writer.write_file(reader.read_file())

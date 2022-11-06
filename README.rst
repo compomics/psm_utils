@@ -82,18 +82,18 @@ Goals and non-goals
 Supported file formats
 **********************
 
-===================================================================================================================== =============== ===============
- File format                                                                                                           Read support    Write support
-===================================================================================================================== =============== ===============
- `OpenMS idXML <https://www.openms.de/>`_                                                                              ✅              ❌
- `MaxQuant msms.txt <https://www.maxquant.org/>`_                                                                      ✅              ❌
- `MS Amanda CSV <https://ms.imp.ac.at/?goto=msamanda>`_                                                                ✅              ❌
- `mzIdentML <https://psidev.info/mzidentml>`_                                                                          ✅              ✅
- `Peptide Record <https://psm-utils.readthedocs.io/en/latest/api/psm_utils.io/#module-psm_utils.io.peptide_record>`_   ✅              ✅
- `Percolator tab <https://github.com/percolator/percolator/wiki/Interface>`_                                           ✅              ✅
- `TSV <https://psm-utils.readthedocs.io/en/latest/api/psm_utils.io/#module-psm_utils.io.tsv>`_                         ✅              ✅
- `X!Tandem XML <https://www.thegpm.org/tandem/>`_                                                                      ✅              ❌
-===================================================================================================================== =============== ===============
+===================================================================================================================== =============== =============== ===============
+ File format                                                                                                           psm_utils tag   Read support    Write support
+===================================================================================================================== =============== =============== ===============
+ `OpenMS idXML <https://www.openms.de/>`_                                                                              ``idxml``       ✅              ❌
+ `MaxQuant msms.txt <https://www.maxquant.org/>`_                                                                      ``msms``        ✅              ❌
+ `MS Amanda CSV <https://ms.imp.ac.at/?goto=msamanda>`_                                                                ``msamanda``    ✅              ❌
+ `mzIdentML <https://psidev.info/mzidentml>`_                                                                          ``mzid``        ✅              ✅
+ `Peptide Record <https://psm-utils.readthedocs.io/en/stable/api/psm_utils.io/#module-psm_utils.io.peptide_record>`_   ``peprec``      ✅              ✅
+ `Percolator tab <https://github.com/percolator/percolator/wiki/Interface>`_                                           ``percolator``  ✅              ✅
+ `TSV <https://psm-utils.readthedocs.io/en/stable/api/psm_utils.io/#module-psm_utils.io.tsv>`_                         ``tsv``         ✅              ✅
+ `X!Tandem XML <https://www.thegpm.org/tandem/>`_                                                                      ``xtandem``     ✅              ❌
+===================================================================================================================== =============== =============== ===============
 
 Legend: ✅ Supported, ❌ Unsupported, 🔧 Work in progress
 

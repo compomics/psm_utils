@@ -173,7 +173,7 @@ Using a molecular formula or mass shift:
 621.24282637892
 
 
-A drawback of using the mass shift is that the composition is not be resolvable:
+A drawback of using the mass shift is that the composition is not resolvable:
 
 >>> Peptidoform("AC[+57.021464]DEK/2").composition
 [...]

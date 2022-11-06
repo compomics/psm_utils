@@ -1,5 +1,5 @@
 {
-    "esbonio.sphinx.confDir": "docs/source",
+    "esbonio.sphinx.confDir": "${workspaceFolder}/docs/source",
     "[python]": {
         "editor.formatOnSave": true,
         "editor.codeActionsOnSave": {"source.organizeImports": true},

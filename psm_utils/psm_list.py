@@ -2,7 +2,7 @@ from __future__ import annotations
 
 import re
 from itertools import compress
-from typing import Iterable, List, Sequence, Union
+from typing import Iterable, List, Sequence
 
 import numpy as np
 import pandas as pd
@@ -62,14 +62,13 @@ class PSMList(BaseModel):
         """
         super().__init__(**data)
 
-
     def __iter__(self) -> Iterable[PSM]:
         return self.psm_list.__iter__()
 
     def __len__(self) -> int:
         return self.psm_list.__len__()
 
-    def __getitem__(self, item) -> Union[PSM, list[PSM]]:
+    def __getitem__(self, item) -> PSM | list[PSM]:
         if isinstance(item, int):
             # Return single PSM by index
             return self.psm_list[item]
@@ -273,6 +272,7 @@ class PSMList(BaseModel):
 
     def set_ranks(self):
         """Set identification ranks for all PSMs in :py:class:`PSMList`."""
+
         def rank_simple(vector):
             return sorted(range(len(vector)), key=vector.__getitem__)
 

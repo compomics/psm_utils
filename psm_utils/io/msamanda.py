@@ -7,7 +7,6 @@ import csv
 import re
 from pathlib import Path
 from itertools import compress
-from typing import Union
 
 import numpy as np
 
@@ -35,7 +34,7 @@ REQUIRED_COLUMNS = [
 class MSAmandaReader(ReaderBase):
     """Reader for psm_utils TSV format."""
 
-    def __init__(self, filename: Union[str, Path], *args, **kwargs) -> None:
+    def __init__(self, filename: str | Path, *args, **kwargs) -> None:
         super().__init__(filename, *args, **kwargs)
 
     def __iter__(self):
@@ -67,7 +66,7 @@ class MSAmandaReader(ReaderBase):
             )
 
     def _get_peptide_spectrum_match(
-        self, psm_dict: dict[str, Union[str, float]]
+        self, psm_dict: dict[str, str | float]
     ) -> PSM:
         """Return a PSM object from MaxQuant msms.txt PSM file."""
 

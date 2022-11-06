@@ -20,7 +20,7 @@ from __future__ import annotations
 import csv
 import re
 from pathlib import Path
-from typing import Iterable, Optional, Union
+from typing import Iterable, Optional
 
 from psm_utils.io._base_classes import ReaderBase, WriterBase
 from psm_utils.io.exceptions import PSMUtilsIOException
@@ -32,7 +32,7 @@ from psm_utils.psm_list import PSMList
 class PercolatorTabReader(ReaderBase):
     def __init__(
         self,
-        filename: Union[str, Path],
+        filename: str | Path,
         score_column=None,
         retention_time_column=None,
         mz_column=None,
@@ -155,7 +155,7 @@ class PercolatorTabReader(ReaderBase):
             peptidoform += f"/{charge}"
         return Peptidoform(peptidoform)
 
-    def _parse_charge(self, entry) -> Union[int, None]:
+    def _parse_charge(self, entry) -> int | None:
         """Parse charge state from single or one-hot encoded charge state."""
         if self.charge_column:
             return int(entry["charge"])
@@ -210,7 +210,7 @@ class PercolatorTabReader(ReaderBase):
 class PercolatorTabWriter(WriterBase):
     def __init__(
         self,
-        filename: Union[str, Path],
+        filename: str | Path,
         style: str = "pin",
         feature_names: Optional[list[str]] = None,
         *args,
@@ -390,9 +390,9 @@ class _PercolatorTabIO:
 
 
 def join_pout_files(
-    target_filename: Union[str, Path],
-    decoy_filename: Union[str, Path],
-    output_filename: Union[str, Path],
+    target_filename: str | Path,
+    decoy_filename: str | Path,
+    output_filename: str | Path,
 ):
     """
     Join target and decoy Percolator Out (POUT) files into single PercolatorTab file.

@@ -57,7 +57,7 @@ from __future__ import annotations
 import csv
 from collections import namedtuple
 from pathlib import Path
-from typing import Iterable, NamedTuple, Optional, Union
+from typing import Iterable, NamedTuple, Optional
 
 import pandas as pd
 
@@ -82,7 +82,7 @@ class _PeptideRecord:
 
     def __init__(
         self,
-        filename: Union[str, Path],
+        filename: str | Path,
         required_columns: list[str] = None,
         optional_columns: list[str] = None,
     ) -> None:
@@ -161,7 +161,7 @@ class _PeptideRecord:
 class PeptideRecordReader(ReaderBase):
     def __init__(
         self,
-        filename: Union[str, Path],
+        filename: str | Path,
         *args,
         **kwargs,
     ) -> None:

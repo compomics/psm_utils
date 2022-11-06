@@ -45,7 +45,6 @@ Notes
 from __future__ import annotations
 
 from pathlib import Path
-from typing import Union
 
 import numpy as np
 from pyteomics import mass, tandem
@@ -58,7 +57,7 @@ from psm_utils.psm_list import PSMList
 
 
 class XTandemReader(ReaderBase):
-    def __init__(self, filename: Union[str, Path], decoy_prefix="DECOY_") -> None:
+    def __init__(self, filename: str | Path, decoy_prefix="DECOY_") -> None:
         """
         Reader for X!Tandem XML PSM files.
 

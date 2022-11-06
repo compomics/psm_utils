@@ -50,7 +50,7 @@ from __future__ import annotations
 import ast
 import csv
 from pathlib import Path
-from typing import Optional, Union
+from typing import Optional
 
 from psm_utils.io._base_classes import ReaderBase, WriterBase
 from psm_utils.io.exceptions import PSMUtilsIOException
@@ -61,7 +61,7 @@ from psm_utils.psm_list import PSMList
 class TSVReader(ReaderBase):
     """Reader for psm_utils TSV format."""
 
-    def __init__(self, filename: Union[str, Path], *args, **kwargs) -> None:
+    def __init__(self, filename: str | Path, *args, **kwargs) -> None:
         super().__init__(filename, *args, **kwargs)
 
     def __iter__(self):
@@ -116,7 +116,7 @@ class TSVWriter(WriterBase):
 
     def __init__(
         self,
-        filename: Union[str, Path],
+        filename: str | Path,
         example_psm: Optional[PSM] = None,
         *args,
         **kwargs,

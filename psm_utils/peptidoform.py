@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Union
-
 from pyteomics import mass, proforma
 
 from psm_utils.exceptions import PSMUtilsException
@@ -84,7 +82,7 @@ class Peptidoform:
         return "".join(pos[0] for pos in self.parsed_sequence)
 
     @property
-    def precursor_charge(self) -> Union[int, None]:
+    def precursor_charge(self) -> int | None:
         """
         Returns the charge state as integer or :py:const:`None` if no charge assigned.
 
@@ -318,7 +316,7 @@ class Peptidoform:
         return mass
 
     @property
-    def theoretical_mz(self) -> Union[float, None]:
+    def theoretical_mz(self) -> float | None:
         """
         Monoisotopic mass-to-charge ratio of the full peptidoform.
 

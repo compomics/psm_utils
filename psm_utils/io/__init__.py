@@ -1,9 +1,10 @@
 """Parsers for proteomics search results from various search engines."""
 
+from __future__ import annotations
+
 import re
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import Union
 
 from rich.progress import track
 
@@ -102,7 +103,7 @@ def _supports_write_psm(writer: WriterBase):
     return supports_write_psm
 
 
-def read_file(filename: Union[str, Path], *args, filetype: str = "infer", **kwargs):
+def read_file(filename: str | Path, *args, filetype: str = "infer", **kwargs):
     """
     Read PSM file into :py:class:`~psm_utils.psmlist.PSMList`.
 
@@ -129,7 +130,7 @@ def read_file(filename: Union[str, Path], *args, filetype: str = "infer", **kwar
 
 def write_file(
     psm_list: PSMList,
-    filename: Union[str, Path],
+    filename: str | Path,
     *args,
     filetype: str = "infer",
     show_progressbar: bool = False,
@@ -176,8 +177,8 @@ def write_file(
 
 
 def convert(
-    input_filename: Union[str, Path],
-    output_filename: Union[str, Path],
+    input_filename: str | Path,
+    output_filename: str | Path,
     input_filetype: str = "infer",
     output_filetype: str = "infer",
     show_progressbar: bool = False,

@@ -222,7 +222,9 @@ class PSMList(BaseModel):
         for psm in self.psm_list:
             psm.peptidoform.rename_modifications(mapping)
 
-    def add_fixed_modifications(self, modification_rules: list[tuple[str, list[str]]]):
+    def add_fixed_modifications(
+        self, modification_rules: list[tuple[str, list[str]]] | dict[str, list[str]]
+    ):
         """
         Add fixed modifications to all PSM peptidoforms in :py:class:`PSMList`.
 
@@ -238,7 +240,11 @@ class PSMList(BaseModel):
         --------
         >>> psm_list.add_fixed_modifications([("Carbamidomethyl", ["C"])])
 
+        >>> psm_list.add_fixed_modifications({"Carbamidomethyl": ["C"]})
+
         """
+        if isinstance(modification_rules, dict):
+            modification_rules = modification_rules.items()
         modification_rules = [
             proforma.ModificationRule(proforma.process_tag_tokens(mod), targets)
             for mod, targets in modification_rules

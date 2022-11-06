@@ -372,6 +372,8 @@ class Peptidoform:
                 try:
                     if mod.value in mapping:
                         new_mods.append(proforma.process_tag_tokens(mapping[mod.value]))
+                    else:
+                        new_mods.append(mod)
                 except AttributeError:
                     if isinstance(mod, proforma.ModificationRule):
                         if mod.modification_tag.value in mapping:
@@ -402,7 +404,9 @@ class Peptidoform:
                     self.properties[mod_type]
                 )
 
-    def add_fixed_modifications(self, modification_rules: list[tuple[str, list[str]]]):
+    def add_fixed_modifications(
+        self, modification_rules: list[tuple[str, list[str]]] | dict[str, list[str]]
+    ):
         """
         Add fixed modifications to peptidoform.
 
@@ -422,6 +426,8 @@ class Peptidoform:
         '<[Carbamidomethyl]@C>ATPEILTCNSIGCLK'
 
         """
+        if isinstance(modification_rules, dict):
+            modification_rules = modification_rules.items()
         modification_rules = [
             proforma.ModificationRule(proforma.process_tag_tokens(mod), targets)
             for mod, targets in modification_rules

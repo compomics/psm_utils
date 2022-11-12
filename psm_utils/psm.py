@@ -22,6 +22,7 @@ class PSM(BaseModel):
     pep: Optional[float] = None
     precursor_mz: Optional[float] = None
     retention_time: Optional[float] = None
+    ion_mobility: Optional[float] = None
     protein_list: Optional[List[str]] = None
     rank: Optional[int] = None
     source: Optional[str] = None
@@ -65,13 +66,16 @@ class PSM(BaseModel):
         precursor_mz : float, optional
             Precursor m/z.
         retention_time : float, optional
-            Retention time.
+            Precursor retention time.
+        ion_mobility : float, optional
+            Precursor ion mobility.
         protein_list : list[str]
             List of proteins or protein groups associated with peptide.
         rank : int
             rank of a psm
         source : str, optional
-            PSM file type where PSM was stored. E.g., ``MaxQuant``.
+            PSM file type where PSM was stored or search engine that generated it. E.g.,
+            ``mzid``, or ``X!Tandem``.
         provenance_data : dict[str, str], optional
             Freeform dict to hold data describing the PSM origin, e.g. a search
             engine-specific identifier.
@@ -108,6 +112,16 @@ class PSM(BaseModel):
         ----------
         as_url : bool, optional
             Return URL to proteomeXchange.org USI aggregator.
+
+        Notes
+        -----
+        - The resulting USI will only be valid if the ``collection``, ``run``,
+          and ``spectrum_id`` are defined.
+        - There is no guarantee that the resulting USI is resolvable at ProteomeXchange.
+          This requires that the spectrum has been fully indexed in a ProteomeXchange
+          partner repository. For instance, the following USI should be resolvable:
+          `mzspec:PXD000561:Adult_Frontalcortex_bRP_Elite_85_f09:scan:17555:VLHPLEGAVVIIFK/2 <http://proteomecentral.proteomexchange.org/usi/?usi=mzspec:PXD000561:Adult_Frontalcortex_bRP_Elite_85_f09:scan:17555:VLHPLEGAVVIIFK/2>`_
+
         """
         # TODO: Support nativeID spectrum flag
         usi = f"mzspec:{self.collection}:{self.run}:scan:{self.spectrum_id}:{self.peptidoform}"

@@ -49,7 +49,7 @@ class Peptidoform:
     def __hash__(self) -> int:
         return hash(self.proforma)
 
-    def __eq__(self, __o: object) -> bool:
+    def __eq__(self, __o: Peptidoform) -> bool:
         try:
             return self.proforma == __o.proforma
         except AttributeError:

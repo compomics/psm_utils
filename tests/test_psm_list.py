@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from psm_utils import PSM, PSMList
+from psm_utils import Peptidoform, PSM, PSMList
 
 sample_psm_list = [
     PSM(peptidoform="ACDK", spectrum_id=1, score=140.2),
@@ -67,3 +67,48 @@ class TestPSMList:
         # Wrong length
         with pytest.raises(ValueError):
             psm_list["score"] = [10, 20, 30, 40]
+
+    def test_set_ranks(self):
+        psm_list = PSMList(
+            psm_list=[
+                PSM(peptidoform=Peptidoform('ACDE/2'), spectrum_id=1, run=None, collection=None, score=3.3),
+                PSM(peptidoform=Peptidoform('ACDF/2'), spectrum_id=2, run=None, collection=None, score=12.0),
+                PSM(peptidoform=Peptidoform('ACDG/2'), spectrum_id=3, run=None, collection=None, score=12.2),
+                PSM(peptidoform=Peptidoform('ACDH/2'), spectrum_id=4, run=None, collection=None, score=2.5),
+            ]
+        )
+
+        # Simple unique set of PSMs
+        psm_list.set_ranks()
+        np.testing.assert_equal(psm_list["rank"], np.array([1, 1, 1, 1]))
+
+        # First two PSMs belong to same spectrum
+        psm_list["spectrum_id"] = [1, 1, 2, 3]
+        psm_list.set_ranks()
+        np.testing.assert_equal(psm_list["rank"], np.array([2, 1, 1, 1]))
+
+        # Single specified run, making spectra unique again
+        psm_list["spectrum_id"] = [1, 1, 2, 3]
+        psm_list["run"] = [None, "run_1", None, None]
+        psm_list.set_ranks()
+        np.testing.assert_equal(psm_list["rank"], np.array([1, 1, 1, 1]))
+
+        # All runs specified
+        psm_list["spectrum_id"] = [1, 1, 2, 3]
+        psm_list["run"] = ["run_1", "run_1", "run_2", "run_2"]
+        psm_list.set_ranks()
+        np.testing.assert_equal(psm_list["rank"], np.array([2, 1, 1, 1]))
+
+        # Collection makes spectra unique again
+        psm_list["spectrum_id"] = [1, 2, 2, 2]
+        psm_list["run"] = ["run_1", "run_1", "run_2", "run_2"]
+        psm_list["collection"] = ["coll_1", "coll_1", "coll_1", "coll_2"]
+        psm_list.set_ranks()
+        np.testing.assert_equal(psm_list["rank"], np.array([1, 1, 1, 1]))
+
+        # Lower score is better
+        psm_list["spectrum_id"] = [1, 1, 2, 2]
+        psm_list["run"] = [None, None, None, None]
+        psm_list["collection"] = [None, None, None, None]
+        psm_list.set_ranks(lower_score_better=True)
+        np.testing.assert_equal(psm_list["rank"], np.array([1, 2, 2, 1]))

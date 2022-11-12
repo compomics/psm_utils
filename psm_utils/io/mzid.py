@@ -12,7 +12,7 @@ import logging
 import re
 import xml.etree.ElementTree as ET
 from pathlib import Path
-from typing import Optional, Union
+from typing import Optional
 
 from psims.mzid import MzIdentMLWriter
 from pyteomics import mzid, proforma
@@ -36,7 +36,10 @@ STANDARD_SEARCHENGINE_SCORES = [
     "DeBunker:score",
     "IdentityE Score",
     "KSDP score",
+    "MS-GF:SpecEValue",
+    "MS-GF:EValue",
     "MS-GF:RawScore",
+    "MS-GF:DeNovoScore",
     "MSFit:Mowse score",
     "MSPathFinder:RawScore" "MSPepSearch:score",
     "Mascot:score",
@@ -66,7 +69,7 @@ STANDARD_SEARCHENGINE_SCORES = [
 
 
 class MzidReader(ReaderBase):
-    def __init__(self, filename: Union[str, Path], *args, **kwargs) -> None:
+    def __init__(self, filename: str | Path, *args, **kwargs) -> None:
 
         """
         Reader for mzIdentML PSM files.
@@ -180,7 +183,7 @@ class MzidReader(ReaderBase):
         self,
         spectrum_id: str,
         raw_file: str,
-        spectrum_identification_item: dict[str, Union[str, float, list]],
+        spectrum_identification_item: dict[str, str | float | list],
         spectrum_title: Optional[str] = None,
     ) -> PSM:
         """Parse single mzid entry to :py:class:`~psm_utils.peptidoform.Peptidoform`."""
@@ -264,7 +267,7 @@ class MzidWriter(WriterBase):
 
     def __init__(
         self,
-        filename: Union[str, Path],
+        filename: str | Path,
         show_progressbar: bool = False,
         *args,
         **kwargs,

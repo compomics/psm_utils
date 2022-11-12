@@ -6,12 +6,12 @@ format for `MS²PIP <https://github.com/compomics/ms2pip_c/>`_. It is a simple a
 flexible delimited text file where each row represents a single PSM. Required columns
 are:
 
+- ``spec_id``: Spectrum identifier; usually the identifier used in the spectrum file.
 - ``peptide``: Simple, stripped peptide sequence (e.g., ``ACDE``).
 - ``modifications``: Amino acid modifications in a custom format (see below).
 
 Depending on the use case, more columns can be required or optional:
 
-- ``spec_id``: Spectrum identifier; usually the identifier used in the spectrum file.
 - ``charge``: Peptide precursor charge.
 - ``observed_retention_time``: Observed retention time.
 - ``predicted_retention_time``: Predicted retention time.
@@ -31,6 +31,7 @@ and ``-1`` for C-terminal modifications. Unmodified peptides can be marked with 
  ``1|Oxidation``                     ``Oxidation`` on the first amino acid
  ``1|Oxidation|5|Carbamidomethyl``   ``Oxidation`` on the first amino acid and ``Carbamidomethyl`` on the fifth
  ``0|Acetylation``                   ``Acetylation`` on the N-terminus
+ ``-1|Amidation``                    ``Amidation`` on the C-terminus
 ==================================== ==============================================================================
 
 
@@ -43,6 +44,12 @@ Full PEPREC example:
     peptide2,2|Carbamidomethyl,ACDEFGR,3
     peptide3,0|Acetyl|2|Carbamidomethyl,ACDEFGHIK,2
 
+.. Attention::
+    Labile, unlocalized, and fixed modifications are not encoded in the Peptide Record
+    notation. To encode fixed modifications, use
+    :py:meth:`~psm_utils.psm_list.PSMList.apply_fixed_modifications` before writing to
+    Peptide Record.
+
 """
 
 from __future__ import annotations
@@ -50,7 +57,7 @@ from __future__ import annotations
 import csv
 from collections import namedtuple
 from pathlib import Path
-from typing import Iterable, NamedTuple, Optional, Union
+from typing import Iterable, NamedTuple, Optional
 
 import pandas as pd
 
@@ -64,9 +71,8 @@ from psm_utils.psm_list import PSMList
 class _PeptideRecord:
     """Helper class for handling Peptide Record files."""
 
-    required_columns = ["peptide", "modifications"]
+    required_columns = ["spec_id", "peptide", "modifications"]
     optional_columns = [
-        "spec_id",
         "charge",
         "observed_retention_time",
         "predicted_retention_time",
@@ -76,7 +82,7 @@ class _PeptideRecord:
 
     def __init__(
         self,
-        filename: Union[str, Path],
+        filename: str | Path,
         required_columns: list[str] = None,
         optional_columns: list[str] = None,
     ) -> None:
@@ -155,7 +161,7 @@ class _PeptideRecord:
 class PeptideRecordReader(ReaderBase):
     def __init__(
         self,
-        filename: Union[str, Path],
+        filename: str | Path,
         *args,
         **kwargs,
     ) -> None:
@@ -328,7 +334,6 @@ class PeptideRecordWriter(WriterBase):
                 "is opened in context (i.e., using the `with` statement)."
             )
 
-    # TODO: Rename to `write_psm_list`? (also for other writers)
     # TODO: Support appending to existing file?
     def write_file(self, psm_list: PSMList):
         """
@@ -424,6 +429,14 @@ def proforma_to_peprec(peptidoform: Peptidoform) -> tuple(str, str, Optional[int
         Modifications in Peptide Record notation
     charge: int, optional
         Precursor charge state, if available, else :py:const:`None`
+
+    Notes
+    -----
+    Labile, unlocalized, and fixed modifications are not encoded in the Peptide Record
+    notation. To encode fixed modifications, use
+    :py:meth:`~psm_utils.psm_list.PSMList.apply_fixed_modifications` before writing to
+    Peptide Record.
+
     """
 
     def _mod_to_ms2pip(mod_list: list, location: int):
@@ -441,7 +454,7 @@ def proforma_to_peprec(peptidoform: Peptidoform) -> tuple(str, str, Optional[int
         if mod:
             ms2pip_mods.append(_mod_to_ms2pip(mod, i + 1))
     if peptidoform.properties["c_term"]:
-        ms2pip_mods.append(_mod_to_ms2pip(peptidoform.properties["n_term"], -1))
+        ms2pip_mods.append(_mod_to_ms2pip(peptidoform.properties["c_term"], -1))
 
     peptide = peptidoform.sequence
     modifications = "|".join(ms2pip_mods) if ms2pip_mods else "-"

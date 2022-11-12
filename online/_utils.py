@@ -57,15 +57,21 @@ def score_histogram(psm_df):
 
 def pp_plot(psm_df):
     """Generate PP plot for given PSM dataframe."""
-    decoy_ratio = np.count_nonzero(psm_df["is_decoy"]) / len(psm_df)
-    if decoy_ratio == 0:
+    n_decoys = np.count_nonzero(psm_df["is_decoy"])
+    n_targets = len(psm_df) - n_decoys
+    pi_zero = n_decoys / n_targets
+    if n_decoys == 0:
         raise ValueError("No decoy PSMs found in PSM file.")
     target_scores = psm_df["score"][~psm_df["is_decoy"]]
     decoy_scores = psm_df["score"][psm_df["is_decoy"]]
-    if len(psm_df) > 5000:
-        target_scores_sample = psm_df["score"][~psm_df["is_decoy"]].sample(5000)
-    target_ecdf = ECDF(target_scores)(target_scores_sample)
-    decoy_ecdf = ECDF(decoy_scores)(target_scores_sample)
+    if len(psm_df) > 1000:
+        target_scores_quantiles = psm_df["score"][~psm_df["is_decoy"]].quantile(
+            np.linspace(0, 1, 1000)
+        )
+    else:
+        target_scores_quantiles = target_scores
+    target_ecdf = ECDF(target_scores)(target_scores_quantiles)
+    decoy_ecdf = ECDF(decoy_scores)(target_scores_quantiles)
 
     fig = go.Figure()
     fig.add_trace(
@@ -78,7 +84,7 @@ def pp_plot(psm_df):
     fig.add_trace(
         go.Scatter(
             x=[0, 1],
-            y=[0, decoy_ratio],
+            y=[0, pi_zero],
             mode="lines",
             line=go.scatter.Line(color="red"),
             showlegend=True,

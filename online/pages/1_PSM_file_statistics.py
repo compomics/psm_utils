@@ -1,5 +1,7 @@
 """psm_utils Streamlit-based web server."""
 
+import gzip
+import re
 from tempfile import NamedTemporaryFile
 
 import numpy as np
@@ -34,6 +36,14 @@ class StreamlitPageStats(StreamlitPage):
         with st.form(key="main_form"):
             self.state["input_file"] = st.file_uploader(
                 label="Input PSM file",
+                accept_multiple_files=False,
+                help=(
+                    "PSM file. See https://psm_utils.readthedocs.io for all supported "
+                    "file types. Uploaded files are limited to 200MB, although single "
+                    "GZipped files are also supported (e.g., `msms.txt.gz`). See "
+                    "https://github.com/compomics/psm_utils/tree/main/example_files "
+                    "for examples."
+                ),
             )
             self.state["input_filetype"] = st.selectbox(
                 label="Input PSM file type",
@@ -67,21 +77,35 @@ class StreamlitPageStats(StreamlitPage):
                     value=0.01,
                     format="%f",
                 )
-                self.state["reverse"] = row[2].radio(
-                    "Score type",
-                    options=[True, False],
-                    format_func=lambda x: "Higher score is better"
-                    if x == True
-                    else "Lower score is better",
-                )
-                row = st.columns(3)
-                self.state["percolator_score_column"] = row[0].text_input(
+                self.state["percolator_score_column"] = row[2].text_input(
                     "Percolator Tab: Score column",
                     help=(
                         """
                         In Percolator Tab PIN files, the name of the score column is not
                         predefined. Provide the correct column name to extract PSM
                         scores from a PIN file.
+                        """
+                    ),
+                )
+                row = st.columns(2)
+                self.state["reverse"] = row[0].radio(
+                    "Score type: order",
+                    options=[True, False],
+                    format_func=lambda x: "Higher score is better"
+                    if x == True
+                    else "Lower score is better",
+                )
+                self.state["log_scale"] = row[1].radio(
+                    "Score type: scale",
+                    options=[False, True],
+                    format_func=lambda x: "Logarithmic scale (e.g., e-value)"
+                    if x == True
+                    else "Linear scale (e.g., Andromeda score)",
+                    help=(
+                        """
+                        Some search engine scores, mostly e-value-like scores, require a
+                        logarithmic transformation for plotting. Usually, these scores
+                        also require the "Lower score is better" option.
                         """
                     ),
                 )
@@ -108,11 +132,21 @@ class StreamlitPageStats(StreamlitPage):
                 # Infer filetype if required
                 if st.session_state["input_filetype"] == "infer":
                     st.session_state["input_filetype"] = _infer_filetype(
-                        st.session_state["input_file"].name
+                        re.sub(
+                            r".gz$",
+                            "",
+                            st.session_state["input_file"].name,
+                            flags=re.IGNORECASE,
+                        )
                     )
                 # Write file to disk for psm_utils; then read
                 with NamedTemporaryFile(mode="wb", delete=False) as tmp_file:
-                    tmp_file.write(self.state["input_file"].getvalue())
+                    if self.state["input_file"].name.lower().endswith(".gz"):
+                        tmp_file.write(
+                            gzip.decompress(self.state["input_file"].getvalue())
+                        )
+                    else:
+                        tmp_file.write(self.state["input_file"].getvalue())
                     tmp_file.flush()
                     tmp_file.close()
                     psm_list = read_file(
@@ -128,6 +162,10 @@ class StreamlitPageStats(StreamlitPage):
     def _prepare_psms(self):
         """Calculate q-values if needed; generate psm_df."""
         psm_list = self.state["psm_list"]
+
+        # Transform logarithmic score, if needed
+        if self.state["log_scale"]:
+            psm_list["score"] = np.log2(psm_list["score"])
 
         # Warn if some but only few decoys are present
         percent_decoys = np.count_nonzero(psm_list["is_decoy"]) / len(psm_list)
@@ -197,7 +235,9 @@ class StreamlitPageStats(StreamlitPage):
             psm_df[["spectrum_id", "run", "collection"]].drop_duplicates().shape[0]
         )
         n_psms = psm_df.shape[0]
-        n_peptidoforms = psm_df["peptidoform"].apply(lambda x: x.proforma).unique().shape[0]
+        n_peptidoforms = (
+            psm_df["peptidoform"].apply(lambda x: x.proforma).unique().shape[0]
+        )
         percent_decoys = np.count_nonzero(psm_list["is_decoy"]) / len(psm_list)
 
         row_1 = st.columns(3)
@@ -227,9 +267,14 @@ class StreamlitPageStats(StreamlitPage):
                 .shape[0]
             )
             n_psms = psm_df_filtered.shape[0]
-            n_peptides = psm_df["peptidoform"].apply(lambda x: x.sequence).unique().shape[0]
+            n_peptides = (
+                psm_df["peptidoform"].apply(lambda x: x.sequence).unique().shape[0]
+            )
             n_peptidoforms = (
-                psm_df_filtered["peptidoform"].apply(lambda x: x.proforma).unique().shape[0]
+                psm_df_filtered["peptidoform"]
+                .apply(lambda x: x.proforma)
+                .unique()
+                .shape[0]
             )
 
             row_3 = st.columns(4)

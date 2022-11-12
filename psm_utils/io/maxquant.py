@@ -7,7 +7,6 @@ import logging
 import re
 from itertools import compress
 from pathlib import Path
-from typing import Union
 
 import numpy as np
 
@@ -38,7 +37,7 @@ class MSMSReader(ReaderBase):
 
     def __init__(
         self,
-        filename: Union[str, Path],
+        filename: str | Path,
         *args,
         **kwargs,
     ) -> None:
@@ -107,7 +106,7 @@ class MSMSReader(ReaderBase):
             )
 
     def _get_peptide_spectrum_match(
-        self, psm_dict: dict[str, Union[str, float]]
+        self, psm_dict: dict[str, str | float]
     ) -> PSM:
         """Return a PSM object from MaxQuant msms.txt PSM file."""
 

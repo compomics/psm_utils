@@ -4,7 +4,6 @@ from __future__ import annotations
 
 from abc import ABC, abstractmethod
 from pathlib import Path
-from typing import Union
 
 from psm_utils.psm import PSM
 from psm_utils.psm_list import PSMList
@@ -15,7 +14,7 @@ class ReaderBase(ABC):
 
     def __init__(
         self,
-        filename: Union[str, Path],
+        filename: str | Path,
         *args,
         **kwargs,
     ) -> None:

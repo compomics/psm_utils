@@ -1,7 +1,5 @@
 from __future__ import annotations
 
-from typing import Union
-
 from pyteomics import mass, proforma
 
 from psm_utils.exceptions import PSMUtilsException
@@ -51,7 +49,7 @@ class Peptidoform:
     def __hash__(self) -> int:
         return hash(self.proforma)
 
-    def __eq__(self, __o: object) -> bool:
+    def __eq__(self, __o: Peptidoform) -> bool:
         try:
             return self.proforma == __o.proforma
         except AttributeError:
@@ -84,7 +82,7 @@ class Peptidoform:
         return "".join(pos[0] for pos in self.parsed_sequence)
 
     @property
-    def precursor_charge(self) -> Union[int, None]:
+    def precursor_charge(self) -> int | None:
         """
         Returns the charge state as integer or :py:const:`None` if no charge assigned.
 
@@ -318,7 +316,7 @@ class Peptidoform:
         return mass
 
     @property
-    def theoretical_mz(self) -> Union[float, None]:
+    def theoretical_mz(self) -> float | None:
         """
         Monoisotopic mass-to-charge ratio of the full peptidoform.
 
@@ -371,10 +369,20 @@ class Peptidoform:
         def _rename_modification_list(mods):
             new_mods = []
             for mod in mods:
-                if mod.value in mapping:
-                    new_mods.append(proforma.process_tag_tokens(mapping[mod.value]))
-                else:
-                    new_mods.append(mod)
+                try:
+                    if mod.value in mapping:
+                        new_mods.append(proforma.process_tag_tokens(mapping[mod.value]))
+                    else:
+                        new_mods.append(mod)
+                except AttributeError:
+                    if isinstance(mod, proforma.ModificationRule):
+                        if mod.modification_tag.value in mapping:
+                            mod.modification_tag = proforma.process_tag_tokens(
+                                mapping[mod.modification_tag.value]
+                            )
+                        new_mods.append(mod)
+                    else:
+                        mod.value  # re-raise AttributeError
             return new_mods
 
         # Sequential modifications
@@ -396,7 +404,9 @@ class Peptidoform:
                     self.properties[mod_type]
                 )
 
-    def add_fixed_modifications(self, modification_rules: list[tuple[str, list[str]]]):
+    def add_fixed_modifications(
+        self, modification_rules: list[tuple[str, list[str]]] | dict[str, list[str]]
+    ):
         """
         Add fixed modifications to peptidoform.
 
@@ -416,6 +426,8 @@ class Peptidoform:
         '<[Carbamidomethyl]@C>ATPEILTCNSIGCLK'
 
         """
+        if isinstance(modification_rules, dict):
+            modification_rules = modification_rules.items()
         modification_rules = [
             proforma.ModificationRule(proforma.process_tag_tokens(mod), targets)
             for mod, targets in modification_rules
@@ -464,7 +476,7 @@ class Peptidoform:
                         self.parsed_sequence[i] = (aa, rule_dict[aa])
 
             # Remove fixed modifications
-            self.properties["fixed_modifications"] = None
+            self.properties["fixed_modifications"] = []
 
 
 class PeptidoformException(PSMUtilsException):

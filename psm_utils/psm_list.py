@@ -2,12 +2,13 @@ from __future__ import annotations
 
 import re
 from itertools import compress
-from typing import Iterable, List, Sequence, Union
+from typing import Iterable, List, Sequence
 
 import numpy as np
 import pandas as pd
 from pydantic import BaseModel
 from pyteomics import auxiliary, proforma
+from rich.pretty import pretty_repr
 
 from psm_utils.psm import PSM
 
@@ -31,9 +32,9 @@ class PSMList(BaseModel):
         Initiate a :py:class:`PSMList` from a list of PSM objects:
 
         >>> psm_list = PSMList(psm_list=[
-        ...     PSM(peptidoform="ACDK", spectrum_id=1, score=140.2),
-        ...     PSM(peptidoform="CDEFR", spectrum_id=2, score=132.9),
-        ...     PSM(peptidoform="DEM[Oxidation]K", spectrum_id=3, score=55.7),
+        ...     PSM(peptidoform="ACDK", spectrum_id=1, score=140.2, retention_time=600.2),
+        ...     PSM(peptidoform="CDEFR", spectrum_id=2, score=132.9, retention_time=1225.4),
+        ...     PSM(peptidoform="DEM[Oxidation]K", spectrum_id=3, score=55.7, retention_time=3389.1),
         ... ])
 
         :py:class:`PSMList` directly supports iteration:
@@ -59,9 +60,26 @@ class PSMList(BaseModel):
         >>> psm_list_subset["score"]
         array([140.2, 55.7], dtype=object)
 
+        For more advanced and efficient vectorized access, converting the
+        :py:class:`PSMList` to a Pandas DataFrame is highly recommended:
+
+        >>> psm_df = psm_list.to_dataframe()
+        >>> psm_df[(psm_df["retention_time"] < 2000) & (psm_df["score"] > 10)]
+          peptidoform  spectrum_id   run collection spectrum is_decoy  score qvalue   pep precursor_mz  retention_time protein_list  rank source provenance_data metadata rescoring_features
+        0        ACDK            1  None       None     None     None  140.2   None  None         None           600.0         None  None   None            None     None               None
+        1       CDEFR            2  None       None     None     None  132.9   None  None         None          1225.0         None  None   None            None     None               None
+
         """
         super().__init__(**data)
 
+    def __rich_repr__(self):
+        yield "psm_list", self.psm_list
+
+    def __repr__(self):
+        return pretty_repr(self, max_length=5)
+
+    def __str__(self):
+        return self.__repr__()
 
     def __iter__(self) -> Iterable[PSM]:
         return self.psm_list.__iter__()
@@ -69,7 +87,7 @@ class PSMList(BaseModel):
     def __len__(self) -> int:
         return self.psm_list.__len__()
 
-    def __getitem__(self, item) -> Union[PSM, list[PSM]]:
+    def __getitem__(self, item) -> PSM | list[PSM]:
         if isinstance(item, int):
             # Return single PSM by index
             return self.psm_list[item]
@@ -78,7 +96,10 @@ class PSMList(BaseModel):
             return PSMList(psm_list=self.psm_list[item])
         elif isinstance(item, str):
             # Return PSM property as array across full PSMList
-            return np.array([psm[item] for psm in self.psm_list], dtype=object)
+            return np.array([psm[item] for psm in self.psm_list])
+        elif _is_iterable_of_bools(item):
+            # Return new PSMList with items that were True
+            return PSMList(psm_list=[self.psm_list[i] for i in np.flatnonzero(item)])
         elif _is_iterable_of_ints(item):
             # Return new PSMList with selection of PSMs by list indices
             return PSMList(psm_list=[self.psm_list[i] for i in item])
@@ -126,16 +147,29 @@ class PSMList(BaseModel):
                         psm_dict[psm.collection] = {psm.run: {psm.spectrum_id: [psm]}}
         return psm_dict
 
-    def get_rank1_psms(self, lower_score_better=False) -> PSMList:
-        """Return new PSMList with only first-rank PSMs"""
+    def set_ranks(self, lower_score_better: bool = False):
+        """Set identification ranks for all PSMs in :py:class:`PSMList`."""
         columns = ["collection", "run", "spectrum_id", "score"]
-        df_rank1 = (
+        self["rank"] = (
             pd.DataFrame(self[columns], columns=columns)
             .sort_values("score", ascending=lower_score_better)
-            .drop_duplicates(["collection", "run", "spectrum_id"])
+            .fillna(0)  # groupby does not play well with None values
+            .groupby(["collection", "run", "spectrum_id"])
+            .cumcount()
+            .sort_index()
+            + 1  # 1-based counting
         )
-        first_rank_indices = df_rank1.index
-        return self[first_rank_indices]
+
+    def get_rank1_psms(self, *args, **kwargs) -> PSMList:
+        """
+        Return new :py:class:`PSMList` with only first-rank PSMs.
+
+        First runs :py:meth:`~set_ranks` with ``*args`` and ``**kwargs`` if if any PSM
+        has no rank yet.
+        """
+        if None in self["rank"]:
+            self.set_ranks(*args, **kwargs)
+        return self[self["rank"] == 1]
 
     def find_decoys(self, decoy_pattern: str) -> None:
         """
@@ -223,7 +257,9 @@ class PSMList(BaseModel):
         for psm in self.psm_list:
             psm.peptidoform.rename_modifications(mapping)
 
-    def add_fixed_modifications(self, modification_rules: list[tuple[str, list[str]]]):
+    def add_fixed_modifications(
+        self, modification_rules: list[tuple[str, list[str]]] | dict[str, list[str]]
+    ):
         """
         Add fixed modifications to all PSM peptidoforms in :py:class:`PSMList`.
 
@@ -239,7 +275,11 @@ class PSMList(BaseModel):
         --------
         >>> psm_list.add_fixed_modifications([("Carbamidomethyl", ["C"])])
 
+        >>> psm_list.add_fixed_modifications({"Carbamidomethyl": ["C"]})
+
         """
+        if isinstance(modification_rules, dict):
+            modification_rules = modification_rules.items()
         modification_rules = [
             proforma.ModificationRule(proforma.process_tag_tokens(mod), targets)
             for mod, targets in modification_rules
@@ -271,36 +311,24 @@ class PSMList(BaseModel):
         for psm in self.psm_list:
             psm.peptidoform.apply_fixed_modifications()
 
-    def set_ranks(self):
-        """Set identification ranks for all PSMs in :py:class:`PSMList`."""
-        def rank_simple(vector):
-            return sorted(range(len(vector)), key=vector.__getitem__)
-
-        spectrum_list = self.__getitem__("spectrum_id")
-        scores = self.__getitem__("score")
-        spectrum_ranks = [None] * len(self.psm_list)
-
-        for spectrum_id in set(spectrum_list):
-            # Get indices of spectrum ids
-            indices = spectrum_list == spectrum_id
-            indices = list(compress(range(len(indices)), indices))
-            # Get corresponding scores
-            spectrum_id_scores = scores[indices]
-            # Get ranks for each score
-            spectrum_id_ranks = rank_simple(spectrum_id_scores)
-            for (index, rank) in zip(indices, spectrum_id_ranks):
-                spectrum_ranks[index] = rank
-
-        self.__setitem__("rank", spectrum_ranks)
-
     def to_dataframe(self) -> pd.DataFrame:
         """Convert :py:class:`PSMList` to :py:class:`pandas.DataFrame`."""
         return pd.DataFrame.from_records([psm.__dict__ for psm in self])
 
 
+def _is_iterable_of_bools(obj):
+    try:
+        if all(isinstance(x, (bool, np.bool_)) for x in obj):
+            return True
+        else:
+            return False
+    except (TypeError, ValueError):
+        return False
+
+
 def _is_iterable_of_ints(obj):
     try:
-        if not all(isinstance(x, int) for x in obj):
+        if not all(isinstance(x, (int, np.integer)) for x in obj):
             return False
         else:
             return True

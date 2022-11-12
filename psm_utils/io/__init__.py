@@ -1,9 +1,10 @@
 """Parsers for proteomics search results from various search engines."""
 
+from __future__ import annotations
+
 import re
 from pathlib import Path
 from tempfile import NamedTemporaryFile
-from typing import Union
 
 from rich.progress import track
 
@@ -17,9 +18,9 @@ import psm_utils.io.tsv as tsv
 import psm_utils.io.xtandem as xtandem
 from psm_utils.io._base_classes import WriterBase
 from psm_utils.io.exceptions import PSMUtilsIOException
+from psm_utils.psm import PSM
 from psm_utils.psm_list import PSMList
 
-# TODO: to be completed
 FILETYPES = {
     "idxml": {
         "reader": idxml.IdXMLReader,
@@ -87,22 +88,24 @@ def _infer_filetype(filename: str):
 
 def _supports_write_psm(writer: WriterBase):
     """Check if writer supports write_psm method."""
-    try:
-        with NamedTemporaryFile(delete=False) as temp_file:
-            with writer(temp_file.name) as writer_instance:
-                temp_file.close()
+    with NamedTemporaryFile(delete=False) as temp_file:
+        temp_file.close()
+        Path(temp_file.name).unlink()
+        example_psm = PSM(peptidoform="ACDE", spectrum_id=0)
+        try:
+            with writer(temp_file.name, example_psm=example_psm) as writer_instance:
                 writer_instance.write_psm(None)
-                temp_file.delete()
-    except NotImplementedError:
-        supports_write_psm = False
-    except AttributeError:  # `None` is not valid PSM
-        supports_write_psm = True
-    else:
-        supports_write_psm = True
-    return supports_write_psm
+        except NotImplementedError:
+            supports_write_psm = False
+        except AttributeError:  # `None` is not valid PSM
+            supports_write_psm = True
+        else:
+            supports_write_psm = True
+        Path(temp_file.name).unlink()
+        return supports_write_psm
 
 
-def read_file(filename: Union[str, Path], *args, filetype: str = "infer", **kwargs):
+def read_file(filename: str | Path, *args, filetype: str = "infer", **kwargs):
     """
     Read PSM file into :py:class:`~psm_utils.psmlist.PSMList`.
 
@@ -111,7 +114,7 @@ def read_file(filename: Union[str, Path], *args, filetype: str = "infer", **kwar
     filename: str
         Path to file.
     filetype: str, optional
-        File type. Any PSM file type with read support. See
+        File type. Any PSM file type with read support. See psm_utils tag in
         :ref:`Supported file formats`.
     *args : tuple
         Additional arguments are passed to the :py:class:`psm_utils.io` reader.
@@ -129,11 +132,11 @@ def read_file(filename: Union[str, Path], *args, filetype: str = "infer", **kwar
 
 def write_file(
     psm_list: PSMList,
-    filename: Union[str, Path],
+    filename: str | Path,
     *args,
     filetype: str = "infer",
     show_progressbar: bool = False,
-    **kwargs
+    **kwargs,
 ):
     """
     Write :py:class:`~psm_utils.psmlist.PSMList` to PSM file.
@@ -145,7 +148,7 @@ def write_file(
     filename: str
         Path to file.
     filetype: str, optional
-        File type. Any PSM file type with read support. See
+        File type. Any PSM file type with read support. See psm_utils tag in
         :ref:`Supported file formats`.
     show_progressbar: bool, optional
         Show progress bar for conversion process. (default: False)
@@ -176,8 +179,8 @@ def write_file(
 
 
 def convert(
-    input_filename: Union[str, Path],
-    output_filename: Union[str, Path],
+    input_filename: str | Path,
+    output_filename: str | Path,
     input_filetype: str = "infer",
     output_filetype: str = "infer",
     show_progressbar: bool = False,
@@ -192,10 +195,10 @@ def convert(
     output_filename: str
         Path to output file.
     input_filetype: str, optional
-        File type. Any PSM file type with read support. See
+        File type. Any PSM file type with read support. See psm_utils tag in
         :ref:`Supported file formats`.
     output_filetype: str, optional
-        File type. Any PSM file type with write support. See
+        File type. Any PSM file type with write support. See psm_utils tag in
         :ref:`Supported file formats`.
     show_progressbar: bool, optional
         Show progress bar for conversion process. (default: False)
@@ -261,8 +264,8 @@ def convert(
 
     # First read full PSM list, then write file at once
     elif writer_cls == mzid.MzidWriter:
-        writer = writer_cls(output_filename)
-        writer.write_file(reader.read_file(), show_progressbar=show_progressbar)
+        writer = writer_cls(output_filename, show_progressbar=show_progressbar)
+        writer.write_file(reader.read_file())
     else:
         writer = writer_cls(output_filename)
         writer.write_file(reader.read_file())

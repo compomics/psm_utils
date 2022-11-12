@@ -5,6 +5,7 @@
    :caption: About
    :hidden:
    :includehidden:
+   :maxdepth: 2
 
    Readme <self>
    quickstart
@@ -17,6 +18,7 @@
    :hidden:
    :includehidden:
    :glob:
+   :maxdepth: 2
 
    api/*
 
@@ -25,5 +27,6 @@
    :caption: Command line interface
    :hidden:
    :includehidden:
+   :maxdepth: 2
 
    cli/cli

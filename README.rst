@@ -14,6 +14,10 @@ engine results in Python.
    :alt: PyPI
    :target: https://pypi.org/project/psm-utils/
 
+.. image:: https://img.shields.io/conda/vn/bioconda/psm-utils?style=flat-square
+   :alt: Bioconda
+   :target: http://bioconda.github.io/recipes/psm-utils/README.html
+
 .. image:: https://img.shields.io/github/workflow/status/compomics/psm_utils/Test?label=tests&style=flat-square
    :alt: GitHub Actions tests status
    :target: https://github.com/compomics/psm_utils/actions/workflows/test.yml
@@ -82,18 +86,18 @@ Goals and non-goals
 Supported file formats
 **********************
 
-===================================================================================================================== =============== ===============
- File format                                                                                                           Read support    Write support
-===================================================================================================================== =============== ===============
- `OpenMS idXML <https://www.openms.de/>`_                                                                              ✅              ❌
- `MaxQuant msms.txt <https://www.maxquant.org/>`_                                                                      ✅              ❌
- `MS Amanda CSV <https://ms.imp.ac.at/?goto=msamanda>`_                                                                ✅              ❌
- `mzIdentML <https://psidev.info/mzidentml>`_                                                                          ✅              ✅
- `Peptide Record <https://psm-utils.readthedocs.io/en/latest/api/psm_utils.io/#module-psm_utils.io.peptide_record>`_   ✅              ✅
- `Percolator tab <https://github.com/percolator/percolator/wiki/Interface>`_                                           ✅              ✅
- `TSV <https://psm-utils.readthedocs.io/en/latest/api/psm_utils.io/#module-psm_utils.io.tsv>`_                         ✅              ✅
- `X!Tandem XML <https://www.thegpm.org/tandem/>`_                                                                      ✅              ❌
-===================================================================================================================== =============== ===============
+===================================================================================================================== =============== =============== ===============
+ File format                                                                                                           psm_utils tag   Read support    Write support
+===================================================================================================================== =============== =============== ===============
+ `OpenMS idXML <https://www.openms.de/>`_                                                                              ``idxml``       ✅              ❌
+ `MaxQuant msms.txt <https://www.maxquant.org/>`_                                                                      ``msms``        ✅              ❌
+ `MS Amanda CSV <https://ms.imp.ac.at/?goto=msamanda>`_                                                                ``msamanda``    ✅              ❌
+ `mzIdentML <https://psidev.info/mzidentml>`_                                                                          ``mzid``        ✅              ✅
+ `Peptide Record <https://psm-utils.readthedocs.io/en/stable/api/psm_utils.io/#module-psm_utils.io.peptide_record>`_   ``peprec``      ✅              ✅
+ `Percolator tab <https://github.com/percolator/percolator/wiki/Interface>`_                                           ``percolator``  ✅              ✅
+ `TSV <https://psm-utils.readthedocs.io/en/stable/api/psm_utils.io/#module-psm_utils.io.tsv>`_                         ``tsv``         ✅              ✅
+ `X!Tandem XML <https://www.thegpm.org/tandem/>`_                                                                      ``xtandem``     ✅              ❌
+===================================================================================================================== =============== =============== ===============
 
 Legend: ✅ Supported, ❌ Unsupported, 🔧 Work in progress
 
@@ -117,15 +121,22 @@ above to get started!
 Installation
 ############
 
-Install with pip:
+.. image:: https://img.shields.io/badge/install%20with-pip-brightgreen?style=flat-square
+   :alt: Install with pip
+   :target: https://pypi.org/project/psm-utils/
 
 .. code-block:: sh
 
     pip install psm-utils
 
 
-Note: In the PyPI package name, a hyphen is used instead of an underscore, as
-per `PEP8 convention <https://peps.python.org/pep-0008/#package-and-module-names>`_.
+.. image:: https://img.shields.io/badge/install%20with-bioconda-blue?style=flat-square
+   :alt: Install with Bioconda
+   :target: http://bioconda.github.io/recipes/psm-utils/README.html
+
+.. code-block:: sh
+
+    conda install -c bioconda install psm-utils
 
 
 
@@ -134,3 +145,13 @@ Full documentation
 
 The full documentation, including a quickstart guide and Python API reference
 is available on `psm_utils.readthedocs.io <https://psm-utils.readthedocs.io>`_.
+
+
+Citation
+########
+
+If you use psm_utils for your research, please cite the following publication:
+
+   | **psm_utils: A high level Python API for parsing and handling peptide-spectrum-matches and proteomics search results.**
+   | Ralf Gabriels, Arthur Declercq, Robbin Bouwmeester, Sven Degroeve, Lennart Martens.
+   | ChemRxiv (2022). `doi:10.26434/chemrxiv-2022-9506r <https://doi.org/10.26434/chemrxiv-2022-9506r>`_

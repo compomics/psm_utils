@@ -26,6 +26,7 @@ class StreamlitPage(ABC):
             "output_filetype",
             "fdr_threshold",
             "reverse",
+            "log_scale",
             "file_state",
             "psm_list",
             "psm_df",

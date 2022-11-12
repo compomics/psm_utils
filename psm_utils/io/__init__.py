@@ -20,7 +20,6 @@ from psm_utils.io._base_classes import WriterBase
 from psm_utils.io.exceptions import PSMUtilsIOException
 from psm_utils.psm_list import PSMList
 
-# TODO: to be completed
 FILETYPES = {
     "idxml": {
         "reader": idxml.IdXMLReader,

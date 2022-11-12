@@ -14,7 +14,6 @@ class PSM(BaseModel):
     spectrum_id: Union[int, str]
     run: Optional[str] = None
     collection: Optional[str] = None
-    # TODO: Not yet sure if `spectrum` should be included...
     spectrum: Optional[Any] = None
     is_decoy: Optional[bool] = None
     score: Optional[float] = None

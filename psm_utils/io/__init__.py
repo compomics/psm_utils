@@ -18,6 +18,7 @@ import psm_utils.io.tsv as tsv
 import psm_utils.io.xtandem as xtandem
 from psm_utils.io._base_classes import WriterBase
 from psm_utils.io.exceptions import PSMUtilsIOException
+from psm_utils.psm import PSM
 from psm_utils.psm_list import PSMList
 
 FILETYPES = {
@@ -87,19 +88,21 @@ def _infer_filetype(filename: str):
 
 def _supports_write_psm(writer: WriterBase):
     """Check if writer supports write_psm method."""
-    try:
-        with NamedTemporaryFile(delete=False) as temp_file:
-            with writer(temp_file.name) as writer_instance:
-                temp_file.close()
+    with NamedTemporaryFile(delete=False) as temp_file:
+        temp_file.close()
+        Path(temp_file.name).unlink()
+        example_psm = PSM(peptidoform="ACDE", spectrum_id=0)
+        try:
+            with writer(temp_file.name, example_psm=example_psm) as writer_instance:
                 writer_instance.write_psm(None)
-                temp_file.delete()
-    except NotImplementedError:
-        supports_write_psm = False
-    except AttributeError:  # `None` is not valid PSM
-        supports_write_psm = True
-    else:
-        supports_write_psm = True
-    return supports_write_psm
+        except NotImplementedError:
+            supports_write_psm = False
+        except AttributeError:  # `None` is not valid PSM
+            supports_write_psm = True
+        else:
+            supports_write_psm = True
+        Path(temp_file.name).unlink()
+        return supports_write_psm
 
 
 def read_file(filename: str | Path, *args, filetype: str = "infer", **kwargs):
@@ -133,7 +136,7 @@ def write_file(
     *args,
     filetype: str = "infer",
     show_progressbar: bool = False,
-    **kwargs
+    **kwargs,
 ):
     """
     Write :py:class:`~psm_utils.psmlist.PSMList` to PSM file.

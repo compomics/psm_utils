@@ -57,7 +57,9 @@ from psm_utils.psm_list import PSMList
 
 
 class XTandemReader(ReaderBase):
-    def __init__(self, filename: str | Path, decoy_prefix="DECOY_") -> None:
+    def __init__(
+        self, filename: str | Path, *args, decoy_prefix="DECOY_", **kwargs
+    ) -> None:
         """
         Reader for X!Tandem XML PSM files.
 

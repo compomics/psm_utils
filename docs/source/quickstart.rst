@@ -60,10 +60,68 @@ match information:
 
 The spectrum can be retrieved by the USI through the ProteomeXchange USI aggregator:
 http://proteomecentral.proteomexchange.org/usi/?usi=mzspec:PXD000561:Adult_Frontalcortex_bRP_Elite_85_f09:scan:17555:VLHPLEGAVVIIFK/2
+Note that this is only possible because the spectrum has been fully indexed in one of
+the ProteomeXchange partner repositories (in this case both MassIVE and PeptideAtlas).
 
 
-PSMList and psm_utils.io
-########################
+PSMList
+#######
+
+:py:class:`~psm_utils.psm.PSMList` is a simple list-like object that represents a
+group of PSMs, from one or more mass spectrometry runs or collections. This simple,
+Pythonic data structure can be flexibly implemented in various contexts.
+
+.. code-block:: python
+
+   >>> psm_list = PSMList(psm_list=[
+   ...     PSM(peptidoform="ACDK", spectrum_id=1, score=140.2, retention_time=600.2),
+   ...     PSM(peptidoform="CDEFR", spectrum_id=2, score=132.9, retention_time=1225.4),
+   ...     PSM(peptidoform="DEM[Oxidation]K", spectrum_id=3, score=55.7, retention_time=3389.1),
+   ... ])
+
+:py:class:`PSMList` directly supports iteration:
+
+.. code-block:: python
+
+   >>> for psm in psm_list:
+   ...     print(psm.peptidoform.score)
+   140.2
+   132.9
+   55.7
+
+:py:class:`PSM` properties can be accessed as a single Numpy array:
+
+.. code-block:: python
+
+   >>> psm_list["score"]
+   array([140.2, 132.9, 55.7], dtype=object)
+
+:py:class:`PSMList` supports indexing and slicing:
+
+.. code-block:: python
+
+   >>> psm_list_subset = psm_list[0:2]
+   >>> psm_list_subset["score"]
+   array([140.2, 132.9], dtype=object)
+
+   >>> psm_list_subset = psm_list[0, 2]
+   >>> psm_list_subset["score"]
+   array([140.2, 55.7], dtype=object)
+
+For more advanced and efficient vectorized access, converting the
+:py:class:`PSMList` to a Pandas DataFrame is highly recommended:
+
+.. code-block:: python
+
+   >>> psm_df = psm_list.to_dataframe()
+   >>> psm_df[(psm_df["retention_time"] < 2000) & (psm_df["score"] > 10)]
+      peptidoform  spectrum_id   run collection spectrum is_decoy  score qvalue   pep precursor_mz  retention_time protein_list  rank source provenance_data metadata rescoring_features
+   0        ACDK            1  None       None     None     None  140.2   None  None         None           600.0         None  None   None            None     None               None
+   1       CDEFR            2  None       None     None     None  132.9   None  None         None          1225.0         None  None   None            None     None               None
+
+
+psm_utils.io
+############
 
 The :py:mod:`psm_utils.io` subpackage contains readers and writers for various
 PSM file formats (see :ref:`Supported file formats`). Each reader parses the

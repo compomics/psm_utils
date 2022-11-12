@@ -60,8 +60,8 @@ class PSMList(BaseModel):
         >>> psm_list_subset["score"]
         array([140.2, 55.7], dtype=object)
 
-        For more advanced and efficient vectorized access, convert the
-        :py:class:`PSMList` to a Pandas DataFrame:
+        For more advanced and efficient vectorized access, converting the
+        :py:class:`PSMList` to a Pandas DataFrame is highly recommended:
 
         >>> psm_df = psm_list.to_dataframe()
         >>> psm_df[(psm_df["retention_time"] < 2000) & (psm_df["score"] > 10)]

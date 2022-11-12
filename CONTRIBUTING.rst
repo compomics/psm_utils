@@ -16,6 +16,16 @@ thread in
 `GitHub Discussions <https://github.com/compomics/psm_utils/discussions>`_
 or in `GitHub Issues <https://github.com/compomics/psm_utils/issues>`_.
 
+Not sure where to start? Great contributions to
+`psm_utils <https://github.com/compomics/psm_utils>`_ include:
+
+- Adding support for more file formats.
+- Adding functionality to the ``PSMList``, ``PSM``, or ``Peptidoform`` classes.
+- Improving the performance of existing functions, e.g. parsing peptidoforms or
+  reading and writing PSM files.
+
+Also check out the `open issues <https://github.com/compomics/psm_utils/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22+label%3A%22help+wanted%22>`_
+that carry the ``good first issue`` or ``help wanted`` labels.
 
 
 Development setup

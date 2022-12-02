@@ -63,36 +63,31 @@ class IonbotReader(ReaderBase):
 
     def _get_peptide_spectrum_match(self, psm_dict: dict[str, str | float]) -> PSM:
 
-        try:
-            psm = PSM(
-                peptidoform=self._parse_peptidoform(
-                    psm_dict["database_peptide"],
-                    psm_dict["modifications"],
-                    psm_dict["charge"],
-                ),
-                spectrum_id=psm_dict["spectrum_title"],
-                run=psm_dict["spectrum_file"],
-                is_decoy=psm_dict["database"] == "D",
-                score=float(psm_dict["psm_score"]),
-                # precursor_mz=float(psm_dict["m/z"]),
-                retention_time=float(psm_dict["observed_retention_time"]),
-                protein_list=psm_dict["proteins"].split(
-                    "|"
-                ),  # what is the ionbot separator?
-                source="Ionbot",
-                qvalue=float(psm_dict["q-value"]),
-                pep=float(psm_dict["PEP"]),
-                provenance_data=({"Ionbot_filename": str(self.filename)}),
-                metadata={
-                    col: str(psm_dict[col])
-                    for col in psm_dict.keys()
-                    if col not in REQUIRED_COLUMNS
-                },
-            )
-        except KeyError:  # keyerror in proforma.parse with Delta:H(2)C(3)O(1) as mod
-            return None
-
-        return psm
+        return PSM(
+            peptidoform=self._parse_peptidoform(
+                psm_dict["database_peptide"],
+                psm_dict["modifications"],
+                psm_dict["charge"],
+            ),
+            spectrum_id=psm_dict["spectrum_title"],
+            run=psm_dict["spectrum_file"],
+            is_decoy=psm_dict["database"] == "D",
+            score=float(psm_dict["psm_score"]),
+            # precursor_mz=float(psm_dict["m/z"]),
+            retention_time=float(psm_dict["observed_retention_time"]),
+            protein_list=psm_dict["proteins"].split(
+                "|"
+            ),  # what is the ionbot separator?
+            source="Ionbot",
+            qvalue=float(psm_dict["q-value"]),
+            pep=float(psm_dict["PEP"]),
+            provenance_data=({"Ionbot_filename": str(self.filename)}),
+            metadata={
+                col: str(psm_dict[col])
+                for col in psm_dict.keys()
+                if col not in REQUIRED_COLUMNS
+            },
+        )
 
     @staticmethod
     def _parse_peptidoform(peptide, modifications, charge):

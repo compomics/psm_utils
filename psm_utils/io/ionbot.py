@@ -76,7 +76,7 @@ class IonbotReader(ReaderBase):
             # precursor_mz=float(psm_dict["m/z"]),
             retention_time=float(psm_dict["observed_retention_time"]),
             protein_list=psm_dict["proteins"].split(
-                "|"
+                "||"
             ),  # what is the ionbot separator?
             source="Ionbot",
             qvalue=float(psm_dict["q-value"]),

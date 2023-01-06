@@ -152,6 +152,6 @@ Citation
 
 If you use psm_utils for your research, please cite the following publication:
 
-   | **psm_utils: A high level Python API for parsing and handling peptide-spectrum-matches and proteomics search results.**
+   | **psm_utils: A high-level Python API for parsing and handling peptide-spectrum-matches and proteomics search results.**
    | Ralf Gabriels, Arthur Declercq, Robbin Bouwmeester, Sven Degroeve, Lennart Martens.
-   | ChemRxiv (2022). `doi:10.26434/chemrxiv-2022-9506r <https://doi.org/10.26434/chemrxiv-2022-9506r>`_
+   | Journal of Proteome Research (2022). `doi:10.1021/acs.jproteome.2c00609 <https://doi.org/10.1021/acs.jproteome.2c00609>`_

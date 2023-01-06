@@ -18,11 +18,11 @@ engine results in Python.
    :alt: Bioconda
    :target: http://bioconda.github.io/recipes/psm-utils/README.html
 
-.. image:: https://img.shields.io/github/workflow/status/compomics/psm_utils/Test?label=tests&style=flat-square
+.. image:: https://img.shields.io/github/actions/workflow/status/compomics/psm_utils/test.yml?branch=main&label=test&style=flat-square
    :alt: GitHub Actions tests status
    :target: https://github.com/compomics/psm_utils/actions/workflows/test.yml
 
-.. image:: https://img.shields.io/github/workflow/status/compomics/psm_utils/Publish?label=build&style=flat-square
+.. image:: https://img.shields.io/github/actions/workflow/status/compomics/psm_utils/publish.yml?event=release&style=flat-square
    :alt: GitHub Actions build status
    :target: https://github.com/compomics/psm_utils/actions/workflows/publish.yml
 

@@ -105,7 +105,9 @@ def _supports_write_psm(writer: WriterBase):
         return supports_write_psm
 
 
-def read_file(filename: str | Path, *args, filetype: str = "infer", **kwargs):
+def read_file(
+    filename: str | Path, *args, filetype: str = "infer", **kwargs
+) -> PSMList:
     """
     Read PSM file into :py:class:`~psm_utils.psmlist.PSMList`.
 

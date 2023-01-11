@@ -17,6 +17,8 @@ Depending on the use case, more columns can be required or optional:
 - ``predicted_retention_time``: Predicted retention time.
 - ``label``: Target/decoy: ``1`` for target PSMs, ``-1`` for decoy PSMs.
 - ``score``: Primary search engine score (e.g., the score used for q-value calculation).
+- ``run``: Identifier of the run (e.g., ``Adult_Frontalcortex_bRP_Elite_85_f09``).
+- ``collection``: Identifier of the collection (e.g., ``PXD000561``).
 
 Peptide modifications are denoted as a pipe-separated list of pipe-separated
 *location → label* pairs for each modification. The location is an integer counted
@@ -78,6 +80,8 @@ class _PeptideRecord:
         "predicted_retention_time",
         "label",
         "score",
+        "run",
+        "collection",
     ]
 
     def __init__(
@@ -243,11 +247,13 @@ class PeptideRecordReader(ReaderBase):
         return PSM(
             peptidoform=proforma,
             spectrum_id=entry.spec_id,
+            run=entry.run,
+            collection=entry.collection,
             is_decoy=is_decoy,
             retention_time=entry.observed_retention_time,
             score=entry.score,
             source="PeptideRecord",
-            provenance_data={"peprec_filename": filename},
+            provenance_data={"peprec_filename": str(filename)},
         )
 
 
@@ -304,6 +310,8 @@ class PeptideRecordWriter(WriterBase):
             "label": None if psm.is_decoy is None else -1 if psm.is_decoy else 1,
             "observed_retention_time": psm.retention_time,
             "score": psm.score,
+            "run": psm.run,
+            "collection": psm.collection,
         }
 
     def write_psm(self, psm: PSM):

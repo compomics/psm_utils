@@ -15,6 +15,5 @@ class TestPeptidoform:
             ("ACDE-[Amidation]", True),
             ("{Glycan:Hex}ACDE", True),
             ("<[U:4]@C>ACDE", True),
-            
         ]:
             assert Peptidoform(pep).is_modified == expected

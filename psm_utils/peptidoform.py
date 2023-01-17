@@ -101,6 +101,26 @@ class Peptidoform:
             return None
 
     @property
+    def is_modified(self) -> bool:
+        """
+        Whether or not the peptidoform carries any modification of any type.
+
+        Includes N- and C-terminal, fixed, sequential, labile, and unlocalized
+        modifications.
+
+        """
+        mod_properties = [
+            "n_term",
+            "c_term",
+            "unlocalized_modifications",
+            "labile_modifications",
+            "fixed_modifications",
+        ]
+        has_sequential = any(mods for _, mods in self.parsed_sequence)
+        has_other = any([self.properties[prop] for prop in mod_properties])
+        return has_sequential or has_other
+
+    @property
     def sequential_composition(self) -> list[mass.Composition]:
         """
         Atomic compositions of both termini and each residue, including modifications.

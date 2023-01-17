@@ -110,17 +110,17 @@ class MzidReader(ReaderBase):
         with mzid.read(str(self.filename)) as reader:
             for spectrum in reader:
                 spectrum_id = spectrum["spectrumID"]
-                raw_file = Path(spectrum["location"]).stem
+                run = Path(spectrum["location"]).stem if "location" in spectrum else None
                 for entry in spectrum["SpectrumIdentificationItem"]:
                     if not self._non_metadata_keys:
                         self._get_non_metadata_keys(entry.keys())
                     try:
                         psm = self._get_peptide_spectrum_match(
-                            spectrum_id, raw_file, entry, spectrum["spectrum title"]
+                            spectrum_id, run, entry, spectrum["spectrum title"]
                         )
                     except KeyError:
                         psm = self._get_peptide_spectrum_match(
-                            spectrum_id, raw_file, entry
+                            spectrum_id, run, entry
                         )
                     yield psm
 
@@ -139,7 +139,10 @@ class MzidReader(ReaderBase):
         mzid_xml = ET.parse(self.filename)
         root = mzid_xml.getroot()
         name_space = self._get_xml_namespace(root.tag)
-        return root.find(f".//{name_space}AnalysisSoftware").attrib["name"]
+        try:
+            return root.find(f".//{name_space}AnalysisSoftware").attrib["name"]
+        except KeyError:
+            return None
 
     @staticmethod
     def _infer_score_name(keys) -> str:
@@ -182,7 +185,7 @@ class MzidReader(ReaderBase):
     def _get_peptide_spectrum_match(
         self,
         spectrum_id: str,
-        raw_file: str,
+        run: Optional[str],
         spectrum_identification_item: dict[str, str | float | list],
         spectrum_title: Optional[str] = None,
     ) -> PSM:
@@ -221,7 +224,7 @@ class MzidReader(ReaderBase):
         psm = PSM(
             peptidoform=peptidoform,
             spectrum_id=spectrum_id,
-            run=raw_file,
+            run=run,
             is_decoy=is_decoy,
             score=sii[self._score_key],
             precursor_mz=precursor_mz,

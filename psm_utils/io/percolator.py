@@ -333,11 +333,11 @@ class PercolatorTabWriter(WriterBase):
                 "ChargeN": psm.peptidoform.precursor_charge,
                 "psm_score": psm.score,
                 "Peptide": "."
-                + re.sub(r"/\d+$", "", self._parse_peptide(psm.peptidoform))
+                + re.sub(r"/\d+$", "", psm.peptidoform.proforma)
                 + ".",
                 "Proteins": self._protein_separator.join(psm.protein_list)
                 if psm.protein_list
-                else None,
+                else "PEP_" + psm.peptidoform.proforma,
             }
             try:
                 entry.update(psm.rescoring_features)
@@ -357,20 +357,23 @@ class PercolatorTabWriter(WriterBase):
             }
         return entry
 
-    @staticmethod
-    def _parse_peptide(peptidoform):
-        """Parse sequence to ms2rescore pin compatible input"""
-
-        parsed_seq = "".join(
-            [
-                f"{aa}[{mod[0].mass}]" if mod else f"{aa}"
-                for aa, mod in peptidoform.parsed_sequence
-            ]
-        )
-        if peptidoform.properties["n_term"]:
-            parsed_seq = f"[{peptidoform.properties['n_term'][0].mass}]" + parsed_seq
-
-        return parsed_seq
+    # @staticmethod
+    # def _parse_peptide(peptidoform):
+    #     """Parse sequence to ms2rescore pin compatible input"""
+    #     try:
+    #         parsed_seq = "".join(
+    #             [
+    #                 f"{aa}[{mod[0].mass}]" if mod else f"{aa}"
+    #                 for aa, mod in peptidoform.parsed_sequence
+    #             ]
+    #         )
+    #         if peptidoform.properties["n_term"]:
+    #             parsed_seq = (
+    #                 f"[{peptidoform.properties['n_term'][0].mass}]" + parsed_seq
+    #             )
+    #     except KeyError:
+    #         return peptidoform.proforma
+    #     return parsed_seq
 
 
 class _PercolatorTabIO:

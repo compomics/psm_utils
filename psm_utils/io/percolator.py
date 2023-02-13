@@ -329,12 +329,10 @@ class PercolatorTabWriter(WriterBase):
             entry = {
                 "SpecId": psm.spectrum_id,
                 "Label": None if psm.is_decoy is None else -1 if psm.is_decoy else 1,
-                "ScanNr": None,  # TODO
+                "ScanNr": None,  # TODO filled in later in the entry writing
                 "ChargeN": psm.peptidoform.precursor_charge,
                 "psm_score": psm.score,
-                "Peptide": "."
-                + re.sub(r"/\d+$", "", psm.peptidoform.proforma)
-                + ".",
+                "Peptide": "." + re.sub(r"/\d+$", "", psm.peptidoform.proforma) + ".",
                 "Proteins": self._protein_separator.join(psm.protein_list)
                 if psm.protein_list
                 else "PEP_" + psm.peptidoform.proforma,

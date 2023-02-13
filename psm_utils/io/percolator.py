@@ -243,8 +243,9 @@ class PercolatorTabWriter(WriterBase):
 
         if style == "pin":
             self._columns = (
-                ["PSMId", "Label", "ScanNr"]
+                ["SpecId", "Label", "ScanNr"]
                 + self.feature_names
+                + ["psm_score", "ChargeN"]
                 + ["Peptide", "Proteins"]
             )
         elif style == "pout":
@@ -317,17 +318,23 @@ class PercolatorTabWriter(WriterBase):
         ) as f:
             writer = csv.DictWriter(f, fieldnames=self._columns, delimiter="\t")
             writer.writeheader()
-            for psm in psm_list:
-                writer.writerow(self._psm_to_entry(psm))
+            for i, psm in enumerate(psm_list):
+                entry = self._psm_to_entry(psm)
+                entry["ScanNr"] = i
+                writer.writerow(entry)
 
     def _psm_to_entry(self, psm: PSM):
         """Parse PSM to Percolator Tab entry."""
         if self.style == "pin":
             entry = {
-                "PSMId": psm.spectrum_id,
+                "SpecId": psm.spectrum_id,
                 "Label": None if psm.is_decoy is None else -1 if psm.is_decoy else 1,
                 "ScanNr": None,  # TODO
-                "Peptide": "." + re.sub(r"/\d+$", "", psm.peptidoform.proforma) + ".",
+                "ChargeN": psm.peptidoform.precursor_charge,
+                "psm_score": psm.score,
+                "Peptide": "."
+                + re.sub(r"/\d+$", "", self._parse_peptide(psm.peptidoform))
+                + ".",
                 "Proteins": self._protein_separator.join(psm.protein_list)
                 if psm.protein_list
                 else None,
@@ -349,6 +356,21 @@ class PercolatorTabWriter(WriterBase):
                 else None,
             }
         return entry
+
+    @staticmethod
+    def _parse_peptide(peptidoform):
+        """Parse sequence to ms2rescore pin compatible input"""
+
+        parsed_seq = "".join(
+            [
+                f"{aa}[{mod[0].mass}]" if mod else f"{aa}"
+                for aa, mod in peptidoform.parsed_sequence
+            ]
+        )
+        if peptidoform.properties["n_term"]:
+            parsed_seq = f"[{peptidoform.properties['n_term'][0].mass}]" + parsed_seq
+
+        return parsed_seq
 
 
 class _PercolatorTabIO:

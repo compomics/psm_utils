@@ -247,7 +247,7 @@ class PeptideRecordReader(ReaderBase):
             retention_time=entry.observed_retention_time,
             score=entry.score,
             source="PeptideRecord",
-            provenance_data={"peprec_filename": filename},
+            provenance_data={"peprec_filename": str(filename)},
         )
 
 

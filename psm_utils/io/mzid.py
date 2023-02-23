@@ -109,19 +109,21 @@ class MzidReader(ReaderBase):
         """Iterate over file and return PSMs one-by-one."""
         with mzid.read(str(self.filename)) as reader:
             for spectrum in reader:
-                spectrum_id = spectrum["spectrumID"]
-                run = Path(spectrum["location"]).stem if "location" in spectrum else None
+                try:
+                    spectrum_id = spectrum["spectrum title"]
+                except KeyError:
+                    spectrum_id = spectrum_id["spectrumID"]
+                run = (
+                    Path(spectrum["location"]).stem if "location" in spectrum else None
+                )
                 for entry in spectrum["SpectrumIdentificationItem"]:
                     if not self._non_metadata_keys:
                         self._get_non_metadata_keys(entry.keys())
-                    try:
-                        psm = self._get_peptide_spectrum_match(
-                            spectrum_id, run, entry, spectrum["spectrum title"]
-                        )
-                    except KeyError:
-                        psm = self._get_peptide_spectrum_match(
-                            spectrum_id, run, entry
-                        )
+
+                    psm = self._get_peptide_spectrum_match(
+                        spectrum_id, run, entry, spectrum["spectrum title"]
+                    )
+
                     yield psm
 
     def read_file(self) -> PSMList:
@@ -187,7 +189,6 @@ class MzidReader(ReaderBase):
         spectrum_id: str,
         run: Optional[str],
         spectrum_identification_item: dict[str, str | float | list],
-        spectrum_title: Optional[str] = None,
     ) -> PSM:
         """Parse single mzid entry to :py:class:`~psm_utils.peptidoform.Peptidoform`."""
         sii = spectrum_identification_item
@@ -218,8 +219,6 @@ class MzidReader(ReaderBase):
             for col in sii.keys()
             if col not in self._non_metadata_keys
         }
-        if spectrum_title:
-            metadata["spectrum title"] = spectrum_title
 
         psm = PSM(
             peptidoform=peptidoform,

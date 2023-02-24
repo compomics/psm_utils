@@ -111,8 +111,10 @@ class MzidReader(ReaderBase):
             for spectrum in reader:
                 try:
                     spectrum_id = spectrum["spectrum title"]
+                    mzid_spectrum_id = spectrum["spectrumID"]
                 except KeyError:
                     spectrum_id = spectrum_id["spectrumID"]
+                    mzid_spectrum_id = None
                 run = (
                     Path(spectrum["location"]).stem if "location" in spectrum else None
                 )
@@ -121,7 +123,7 @@ class MzidReader(ReaderBase):
                         self._get_non_metadata_keys(entry.keys())
 
                     psm = self._get_peptide_spectrum_match(
-                        spectrum_id, run, entry, spectrum["spectrum title"]
+                        spectrum_id, run, entry, mzid_spectrum_id=mzid_spectrum_id
                     )
 
                     yield psm
@@ -189,6 +191,7 @@ class MzidReader(ReaderBase):
         spectrum_id: str,
         run: Optional[str],
         spectrum_identification_item: dict[str, str | float | list],
+        mzid_spectrum_id=None,
     ) -> PSM:
         """Parse single mzid entry to :py:class:`~psm_utils.peptidoform.Peptidoform`."""
         sii = spectrum_identification_item
@@ -219,6 +222,9 @@ class MzidReader(ReaderBase):
             for col in sii.keys()
             if col not in self._non_metadata_keys
         }
+
+        if mzid_spectrum_id:
+            metadata["mzid_spectrum_id"] = mzid_spectrum_id
 
         psm = PSM(
             peptidoform=peptidoform,

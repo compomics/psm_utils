@@ -9,7 +9,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- Fix bug in `io._base_classes`
+- Fix bug in `io._base_classes` (introduced in v0.2.2)
+- Fix bug in TSVReader for reading TSV files with empty protein_list
 
 ## [0.2.2] - 2023-03-08
 

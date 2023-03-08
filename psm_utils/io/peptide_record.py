@@ -233,10 +233,10 @@ class PeptideRecordReader(ReaderBase):
             is_decoy_map = {"-1": True, "1": False}
             try:
                 is_decoy = is_decoy_map[entry.label]
-            except (ValueError, KeyError):
-                InvalidPeprecError(
+            except (ValueError, KeyError) as e:
+                raise InvalidPeprecError(
                     f"Could not parse value for `label` {entry.label}. Should be `1` or `-1`."
-                )
+                ) from e
         else:
             is_decoy = None
 
@@ -247,7 +247,7 @@ class PeptideRecordReader(ReaderBase):
             retention_time=entry.observed_retention_time,
             score=entry.score,
             source="PeptideRecord",
-            provenance_data={"peprec_filename": filename},
+            provenance_data={"peprec_filename": str(filename)},
         )
 
 
@@ -520,10 +520,6 @@ def to_dataframe(psm_list: PSMList) -> pd.DataFrame:
 class InvalidPeprecError(PSMUtilsIOException):
     """Invalid Peptide Record file."""
 
-    pass
-
 
 class InvalidPeprecModificationError(InvalidPeprecError):
     """Invalid Peptide Record modification."""
-
-    pass

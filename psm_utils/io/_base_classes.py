@@ -27,7 +27,7 @@ class ReaderBase(ABC):
             Path to PSM file.
 
         """
-        super().__init__()
+        super().__init__(*args, **kwargs)
 
         self.filename = Path(filename)
 
@@ -42,7 +42,7 @@ class ReaderBase(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def read_file() -> PSMList:
+    def read_file(self) -> PSMList:
         """Read full PSM file into a PSMList object."""
         raise NotImplementedError()
 
@@ -51,7 +51,7 @@ class WriterBase(ABC):
     """Abstract base class for PSM file writers."""
 
     def __init__(self, filename, *args, **kwargs):
-        super().__init__()
+        super().__init__(*args, **kwargs)
         self.filename = Path(filename)
 
     def __enter__(self):

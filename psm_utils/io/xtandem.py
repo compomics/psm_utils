@@ -161,12 +161,12 @@ class XTandemReader(ReaderBase):
             source="X!Tandem",
             provenance_data={
                 "xtandem_filename": str(self.filename),
-                "xtandem_id": entry["id"],
+                "xtandem_id": str(entry["id"]),
             },
             metadata={
-                "xtandem_hyperscore": peptide_entry["hyperscore"],
-                "xtandem_delta": peptide_entry["delta"],
-                "xtandem_nextscore": peptide_entry["nextscore"],
+                "xtandem_hyperscore": str(peptide_entry["hyperscore"]),
+                "xtandem_delta": str(peptide_entry["delta"]),
+                "xtandem_nextscore": str(peptide_entry["nextscore"]),
             },
         )
         return psm

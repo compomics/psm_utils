@@ -171,7 +171,7 @@ class PercolatorTabReader(ReaderBase):
         label = entry["label"] if "label" in entry else None
         is_decoy = True if label == "-1" else False if label == "1" else None
         rescoring_features = {
-            k: v for k, v in entry.items() if k not in self.non_feature_columns
+            k: str(v) for k, v in entry.items() if k not in self.non_feature_columns
         }
         charge = self._parse_charge(entry)
         peptidoform = self._parse_peptidoform(entry["peptide"], charge)

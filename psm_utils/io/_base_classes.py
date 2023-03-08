@@ -27,7 +27,7 @@ class ReaderBase(ABC):
             Path to PSM file.
 
         """
-        super().__init__(*args, **kwargs)
+        super().__init__()
 
         self.filename = Path(filename)
 
@@ -51,7 +51,7 @@ class WriterBase(ABC):
     """Abstract base class for PSM file writers."""
 
     def __init__(self, filename, *args, **kwargs):
-        super().__init__(*args, **kwargs)
+        super().__init__()
         self.filename = Path(filename)
 
     def __enter__(self):

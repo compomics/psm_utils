@@ -79,7 +79,7 @@ class TSVReader(ReaderBase):
         entry = {k: v if v else None for k, v in entry.items()}
 
         # Parse protein list
-        if "protein_list" in entry:
+        if "protein_list" in entry and entry["protein_list"]:
             entry["protein_list"] = ast.literal_eval(entry["protein_list"])
 
         # Extract dict properties

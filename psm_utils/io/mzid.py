@@ -41,7 +41,8 @@ STANDARD_SEARCHENGINE_SCORES = [
     "MS-GF:RawScore",
     "MS-GF:DeNovoScore",
     "MSFit:Mowse score",
-    "MSPathFinder:RawScore" "MSPepSearch:score",
+    "MSPathFinder:RawScore",
+    "MSPepSearch:score",
     "Mascot:score",
     "MetaMorpheus:score",
     "OMSSA:evalue",
@@ -113,15 +114,15 @@ class MzidReader(ReaderBase):
                     spectrum_id = spectrum["spectrum title"]
                     mzid_spectrum_id = spectrum["spectrumID"]
                 except KeyError:
-                    spectrum_id = spectrum_id["spectrumID"]
+                    spectrum_id = spectrum["spectrumID"]
                     mzid_spectrum_id = None
                 run = (
                     Path(spectrum["location"]).stem if "location" in spectrum else None
                 )
                 for entry in spectrum["SpectrumIdentificationItem"]:
+
                     if not self._non_metadata_keys:
                         self._get_non_metadata_keys(entry.keys())
-
                     psm = self._get_peptide_spectrum_match(
                         spectrum_id, run, entry, mzid_spectrum_id=mzid_spectrum_id
                     )
@@ -195,7 +196,6 @@ class MzidReader(ReaderBase):
     ) -> PSM:
         """Parse single mzid entry to :py:class:`~psm_utils.peptidoform.Peptidoform`."""
         sii = spectrum_identification_item
-
         try:
             modifications = sii["Modification"]
         except KeyError:
@@ -213,9 +213,11 @@ class MzidReader(ReaderBase):
             precursor_mz = None
 
         if self._rt_key:
-            rt = sii[self._rt_key]
+            rt = sii[
+                self._rt_key
+            ]  # rt key is in mzid but sometimes not in mzid parser pyteomics
         else:
-            rt = float("nan")
+            rt = None
 
         metadata = {
             col: str(sii[col])

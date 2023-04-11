@@ -16,6 +16,7 @@ import psm_utils.io.peptide_record as peptide_record
 import psm_utils.io.percolator as percolator
 import psm_utils.io.tsv as tsv
 import psm_utils.io.xtandem as xtandem
+import psm_utils.io.sage as sage
 from psm_utils.io._base_classes import WriterBase
 from psm_utils.io.exceptions import PSMUtilsIOException
 from psm_utils.psm import PSM
@@ -69,6 +70,12 @@ FILETYPES = {
         "writer": None,
         "extension": ".csv",
         "filename_pattern": r"^.*(?:_|\.)msamanda.csv$",
+    },
+    "sage": {
+        "reader": sage.SageReader,
+        "writer": None,
+        "extension": ".tsv",
+        "filename_pattern": r"^.*(?:_|\.).sage.tsv$",
     },
 }
 READERS = {k: v["reader"] for k, v in FILETYPES.items() if v["reader"]}

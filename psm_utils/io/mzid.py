@@ -131,7 +131,7 @@ class MzidReader(ReaderBase):
 
     def read_file(self) -> PSMList:
         """Read full mzid file to PSM list object."""
-        return PSMList(psm_list=[psm for psm in self.__iter__()])
+        return PSMList(psm_list=[psm for psm in self])
 
     @staticmethod
     def _get_xml_namespace(root_tag):
@@ -278,8 +278,8 @@ class MzidWriter(WriterBase):
     def __init__(
         self,
         filename: str | Path,
-        show_progressbar: bool = False,
         *args,
+        show_progressbar: bool = False,
         **kwargs,
     ):
         """
@@ -326,7 +326,7 @@ class MzidWriter(WriterBase):
     def write_file(self, psm_list: PSMList):
         """Write entire PSMList to mzid file."""
         file = open(self.filename, "wb")
-        with Progress(disable=(not self.show_progressbar)) as progress:
+        with Progress(disable=not self.show_progressbar) as progress:
             with MzIdentMLWriter(file, close=True) as writer:
                 writer.controlled_vocabularies()
                 writer.provenance(
@@ -401,7 +401,8 @@ class MzidWriter(WriterBase):
                     )
                     writer.inputs(
                         source_files=[],
-                        # search_databases=transform_search_database(), # if fasta file is given we can parse here and add protein information
+                        # # if fasta file is given, we can parse here and add protein information
+                        # search_databases=transform_search_database(),
                         spectra_data=spectra_data,
                     )
 
@@ -504,7 +505,7 @@ class MzidWriter(WriterBase):
         return spectra_data, collection_run_id_dict
 
     @staticmethod
-    def _transform_spectrum_identification_item(candidate_psm, i=0):
+    def _transform_spectrum_identification_item(candidate_psm):
         """Create SpectrumIdentificationItem for each candidate PSM."""
         peptide = candidate_psm["peptidoform"].proforma
         if candidate_psm["metadata"]:
@@ -513,7 +514,7 @@ class MzidWriter(WriterBase):
             params = []
         candidate_psm_dict = {
             "charge_state": candidate_psm["peptidoform"].precursor_charge,
-            "peptide_id": f"Peptide_" + peptide,
+            "peptide_id": f"Peptide_{peptide}",
             # TODO: add which search engine score cv param
             "score": {"score": candidate_psm["score"]},
             "experimental_mass_to_charge": candidate_psm["precursor_mz"],
@@ -546,15 +547,13 @@ class MzidWriter(WriterBase):
             ],  # add function to determine the unit
         }
         identifications = []
-        for i, candidate in enumerate(identified_psms):
+        for candidate in identified_psms:
             identifications.extend(
-                self._transform_spectrum_identification_item(candidate, i)
+                self._transform_spectrum_identification_item(candidate)
             )
         spectrum_id_result["identifications"] = identifications
         return spectrum_id_result
 
 
 class UnknownMzidScore(PSMUtilsIOException):
-    """Exception while handling or parsing peptide modifications."""
-
-    pass
+    """No known score metric found in mzIdentML file."""

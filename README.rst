@@ -136,7 +136,7 @@ Installation
 
 .. code-block:: sh
 
-    conda install -c bioconda install psm-utils
+    conda install -c bioconda psm-utils
 
 
 

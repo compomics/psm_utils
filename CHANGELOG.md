@@ -5,6 +5,20 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.2.3] - 2023-03-08
+
+### Fixed
+
+- Fix bug in `io._base_classes` (introduced in v0.2.2)
+- Fix bug in TSVReader for reading TSV files with empty protein_list
+
+## [0.2.2] - 2023-03-08
+
+### Fixed
+
+- `io.peptide_record`: Fix bug where provenance item `filename` was not a string
+- Various minor fixes after linting
+
 ## [0.2.1] - 2023-01-17
 
 ### Added

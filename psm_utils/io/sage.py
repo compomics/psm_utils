@@ -13,7 +13,8 @@ from psm_utils.psm_list import PSMList
 
 
 class SageReader(ReaderBase):
-    def __init__(self, filename) -> None:
+    def __init__(self, filename, *args, **kwargs) -> None:
+        super().__init__(filename, *args, **kwargs)
         self.filename = filename
 
     def __iter__(self) -> PSMList:
@@ -44,8 +45,8 @@ class SageReader(ReaderBase):
                 psm_dict["charge"],
             ),
             spectrum_id=psm_dict["scannr"],
-            run=psm_dict["filename"],
-            is_decoy=psm_dict["label"] == -1,
+            run=psm_dict["filename"].split(".")[0],
+            is_decoy=psm_dict["label"] == "-1",
             qvalue=psm_dict["spectrum_fdr"],
             score=float(psm_dict["hyperscore"]),
             precursor_mz=None,
@@ -83,7 +84,6 @@ class SageReader(ReaderBase):
 
     @staticmethod
     def _parse_peptidoform(peptide, charge):
-
         # Add charge state
         if charge:
             peptide += f"/{int(float(charge))}"

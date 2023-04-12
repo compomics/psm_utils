@@ -149,7 +149,7 @@ class PercolatorTabReader(ReaderBase):
     def _parse_peptidoform(percolator_peptide, charge):
         """Parse Percolator TSV peptide notation to Peptidoform."""
         # Remove leading and trailing amino acids
-        match = re.match("^[A-Z-]\.(.+)\.[A-Z-]$", percolator_peptide)
+        match = re.match("^(?:[A-Z-])?\.(.+)\.(?:[A-Z-])?$", percolator_peptide)
         peptidoform = match[1] if match else percolator_peptide
         if charge:
             peptidoform += f"/{charge}"

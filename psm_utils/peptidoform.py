@@ -1,9 +1,9 @@
 from __future__ import annotations
+import logging
 
 from pyteomics import mass, proforma
 
 from psm_utils.exceptions import PSMUtilsException
-
 
 class Peptidoform:
     """
@@ -390,8 +390,12 @@ class Peptidoform:
             new_mods = []
             for mod in mods:
                 try:
-                    if mod.value in mapping:
-                        new_mods.append(proforma.process_tag_tokens(mapping[mod.value]))
+                    if isinstance(mod, proforma.MassModification):
+                        mod_value = f"{mod.value:+.g}"
+                    else:
+                        mod_value = mod.value
+                    if mod_value in mapping:
+                        new_mods.append(proforma.process_tag_tokens(mapping[mod_value]))
                     else:
                         new_mods.append(mod)
                 except AttributeError:

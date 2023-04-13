@@ -54,7 +54,7 @@ online = [
 
 [project.urls]
 GitHub = "https://github.com/compomics/psm_utils"
-ReadTheDocs = "https://psm_utils.readthedocs.io"
+ReadTheDocs = "https://psm-utils.readthedocs.io"
 PyPi = "https://pypi.org/project/psm-utils/"
 CompOmics = "https://www.compomics.com"
 

@@ -39,6 +39,33 @@ class SageReader(ReaderBase):
         psm_dict["delta_mass"] = float(psm_dict["expmass"]) - float(
             psm_dict["calcmass"]
         )
+        rescoring_features = {}
+        for ft in [
+            "expmass",
+            "calcmass",
+            "delta_mass",
+            "peptide_len",
+            "missed_cleavages",
+            "isotope_error",
+            "precursor_ppm",
+            "fragment_ppm",
+            "delta_hyperscore",
+            "aligned_rt",
+            "matched_peaks",
+            "longest_b",
+            "longest_y",
+            "longest_y_pct",
+            "matched_intensity_pct",
+            "scored_candidates",
+            "poisson",
+            "sage_discriminant_score",
+            "ms1_intensity",
+        ]:
+            try:
+                rescoring_features[ft] = psm_dict[ft]
+            except KeyError:
+                continue
+
         return PSM(
             peptidoform=self._parse_peptidoform(
                 psm_dict["peptide"],
@@ -55,30 +82,7 @@ class SageReader(ReaderBase):
             source="sage",
             rank=int(float(psm_dict["rank"])),
             provenance_data=({"sage_filename": str(self.filename)}),
-            rescoring_features={
-                ft: psm_dict[ft]
-                for ft in [
-                    "expmass",
-                    "calcmass",
-                    "delta_mass",
-                    "peptide_len",
-                    "missed_cleavages",
-                    "isotope_error",
-                    "precursor_ppm",
-                    "fragment_ppm",
-                    "delta_hyperscore",
-                    "aligned_rt",
-                    "matched_peaks",
-                    "longest_b",
-                    "longest_y",
-                    "longest_y_pct",
-                    "matched_intensity_pct",
-                    "scored_candidates",
-                    "poisson",
-                    "sage_discriminant_score",
-                    "ms1_intensity",
-                ]
-            },
+            rescoring_features=rescoring_features,
             metadata={},
         )
 

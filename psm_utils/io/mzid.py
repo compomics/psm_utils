@@ -177,7 +177,10 @@ class MzidReader(ReaderBase):
     @staticmethod
     def _parse_peptide_evidence_ref(peptide_evidence_list: list[dict]):
         """Parse peptide evidence References of PSM."""
-        isdecoy = peptide_evidence_list[0]["isDecoy"]
+        try:
+            isdecoy = peptide_evidence_list[0]["isDecoy"]
+        except KeyError:
+            isdecoy = None
         protein_list = [
             d["accession"] for d in peptide_evidence_list if "accession" in d.keys()
         ]

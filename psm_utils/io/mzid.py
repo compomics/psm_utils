@@ -190,7 +190,7 @@ class MzidReader(ReaderBase):
         """
         isdecoy = all(
             [
-                entry["is_decoy"] if "is_decoy" in entry else None
+                entry["isDecoy"] if "isDecoy" in entry else None
                 for entry in peptide_evidence_list
             ]
         )

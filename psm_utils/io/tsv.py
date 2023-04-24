@@ -80,7 +80,12 @@ class TSVReader(ReaderBase):
 
         # Parse protein list
         if "protein_list" in entry and entry["protein_list"]:
-            entry["protein_list"] = ast.literal_eval(entry["protein_list"])
+            try:
+                entry["protein_list"] = ast.literal_eval(entry["protein_list"])
+            except ValueError:
+                raise PSMUtilsIOException(
+                    f"Could not parse protein list: `{entry['protein_list']}`"
+                )
 
         # Extract dict properties
         parsed_entry = {}

@@ -12,7 +12,7 @@ import logging
 import re
 import xml.etree.ElementTree as ET
 from pathlib import Path
-from typing import Optional
+from typing import Optional, Union
 
 from psims.mzid import MzIdentMLWriter
 from pyteomics import mzid, proforma
@@ -103,6 +103,7 @@ class MzidReader(ReaderBase):
         self._non_metadata_keys = None
         self._score_key = None
         self._rt_key = None
+        self._spectrum_rt_key = None
 
         self._source = self._infer_source()
 
@@ -110,24 +111,29 @@ class MzidReader(ReaderBase):
         """Iterate over file and return PSMs one-by-one."""
         with mzid.read(str(self.filename)) as reader:
             for spectrum in reader:
-                try:
-                    spectrum_id = spectrum["spectrum title"]
-                    mzid_spectrum_id = spectrum["spectrumID"]
-                except KeyError:
-                    spectrum_id = spectrum["spectrumID"]
-                    mzid_spectrum_id = None
-                run = (
-                    Path(spectrum["location"]).stem if "location" in spectrum else None
-                )
+                # Check if RT is encoded in spectrum metadata
+                if "retention time" in spectrum:
+                    self._spectrum_rt_key = "retention time"
+                elif "scan start time" in spectrum:
+                    self._spectrum_rt_key = "scan start time"
+                else:
+                    self._spectrum_rt_key = None
+                # Parse PSM non-metadata keys, rt key, and score key
+                self._get_non_metadata_keys(spectrum["SpectrumIdentificationItem"][0].keys())
+                break
+
+            for spectrum in reader:
+                # Parse spectrum metadata
+                spectrum_id = spectrum["spectrumID"]
+                spectrum_title = spectrum["spectrum title"] if "spectrum title" in spectrum else None
+                run = Path(spectrum["location"]).stem if "location" in spectrum else None
+                rt = float(spectrum[self._spectrum_rt_key]) if self._spectrum_rt_key else None
+
+                # Parse PSMs from spectrum
                 for entry in spectrum["SpectrumIdentificationItem"]:
-
-                    if not self._non_metadata_keys:
-                        self._get_non_metadata_keys(entry.keys())
-                    psm = self._get_peptide_spectrum_match(
-                        spectrum_id, run, entry, mzid_spectrum_id=mzid_spectrum_id
+                    yield self._get_peptide_spectrum_match(
+                        spectrum_id, spectrum_title, run, rt, entry
                     )
-
-                    yield psm
 
     def read_file(self) -> PSMList:
         """Read full mzid file to PSM list object."""
@@ -190,9 +196,10 @@ class MzidReader(ReaderBase):
     def _get_peptide_spectrum_match(
         self,
         spectrum_id: str,
-        run: Optional[str],
+        spectrum_title: Union[str, None],
+        run: Union[str, None],
+        rt: Union[float, None],
         spectrum_identification_item: dict[str, str | float | list],
-        mzid_spectrum_id=None,
     ) -> PSM:
         """Parse single mzid entry to :py:class:`~psm_utils.peptidoform.Peptidoform`."""
         sii = spectrum_identification_item
@@ -212,12 +219,9 @@ class MzidReader(ReaderBase):
         except KeyError:
             precursor_mz = None
 
+        # Override spectrum-level RT if present at PSM level
         if self._rt_key:
-            rt = sii[
-                self._rt_key
-            ]  # rt key is in mzid but sometimes not in mzid parser pyteomics
-        else:
-            rt = None
+            rt = float(sii[self._rt_key])
 
         metadata = {
             col: str(sii[col])
@@ -225,12 +229,16 @@ class MzidReader(ReaderBase):
             if col not in self._non_metadata_keys
         }
 
-        if mzid_spectrum_id:
-            metadata["mzid_spectrum_id"] = mzid_spectrum_id
+        # Prefer spectrum title (identical to titles in MGF), fall back to spectrumID
+        if spectrum_title:
+            metadata["mzid_spectrum_id"] = spectrum_id
+            psm_spectrum_id = spectrum_title
+        else:
+            psm_spectrum_id = spectrum_id
 
         psm = PSM(
             peptidoform=peptidoform,
-            spectrum_id=spectrum_id,
+            spectrum_id=psm_spectrum_id,
             run=run,
             is_decoy=is_decoy,
             score=sii[self._score_key],
@@ -246,7 +254,6 @@ class MzidReader(ReaderBase):
 
     def _get_non_metadata_keys(self, keys: list):
         """Gather all the keys that should not be written to metadata"""
-
         # All keys required to create PSM object
         default_keys = [
             "chargeState",

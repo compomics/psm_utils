@@ -12,7 +12,7 @@ import logging
 import re
 import xml.etree.ElementTree as ET
 from pathlib import Path
-from typing import Optional, Union
+from typing import Union
 
 from psims.mzid import MzIdentMLWriter
 from pyteomics import mzid, proforma
@@ -71,7 +71,6 @@ STANDARD_SEARCHENGINE_SCORES = [
 
 class MzidReader(ReaderBase):
     def __init__(self, filename: str | Path, *args, **kwargs) -> None:
-
         """
         Reader for mzIdentML PSM files.
 
@@ -97,6 +96,17 @@ class MzidReader(ReaderBase):
 
         >>> mzid_reader = MzidReader("peptides_1_1_0.mzid")
         >>> psm_list = mzid_reader.read_file()
+
+        Notes
+        -----
+        - :py:class:`MzidReader` looks for the ``retention time`` or ``scan start time`` cvParams
+          in both SpectrumIdentificationResult and SpectrumIdentificationItem levels. Note that
+          according to the mzIdentML specification document (v1.1.1) neither cvParams are expected
+          to be present at either levels.
+        - For the :py:attr:`PSM.spectrum_id` property, the ``spectrum title`` cvParam is preferred
+          over the ``spectrumID`` attribute, as these titles always match the titles in the  peak
+          list files. ``spectrumID`` is then saved in ``PSM.metadata["mzid_spectrum_id"]``.
+          If ``spectrum title`` is absent, ``spectrumID`` is saved to :py:attr:`PSM.spectrum_id`.
 
         """
         super().__init__(filename, *args, **kwargs)
@@ -301,10 +311,15 @@ class MzidWriter(WriterBase):
 
         Notes
         -----
-        Unlike other psm_utils.io writer classes, :py:class:`MzidWriter` does not
-        support writing a single PSM to a file with the :py:meth:`write_psm` method.
-        Only writing a full PSMList to a file at once with the :py:meth:`write_file`
-        method is currently supported.
+        - Unlike other psm_utils.io writer classes, :py:class:`MzidWriter` does not support writing
+          a single PSM to a file with the :py:meth:`write_psm` method. Only writing a full PSMList
+          to a file at once with the :py:meth:`write_file` method is currently supported.
+        - While not required according to the mzIdentML specification document (v1.1.1), the
+          retention time is written as cvParam ``retention time`` to the
+          SpectrumIdentificationItem element. As the actual unit is not known in psm_utils,
+          the unit is written as seconds.
+        - As the actual PSM score type is not known in psm_utils, the score is written as cvParam
+          ``MS:1001153`` to the SpectrumIdentificationItem element.
 
         """
         super().__init__(filename, *args, **kwargs)
@@ -519,11 +534,17 @@ class MzidWriter(WriterBase):
             params = [{k: v} for k, v in candidate_psm["metadata"].items()]
         else:
             params = []
+        params.append(
+            {
+                "name": "retention time",
+                "value": candidate_psm["retention_time"],
+                "unit_name": "second",
+            }
+        )
         candidate_psm_dict = {
             "charge_state": candidate_psm["peptidoform"].precursor_charge,
             "peptide_id": f"Peptide_{peptide}",
-            # TODO: add which search engine score cv param
-            "score": {"score": candidate_psm["score"]},
+            "score": {"search engine specific score": candidate_psm["score"]},
             "experimental_mass_to_charge": candidate_psm["precursor_mz"],
             "calculated_mass_to_charge": candidate_psm["peptidoform"].theoretical_mz,
             "rank": candidate_psm["rank"],
@@ -546,12 +567,6 @@ class MzidWriter(WriterBase):
             "id": f"SIR_{spec_id}",
             "spectrum_id": spec_id,
             "spectra_data_id": spectra_data_id,
-            "params": [
-                {
-                    "name": "scan start time",
-                    "value": identified_psms[0]["retention_time"],
-                }
-            ],  # add function to determine the unit
         }
         identifications = []
         for candidate in identified_psms:

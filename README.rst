@@ -95,11 +95,12 @@ Supported file formats
  `mzIdentML <https://psidev.info/mzidentml>`_                                                                          ``mzid``        ✅              ✅
  `Peptide Record <https://psm-utils.readthedocs.io/en/stable/api/psm_utils.io/#module-psm_utils.io.peptide_record>`_   ``peprec``      ✅              ✅
  `Percolator tab <https://github.com/percolator/percolator/wiki/Interface>`_                                           ``percolator``  ✅              ✅
+ `Sage <https://github.com/lazear/sage/blob/v0.12.0/DOCS.md#interpreting-sage-output>`_                                ``sage``        ✅              ❌
  `TSV <https://psm-utils.readthedocs.io/en/stable/api/psm_utils.io/#module-psm_utils.io.tsv>`_                         ``tsv``         ✅              ✅
  `X!Tandem XML <https://www.thegpm.org/tandem/>`_                                                                      ``xtandem``     ✅              ❌
 ===================================================================================================================== =============== =============== ===============
 
-Legend: ✅ Supported, ❌ Unsupported, 🔧 Work in progress
+Legend: ✅ Supported, ❌ Unsupported
 
 
 

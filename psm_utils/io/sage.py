@@ -1,25 +1,47 @@
+"""
+Reader for PSM files from the Sage search engine.
+
+Reads the ``results.sage.tsv`` file as defined on the
+`Sage documentation page <https://github.com/lazear/sage/blob/v0.12.0/DOCS.md#interpreting-sage-output>`_.
+
+"""
+
+
 from __future__ import annotations
 
 import csv
-import re
 from pathlib import Path
 from typing import Iterable, Optional
 
-from psm_utils.io._base_classes import ReaderBase, WriterBase
-from psm_utils.io.exceptions import PSMUtilsIOException
-from psm_utils.peptidoform import Peptidoform
+from pyteomics import mass
+
+from psm_utils.io._base_classes import ReaderBase
 from psm_utils.psm import PSM
 from psm_utils.psm_list import PSMList
 
 
 class SageReader(ReaderBase):
-    def __init__(self, filename, *args, **kwargs) -> None:
+    def __init__(
+        self, filename, score_column: str = "sage_discriminant_score", *args, **kwargs
+    ) -> None:
+        """
+        Reader for Sage ``results.sage.tsv`` file.
+
+        Parameters
+        ----------
+        filename : str or Path
+            Path to PSM file.
+        score_column: str, optional
+            Name of the column that holds the primary PSM score. Default is
+            ``sage_discriminant_score``, ``hyperscore`` could also be used.
+
+        """
         super().__init__(filename, *args, **kwargs)
         self.filename = filename
+        self.score_column = score_column
 
-    def __iter__(self) -> PSMList:
-        """Read full Peptide Record PSM file into a PSMList object."""
-        psm_list = []
+    def __iter__(self) -> Iterable[PSM]:
+        """Iterate over file and return PSMs one-by-one."""
         with open(self.filename) as open_file:
             reader = csv.DictReader(open_file, delimiter="\t")
             for row in reader:
@@ -35,10 +57,6 @@ class SageReader(ReaderBase):
 
     def _get_peptide_spectrum_match(self, psm_dict) -> PSM:
         """Parse a single PSM from a sage PSM file."""
-
-        psm_dict["delta_mass"] = float(psm_dict["expmass"]) - float(
-            psm_dict["calcmass"]
-        )
         rescoring_features = {}
         for ft in [
             "expmass",
@@ -49,8 +67,12 @@ class SageReader(ReaderBase):
             "isotope_error",
             "precursor_ppm",
             "fragment_ppm",
-            "delta_hyperscore",
+            "hyperscore",
+            "delta_next",
+            "delta_best",
+            "delta_rt_model",
             "aligned_rt",
+            "predicted_rt",
             "matched_peaks",
             "longest_b",
             "longest_y",
@@ -58,8 +80,8 @@ class SageReader(ReaderBase):
             "matched_intensity_pct",
             "scored_candidates",
             "poisson",
-            "sage_discriminant_score",
             "ms1_intensity",
+            "ms2_intensity",
         ]:
             try:
                 rescoring_features[ft] = psm_dict[ft]
@@ -72,11 +94,13 @@ class SageReader(ReaderBase):
                 psm_dict["charge"],
             ),
             spectrum_id=psm_dict["scannr"],
-            run=psm_dict["filename"].split(".")[0],
-            is_decoy=psm_dict["label"] == "-1",
+            run=Path(psm_dict["filename"]).stem,
+            is_decoy=True
+            if psm_dict["label"] == "-1" else False
+            if psm_dict["label"] == "1" else None,
             qvalue=psm_dict["spectrum_fdr"],
-            score=float(psm_dict["hyperscore"]),
-            precursor_mz=None,
+            score=float(psm_dict[self.score_column]),
+            precursor_mz=self._parse_precursor_mz(psm_dict["expmass"], psm_dict["charge"]),
             retention_time=float(psm_dict["rt"]),
             protein_list=psm_dict["proteins"].split(";"),
             source="sage",
@@ -87,9 +111,16 @@ class SageReader(ReaderBase):
         )
 
     @staticmethod
-    def _parse_peptidoform(peptide, charge):
-        # Add charge state
+    def _parse_peptidoform(peptide: str, charge: Optional[str]) -> str:
         if charge:
             peptide += f"/{int(float(charge))}"
-
         return peptide
+
+    @staticmethod
+    def _parse_precursor_mz(expmass: str, charge: Optional[str]) -> Optional[float]:
+        if charge:
+            charge = float(charge)
+            expmass = float(expmass)
+            return (expmass + (mass.nist_mass["H"][1][0] * charge)) / charge
+        else:
+            return None

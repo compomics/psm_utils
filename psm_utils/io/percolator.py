@@ -8,10 +8,8 @@ Notes
 -----
 
 * While :py:class:`PercolatorTabReader` supports reading the peptide notation with
-  preceding and following amino acids (e.g. ``R.ACDEK.F``),
-  :py:class:`PercolatorTabWriter` simply writes peptides in Proforma format, without
-  preceding and following amino acids.
-
+  preceding and following amino acids (e.g. ``R.ACDEK.F``), these amino acids are not stored and
+  are not written by :py:class:`PercolatorTabWriter`.
 
 """
 
@@ -245,7 +243,7 @@ class PercolatorTabWriter(WriterBase):
             self._columns = (
                 ["SpecId", "Label", "ScanNr"]
                 + self.feature_names
-                + ["psm_score", "ChargeN"]
+                + ["PSMScore", "ChargeN"]
                 + ["Peptide", "Proteins"]
             )
         elif style == "pout":
@@ -266,6 +264,7 @@ class PercolatorTabWriter(WriterBase):
         self._open_file = None
         self._writer = None
         self._protein_separator = "|||"
+        self._last_scan_number = None
 
     def __enter__(self) -> PercolatorTabWriter:
         """Either open existing file in append mode or new file in write mode."""
@@ -276,6 +275,7 @@ class PercolatorTabWriter(WriterBase):
         )
         if file_existed:
             with open(self.filename, "rt") as open_file:
+                # Read header
                 for line in open_file:
                     fieldnames = line.strip().split("\t")
                     break
@@ -283,8 +283,21 @@ class PercolatorTabWriter(WriterBase):
                     raise ValueError(
                         f"File {self.filename} is not a valid Percolator Tab file."
                     )
+                # Determine last scan number
+                open_file.seek(0)
+                last_line = None
+                for line in open_file:
+                    if line.strip():
+                        last_line = line
+            if last_line:
+                last_line = {k: v for k, v in zip(fieldnames, last_line.strip().split("\t"))}
+            try:
+                self._last_scan_number = int(last_line["ScanNr"])
+            except ValueError:
+                self._last_scan_number = None
         else:
             fieldnames = self._columns
+            self._last_scan_number = -1
         self._writer = csv.DictWriter(
             self._open_file,
             fieldnames=fieldnames,
@@ -299,10 +312,15 @@ class PercolatorTabWriter(WriterBase):
         self._open_file.close()
         self._open_file = None
         self._writer = None
+        self._last_scan_number = None
 
     def write_psm(self, psm: PSM):
         """Write a single PSM to the PSM file."""
         entry = self._psm_to_entry(psm)
+        if self._last_scan_number is not None:
+            entry["ScanNr"] = self._last_scan_number + 1
+        else:
+            entry["ScanNr"] = None
         try:
             self._writer.writerow(entry)
         except AttributeError:
@@ -310,6 +328,8 @@ class PercolatorTabWriter(WriterBase):
                 f"`write_psm` method can only be called if `{self.__class__.__qualname__}`"
                 "is opened in context (i.e., using the `with` statement)."
             )
+        else:
+            self._last_scan_number = entry["ScanNr"]
 
     def write_file(self, psm_list: PSMList):
         """Write an entire PSMList to the PSM file."""
@@ -329,7 +349,6 @@ class PercolatorTabWriter(WriterBase):
             entry = {
                 "SpecId": psm.spectrum_id,
                 "Label": None if psm.is_decoy is None else -1 if psm.is_decoy else 1,
-                "ScanNr": None,  # TODO filled in later in the entry writing
                 "ChargeN": psm.peptidoform.precursor_charge,
                 "PSMScore": psm.score,
                 "Peptide": "." + re.sub(r"/\d+$", "", psm.peptidoform.proforma) + ".",

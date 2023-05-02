@@ -196,8 +196,24 @@ class MzidReader(ReaderBase):
 
     @staticmethod
     def _parse_peptide_evidence_ref(peptide_evidence_list: list[dict]):
-        """Parse peptide evidence References of PSM."""
-        isdecoy = peptide_evidence_list[0]["isDecoy"]
+        """
+        Parse PeptideEvidence list of PSM.
+
+        Notes
+        -----
+        If multiple PeptideEvidence entries are associated with the PSM, the PSM is only considered
+        a decoy entry if ALL PeptideEvidence entries are decoy entries. If a target PeptideEvidence
+        entry is present, it should get priority over decoy entries. In theory, no overlap between
+        target and decoy peptide sequence should be present in the search space, although this
+        might not have been filtered for by the search engine.
+
+        """
+        isdecoy = all(
+            [
+                entry["isDecoy"] if "isDecoy" in entry else None
+                for entry in peptide_evidence_list
+            ]
+        )
         protein_list = [
             d["accession"] for d in peptide_evidence_list if "accession" in d.keys()
         ]

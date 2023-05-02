@@ -12,7 +12,7 @@ import logging
 import re
 import xml.etree.ElementTree as ET
 from pathlib import Path
-from typing import Optional
+from typing import Union
 
 from psims.mzid import MzIdentMLWriter
 from pyteomics import mzid, proforma
@@ -71,7 +71,6 @@ STANDARD_SEARCHENGINE_SCORES = [
 
 class MzidReader(ReaderBase):
     def __init__(self, filename: str | Path, *args, **kwargs) -> None:
-
         """
         Reader for mzIdentML PSM files.
 
@@ -98,11 +97,23 @@ class MzidReader(ReaderBase):
         >>> mzid_reader = MzidReader("peptides_1_1_0.mzid")
         >>> psm_list = mzid_reader.read_file()
 
+        Notes
+        -----
+        - :py:class:`MzidReader` looks for the ``retention time`` or ``scan start time`` cvParams
+          in both SpectrumIdentificationResult and SpectrumIdentificationItem levels. Note that
+          according to the mzIdentML specification document (v1.1.1) neither cvParams are expected
+          to be present at either levels.
+        - For the :py:attr:`PSM.spectrum_id` property, the ``spectrum title`` cvParam is preferred
+          over the ``spectrumID`` attribute, as these titles always match the titles in the  peak
+          list files. ``spectrumID`` is then saved in ``PSM.metadata["mzid_spectrum_id"]``.
+          If ``spectrum title`` is absent, ``spectrumID`` is saved to :py:attr:`PSM.spectrum_id`.
+
         """
         super().__init__(filename, *args, **kwargs)
         self._non_metadata_keys = None
         self._score_key = None
         self._rt_key = None
+        self._spectrum_rt_key = None
 
         self._source = self._infer_source()
 
@@ -110,20 +121,29 @@ class MzidReader(ReaderBase):
         """Iterate over file and return PSMs one-by-one."""
         with mzid.read(str(self.filename)) as reader:
             for spectrum in reader:
+                # Check if RT is encoded in spectrum metadata
+                if "retention time" in spectrum:
+                    self._spectrum_rt_key = "retention time"
+                elif "scan start time" in spectrum:
+                    self._spectrum_rt_key = "scan start time"
+                else:
+                    self._spectrum_rt_key = None
+                # Parse PSM non-metadata keys, rt key, and score key
+                self._get_non_metadata_keys(spectrum["SpectrumIdentificationItem"][0].keys())
+                break
+
+            for spectrum in reader:
+                # Parse spectrum metadata
                 spectrum_id = spectrum["spectrumID"]
+                spectrum_title = spectrum["spectrum title"] if "spectrum title" in spectrum else None
                 run = Path(spectrum["location"]).stem if "location" in spectrum else None
+                rt = float(spectrum[self._spectrum_rt_key]) if self._spectrum_rt_key else None
+
+                # Parse PSMs from spectrum
                 for entry in spectrum["SpectrumIdentificationItem"]:
-                    if not self._non_metadata_keys:
-                        self._get_non_metadata_keys(entry.keys())
-                    try:
-                        psm = self._get_peptide_spectrum_match(
-                            spectrum_id, run, entry, spectrum["spectrum title"]
-                        )
-                    except KeyError:
-                        psm = self._get_peptide_spectrum_match(
-                            spectrum_id, run, entry
-                        )
-                    yield psm
+                    yield self._get_peptide_spectrum_match(
+                        spectrum_id, spectrum_title, run, rt, entry
+                    )
 
     def read_file(self) -> PSMList:
         """Read full mzid file to PSM list object."""
@@ -202,13 +222,13 @@ class MzidReader(ReaderBase):
     def _get_peptide_spectrum_match(
         self,
         spectrum_id: str,
-        run: Optional[str],
+        spectrum_title: Union[str, None],
+        run: Union[str, None],
+        rt: Union[float, None],
         spectrum_identification_item: dict[str, str | float | list],
-        spectrum_title: Optional[str] = None,
     ) -> PSM:
         """Parse single mzid entry to :py:class:`~psm_utils.peptidoform.Peptidoform`."""
         sii = spectrum_identification_item
-
         try:
             modifications = sii["Modification"]
         except KeyError:
@@ -225,22 +245,26 @@ class MzidReader(ReaderBase):
         except KeyError:
             precursor_mz = None
 
+        # Override spectrum-level RT if present at PSM level
         if self._rt_key:
-            rt = sii[self._rt_key]
-        else:
-            rt = float("nan")
+            rt = float(sii[self._rt_key])
 
         metadata = {
             col: str(sii[col])
             for col in sii.keys()
             if col not in self._non_metadata_keys
         }
+
+        # Prefer spectrum title (identical to titles in MGF), fall back to spectrumID
         if spectrum_title:
-            metadata["spectrum title"] = spectrum_title
+            metadata["mzid_spectrum_id"] = spectrum_id
+            psm_spectrum_id = spectrum_title
+        else:
+            psm_spectrum_id = spectrum_id
 
         psm = PSM(
             peptidoform=peptidoform,
-            spectrum_id=spectrum_id,
+            spectrum_id=psm_spectrum_id,
             run=run,
             is_decoy=is_decoy,
             score=sii[self._score_key],
@@ -256,7 +280,6 @@ class MzidReader(ReaderBase):
 
     def _get_non_metadata_keys(self, keys: list):
         """Gather all the keys that should not be written to metadata"""
-
         # All keys required to create PSM object
         default_keys = [
             "chargeState",
@@ -304,10 +327,15 @@ class MzidWriter(WriterBase):
 
         Notes
         -----
-        Unlike other psm_utils.io writer classes, :py:class:`MzidWriter` does not
-        support writing a single PSM to a file with the :py:meth:`write_psm` method.
-        Only writing a full PSMList to a file at once with the :py:meth:`write_file`
-        method is currently supported.
+        - Unlike other psm_utils.io writer classes, :py:class:`MzidWriter` does not support writing
+          a single PSM to a file with the :py:meth:`write_psm` method. Only writing a full PSMList
+          to a file at once with the :py:meth:`write_file` method is currently supported.
+        - While not required according to the mzIdentML specification document (v1.1.1), the
+          retention time is written as cvParam ``retention time`` to the
+          SpectrumIdentificationItem element. As the actual unit is not known in psm_utils,
+          the unit is written as seconds.
+        - As the actual PSM score type is not known in psm_utils, the score is written as cvParam
+          ``MS:1001153`` to the SpectrumIdentificationItem element.
 
         """
         super().__init__(filename, *args, **kwargs)
@@ -522,11 +550,17 @@ class MzidWriter(WriterBase):
             params = [{k: v} for k, v in candidate_psm["metadata"].items()]
         else:
             params = []
+        params.append(
+            {
+                "name": "retention time",
+                "value": candidate_psm["retention_time"],
+                "unit_name": "second",
+            }
+        )
         candidate_psm_dict = {
             "charge_state": candidate_psm["peptidoform"].precursor_charge,
             "peptide_id": f"Peptide_{peptide}",
-            # TODO: add which search engine score cv param
-            "score": {"score": candidate_psm["score"]},
+            "score": {"search engine specific score": candidate_psm["score"]},
             "experimental_mass_to_charge": candidate_psm["precursor_mz"],
             "calculated_mass_to_charge": candidate_psm["peptidoform"].theoretical_mz,
             "rank": candidate_psm["rank"],
@@ -549,12 +583,6 @@ class MzidWriter(WriterBase):
             "id": f"SIR_{spec_id}",
             "spectrum_id": spec_id,
             "spectra_data_id": spectra_data_id,
-            "params": [
-                {
-                    "name": "scan start time",
-                    "value": identified_psms[0]["retention_time"],
-                }
-            ],  # add function to determine the unit
         }
         identifications = []
         for candidate in identified_psms:

@@ -120,7 +120,7 @@ class MSMSReader(ReaderBase):
             score=float(psm_dict["Score"]),
             precursor_mz=float(psm_dict["m/z"]),
             retention_time=float(psm_dict["Retention time"]),
-            protein_list=psm_dict["Proteins"].split(";"),
+            protein_list=psm_dict["Proteins"].split(";") if psm_dict["Proteins"] else None,
             pep=psm_dict["PEP"],
             source="msms",
             provenance_data=({"msms_filename": str(self.filename)}),

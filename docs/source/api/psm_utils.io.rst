@@ -52,6 +52,15 @@ psm_utils.io.percolator
 
 
 
+psm_utils.io.sage
+###########################
+
+.. automodule:: psm_utils.io.sage
+   :members:
+   :inherited-members:
+
+
+
 psm_utils.io.tsv
 ##########################
 

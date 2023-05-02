@@ -25,9 +25,9 @@ class PSM(BaseModel):
     protein_list: Optional[List[str]] = None
     rank: Optional[int] = None
     source: Optional[str] = None
-    provenance_data: Optional[Dict[str, str]] = None
-    metadata: Optional[Dict[str, str]] = None
-    rescoring_features: Optional[Dict[str, str]] = None
+    provenance_data: Optional[Dict[str, str]] = dict()
+    metadata: Optional[Dict[str, str]] = dict()
+    rescoring_features: Optional[Dict[str, str]] = dict()
 
     class Config:
         arbitrary_types_allowed = True  # Allows non-pydantic class Peptidoform

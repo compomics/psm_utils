@@ -392,7 +392,7 @@ class Peptidoform:
             for mod in mods:
                 try:
                     if isinstance(mod, proforma.MassModification):
-                        mod_value = self._format_number_as_string(mod.value)
+                        mod_value = _format_number_as_string(mod.value)
                     else:
                         mod_value = mod.value
                     if mod_value in mapping:
@@ -503,14 +503,12 @@ class Peptidoform:
             # Remove fixed modifications
             self.properties["fixed_modifications"] = []
 
-    @staticmethod
-    def _format_number_as_string(num):
-        """Format number as string"""
 
-        sign = "+" if np.sign(num) == 1 else "-"
-        num = str(num).rstrip("0").rstrip(".")
-
-        return sign + num
+def _format_number_as_string(num):
+    """Format number as string for ProForma mass modifications."""
+    sign = "+" if np.sign(num) == 1 else "-"
+    num = str(num).rstrip("0").rstrip(".")
+    return sign + num
 
 
 class PeptidoformException(PSMUtilsException):

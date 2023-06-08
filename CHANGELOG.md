@@ -5,6 +5,37 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.3.0] - 2023-06-08
+
+### Added
+- Add reader for [Sage](https://github.com/lazear/sage) PSM files.
+- `io.mzid`: Add reading/writing of PEP and q-values
+
+### Changed
+- `psm`: The default values of `PSM.provenance_data`, `PSM.metadata` and `PSM.rescoring_features` are now `dict()` instead of `None`.
+- `PSMList`: Also allow Numpy integers for indexing a single PSM
+- `io.mzid.MzidReader`: Attempt to parse `retention time` or `scan start time` cvParams from both SpectrumIdentificationResult as SpectrumIdentificationItem levels. Note that according to the mzIdentML specification document (v1.1.1) neither cvParams are expected to be present at either level.
+- `io.mzid.MzidReader`: Prefer `spectrum title` cvParam over `spectrumID` attribute for `PSM.spectrum_id` as these titles always match to the peak list files. In this case, `spectrumID` is saved in `metadata["mzid_spectrum_id"]`. Fall back to `spectrumID` if `spectrum title` is absent.
+- `io.mzid.MzidWriter`: `PSM.retention_time` is now written as cvParam `retention time` instead of `scan start time`, and to the `SpectrumIdentificationItem` level instead of the `SpectrumIdentificationResult` level, as theoretically in psm_utils, multiple PSMs for the same spectrum can have different values for `retention_time`.
+- `io.mzid.MzidWriter`: Write PSM score as cvParam `search engine specific score` instead of userParam `score`.
+- `io.percolator.PercolatorTabWriter`: For PIN-style files: Use `SpecId` instead of `PSMId` and write `PSMScore` and `ChargeN` columns by default.
+- Filter warnings from `psims.mzmlb` on import, as `mzmlb` is not used
+
+### Fixed
+- `psm`: Fix missing qvalue and pep in docstring
+- `peptidoform`: ProForma mass modifications are now correctly parsed within the `rename_modifications` function.
+- `io.maxquant.MSMSReader`: Correctly parse empty `Proteins` column to `None`
+- `io.percolator.PercolatorTabReader`: Correctly parse Percolator peptidoform notation if no leading or trailing amino acids are present (e.g. `.ACDK.` instead of `K.ACDK.E`).
+- `io.percolator.PercolatorTabWriter`: ScanNr is now correctly written as an integer counting from the first PSM in the file.
+- `io.percolator.PercolatorTabWriter`: If no protein information is present, write the peptidoform preceded by `PEP_` to the Proteins column.
+- `io.idxml`: Read metadata as strings
+- `io.mzid.MzidReader`: Set `PSM.retention_time` to `None` instead of `float('nan')` if missing from the PSM file.
+- `io.mzid`: Fix reading of file if charge is missing
+- `io.mzid`: Fix writing if protein_list is None
+- `io.mzid`: Consider all `PeptideEvidence` entries for a `SpectrumIdentificationItem` to determine `is_decoy`
+- `io.mzid`: Fix handling of mzIdentML files when `is_decoy` field is not present (fixes #30)
+- `io.tsv`: Raise `PSMUtilsIOException` with clear error message when TSV `protein_list` cannot be read
+
 ## [0.2.3] - 2023-03-08
 
 ### Fixed

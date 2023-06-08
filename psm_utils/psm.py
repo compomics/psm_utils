@@ -62,6 +62,10 @@ class PSM(BaseModel):
             (``False``).
         score : float, optional
             Search engine score.
+        qvalue : float, optional
+            PSM-level q-value.
+        pep : float, optional
+            PSM-level posterior error probability.
         precursor_mz : float, optional
             Precursor m/z.
         retention_time : float, optional

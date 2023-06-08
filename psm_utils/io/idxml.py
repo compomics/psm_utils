@@ -85,8 +85,8 @@ class IdXMLReader(ReaderBase):
             protein_list=[protein["accession"] for protein in peptide_hit["protein"]],
             source="idXML",
             metadata={
-                "idxml:score_type": entry["score_type"],
-                "idxml:higher_score_better": entry["higher_score_better"],
-                "idxml:significance_threshold": entry["significance_threshold"],
+                "idxml:score_type": str(entry["score_type"]),
+                "idxml:higher_score_better": str(entry["higher_score_better"]),
+                "idxml:significance_threshold": str(entry["significance_threshold"]),
             },
         )

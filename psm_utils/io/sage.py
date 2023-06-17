@@ -2,7 +2,7 @@
 Reader for PSM files from the Sage search engine.
 
 Reads the ``results.sage.tsv`` file as defined on the
-`Sage documentation page <https://github.com/lazear/sage/blob/v0.12.0/DOCS.md#interpreting-sage-output>`_.
+`Sage documentation page <https://github.com/lazear/sage/blob/v0.13.1/DOCS.md#interpreting-sage-output>`_.
 
 """
 
@@ -98,7 +98,7 @@ class SageReader(ReaderBase):
             is_decoy=True
             if psm_dict["label"] == "-1" else False
             if psm_dict["label"] == "1" else None,
-            qvalue=psm_dict["spectrum_fdr"],
+            qvalue=psm_dict["spectrum_q"],
             score=float(psm_dict[self.score_column]),
             precursor_mz=self._parse_precursor_mz(psm_dict["expmass"], psm_dict["charge"]),
             retention_time=float(psm_dict["rt"]),

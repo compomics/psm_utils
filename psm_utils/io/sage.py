@@ -2,7 +2,7 @@
 Reader for PSM files from the Sage search engine.
 
 Reads the ``results.sage.tsv`` file as defined on the
-`Sage documentation page <https://github.com/lazear/sage/blob/v0.13.1/DOCS.md#interpreting-sage-output>`_.
+`Sage documentation page <https://github.com/lazear/sage/blob/v0.13.2/DOCS.md#interpreting-sage-output>`_.
 
 """
 

@@ -28,6 +28,15 @@ REQUIRED_COLUMNS = [
     "Charge",
     "RT",
     "Filename",
+    "number of missed cleavages",
+    "number of residues",
+    "number of considered fragment ions",
+    "delta M",
+    "avg MS2 error[ppm]",
+    "assigned intensity fraction",
+    "binom score",
+    "Id"
+
 ]
 
 
@@ -54,7 +63,7 @@ class MSAmandaReader(ReaderBase):
 
     @staticmethod
     def _evaluate_columns(columns) -> bool:
-        """Case insensitive column evaluation MsAmanda file."""
+        """Case insensitive column evaluation MS Amanda file."""
 
         if "Rank" in columns:
             REQUIRED_COLUMNS.append("Rank")
@@ -68,7 +77,7 @@ class MSAmandaReader(ReaderBase):
     def _get_peptide_spectrum_match(
         self, psm_dict: dict[str, str | float]
     ) -> PSM:
-        """Return a PSM object from MaxQuant msms.txt PSM file."""
+        """Return a PSM object from MS Amanda CSV PSM file."""
 
         psm = PSM(
             peptidoform=self._parse_peptidoform(
@@ -128,4 +137,4 @@ class MSAmandaReader(ReaderBase):
 
 
 class MSAmandaParsingError(PSMUtilsException):
-    """Error while parsing MaxQuant msms.txt PSM file."""
+    """Error while parsing MS Amanda CSV PSM file."""

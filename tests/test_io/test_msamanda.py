@@ -13,6 +13,14 @@ TEST_COL = [
     "Charge",
     "RT",
     "Filename",
+    "number of missed cleavages",
+    "number of residues",
+    "number of considered fragment ions",
+    "delta M",
+    "avg MS2 error[ppm]",
+    "assigned intensity fraction",
+    "binom score",
+    "Id"
 ]
 
 

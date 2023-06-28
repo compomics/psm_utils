@@ -24,6 +24,14 @@ psm_utils.io.maxquant
    :inherited-members:
 
 
+psm_utils.io.msamanda
+##########################
+
+.. automodule:: psm_utils.io.msamanda
+   :members:
+   :inherited-members:
+
+
 
 psm_utils.io.mzid
 #####################
@@ -74,13 +82,5 @@ psm_utils.io.xtandem
 ##########################
 
 .. automodule:: psm_utils.io.xtandem
-   :members:
-   :inherited-members:
-
-
-psm_utils.io.msamanda
-##########################
-
-.. automodule:: psm_utils.io.msamanda
    :members:
    :inherited-members:

@@ -2,11 +2,11 @@
 
 from __future__ import annotations
 
-import logging
 import csv
+import logging
 import re
-from pathlib import Path
 from itertools import compress
+from pathlib import Path
 
 import numpy as np
 
@@ -18,6 +18,7 @@ from psm_utils.psm_list import PSMList
 logger = logging.getLogger(__name__)
 
 
+# Minimal set of required columns
 REQUIRED_COLUMNS = [
     "Title",
     "Sequence",
@@ -28,6 +29,11 @@ REQUIRED_COLUMNS = [
     "Charge",
     "RT",
     "Filename",
+    "Id",
+]
+
+# Potential rescoring features
+RESCORING_FEATURES = [
     "number of missed cleavages",
     "number of residues",
     "number of considered fragment ions",
@@ -35,8 +41,6 @@ REQUIRED_COLUMNS = [
     "avg MS2 error[ppm]",
     "assigned intensity fraction",
     "binom score",
-    "Id"
-
 ]
 
 
@@ -45,10 +49,13 @@ class MSAmandaReader(ReaderBase):
 
     def __init__(self, filename: str | Path, *args, **kwargs) -> None:
         super().__init__(filename, *args, **kwargs)
+        self._present_columns = REQUIRED_COLUMNS.copy()
+        self._rescoring_feature_columns = []
+        self._metadata_columns = []
+        self._has_rank_column = None
 
     def __iter__(self):
         """Iterate over file and return PSMs one-by-one."""
-
         with open(self.filename, "rt") as open_file:
             if not next(open_file).startswith("#"):
                 open_file.seek(0)
@@ -61,33 +68,39 @@ class MSAmandaReader(ReaderBase):
         """Read full PSM file into a PSMList object."""
         return PSMList(psm_list=[psm for psm in self.__iter__()])
 
-    @staticmethod
-    def _evaluate_columns(columns) -> bool:
-        """Case insensitive column evaluation MS Amanda file."""
-
-        if "Rank" in columns:
-            REQUIRED_COLUMNS.append("Rank")
-
+    def _evaluate_columns(self, columns) -> bool:
+        """Column evaluation for MS Amanda file."""
+        # Check if required columns are present
         column_check = [True if col in columns else False for col in REQUIRED_COLUMNS]
         if not all(column_check):
-            raise MSAmandaParsingError(
-                f"Missing columns: {list(compress(REQUIRED_COLUMNS, list(~np.array(column_check))))}"
-            )
+            missing = list(compress(REQUIRED_COLUMNS, list(~np.array(column_check))))
+            raise MSAmandaParsingError(f"Missing columns: {missing}")
 
-    def _get_peptide_spectrum_match(
-        self, psm_dict: dict[str, str | float]
-    ) -> PSM:
+        # Check if rank is present
+        if "Rank" in columns:
+            self._has_rank_column = True
+            self._present_columns.append("Rank")
+
+        # Get list of present rescoring features
+        self._rescoring_feature_columns = [
+            col for col in RESCORING_FEATURES if col in columns
+        ]
+
+        # Add remaining columns to metadata
+        self._metadata_columns = [
+            col
+            for col in columns
+            if col not in self._present_columns + self._rescoring_feature_columns
+        ]
+
+    def _get_peptide_spectrum_match(self, psm_dict: dict[str, str | float]) -> PSM:
         """Return a PSM object from MS Amanda CSV PSM file."""
-
         psm = PSM(
             peptidoform=self._parse_peptidoform(
                 psm_dict["Sequence"], psm_dict["Modifications"], psm_dict["Charge"]
             ),
             spectrum_id=psm_dict["Title"],
-            run=psm_dict["Filename"]
-            .replace(".mgf", "")
-            .replace(".raw", "")
-            .replace(".mzml", ""),
+            run=Path(psm_dict["Filename"]).with_suffix("").name,
             is_decoy=psm_dict["Protein Accessions"].startswith("REV_"),
             score=float(psm_dict["Amanda Score"]),
             precursor_mz=float(psm_dict["m/z"]),
@@ -95,25 +108,25 @@ class MSAmandaReader(ReaderBase):
             protein_list=psm_dict["Protein Accessions"].split(";"),
             source="MSAmanda",
             provenance_data=({"MSAmanda_filename": str(self.filename)}),
+            rescoring_features={
+                col: str(value)
+                for col, value in psm_dict.items()
+                if col in self._rescoring_feature_columns
+            },
             metadata={
-                col: str(psm_dict[col])
-                for col in psm_dict.keys()
-                if col not in REQUIRED_COLUMNS
+                col: str(value)
+                for col, value in psm_dict.items()
+                if col in self._metadata_columns
             },
         )
-
-        try:
+        if self._has_rank_column:
             psm["rank"] = psm_dict["Rank"]
-        except KeyError:
-            pass
-
         return psm
 
     @staticmethod
     def _parse_peptidoform(seq, modifications, charge):
         "Parse MSAmanda sequence, modifications and charge to proforma sequence"
         peptide = [""] + [aa.upper() for aa in seq] + [""]
-
         pattern = re.compile(
             r"(?P<site>[A-Z])(?P<loc>-term|\d+)\((?P<mod_name>[A-Za-z]+)\|([-0-9.]+)\|(variable|fixed)\);?"
         )
@@ -138,3 +151,5 @@ class MSAmandaReader(ReaderBase):
 
 class MSAmandaParsingError(PSMUtilsException):
     """Error while parsing MS Amanda CSV PSM file."""
+
+    pass

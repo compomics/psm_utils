@@ -40,7 +40,7 @@ Local install
 
 .. code-block:: sh
 
-    pip install --editable .[dev,doc]
+    pip install --editable .[dev,docs]
 
 
 
@@ -62,7 +62,7 @@ and run ``sphinx-autobuild``:
 
 .. code-block:: sh
 
-    pip install .[doc]
+    pip install .[docs]
     sphinx-autobuild  --watch ./psm_utils ./docs/source/ ./docs/_build/html/
 
 Then browse to http://localhost:8000 to watch the live preview.

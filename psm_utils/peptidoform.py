@@ -4,6 +4,7 @@ from pyteomics import mass, proforma
 import numpy as np
 
 from psm_utils.exceptions import PSMUtilsException
+from psm_utils.utils import mass_to_mz
 
 
 class Peptidoform:
@@ -353,10 +354,7 @@ class Peptidoform:
 
         """
         if self.precursor_charge:
-            return (
-                self.theoretical_mass
-                + (mass.nist_mass["H"][1][0] * self.precursor_charge)
-            ) / self.precursor_charge
+            return mass_to_mz(self.theoretical_mass, self.precursor_charge)
         else:
             return None
 

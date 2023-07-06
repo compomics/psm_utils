@@ -1,7 +1,7 @@
 from __future__ import annotations
 
-from pyteomics import mass, proforma
 import numpy as np
+from pyteomics import mass, proforma
 
 from psm_utils.exceptions import PSMUtilsException
 from psm_utils.utils import mass_to_mz
@@ -35,7 +35,12 @@ class Peptidoform:
             Dict with sequence-wide properties.
 
         """
-        self.parsed_sequence, self.properties = proforma.parse(proforma_sequence)
+        try:
+            self.parsed_sequence, self.properties = proforma.parse(proforma_sequence)
+        except proforma.ProFormaError as e:
+            raise PeptidoformException(
+                f"Could not parse ProForma sequence: {proforma_sequence}"
+            ) from e
 
         if self.properties["isotopes"]:
             raise NotImplementedError(

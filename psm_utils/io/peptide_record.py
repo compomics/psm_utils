@@ -400,6 +400,10 @@ def peprec_to_proforma(
             raise InvalidPeprecModificationError(
                 f"Could not parse PEPREC modification `{modifications}`."
             )
+        except IndexError:
+            raise InvalidPeprecModificationError(
+                f"PEPREC modification has invalid position {position} in peptide `{''.join(peptide)}`."
+            )
 
     # Add dashes between residues and termini, and join sequence
     peptide[0] = peptide[0] + "-" if peptide[0] else ""

@@ -81,6 +81,9 @@ class PSMList(BaseModel):
     def __str__(self):
         return self.__repr__()
 
+    def __add__(self, other):
+        return PSMList(psm_list=self.psm_list + other.psm_list)
+
     def __iter__(self) -> Iterable[PSM]:
         return self.psm_list.__iter__()
 

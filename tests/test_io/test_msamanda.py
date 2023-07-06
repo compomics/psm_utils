@@ -13,20 +13,27 @@ TEST_COL = [
     "Charge",
     "RT",
     "Filename",
+    "number of missed cleavages",
+    "number of residues",
+    "number of considered fragment ions",
+    "delta M",
+    "avg MS2 error[ppm]",
+    "assigned intensity fraction",
+    "binom score",
+    "Id",
 ]
 
 
 class TestMSMSReader:
     def test_evaluate_columns(self):
-
         columns = TEST_COL.copy()
         # Test with the right column names
-        msamanda.MSAmandaReader._evaluate_columns(columns)
+        msamanda.MSAmandaReader("test.file")._evaluate_columns(columns)
 
         # Test when column name is missing
         columns.remove("m/z")
         with pytest.raises(msamanda.MSAmandaParsingError):
-            msamanda.MSAmandaReader._evaluate_columns(columns)
+            msamanda.MSAmandaReader("test.file")._evaluate_columns(columns)
 
     def test_parse_peptidoform(self):
         test_cases = {

@@ -46,9 +46,14 @@ class TestPeptideRecord:
             test_out = peprec_to_proforma(*test_in)
             assert test_out.proforma == expected_out
 
-        # Invalid case
-        with pytest.raises(InvalidPeprecModificationError):
-            peprec_to_proforma("ACDE", "|")
+        # Invalid cases
+        invalid_test_cases = [
+            ("ACDE", "|"),
+            ("ACDE", "8|Oxidation"),
+        ]
+        for test_in in invalid_test_cases:
+            with pytest.raises(InvalidPeprecModificationError):
+                peprec_to_proforma(*test_in)
 
 
 class TestPeptideRecordReader:

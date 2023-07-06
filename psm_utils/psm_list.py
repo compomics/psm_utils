@@ -221,7 +221,7 @@ class PSMList(BaseModel):
 
         """
         for key in ["score", "is_decoy"]:
-            if (self[key] is None).any():
+            if (self[key] == None).any():  # noqa: E711 (self[key] is a Numpy array)
                 raise ValueError(
                     f"Cannot calculate q-values if not all PSMs have `{key}` assigned."
                 )

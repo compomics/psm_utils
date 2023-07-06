@@ -41,6 +41,8 @@ RESCORING_FEATURES = [
     "avg MS2 error[ppm]",
     "assigned intensity fraction",
     "binom score",
+    "Weigthed Probability",
+    "Nr of matched peaks"
 ]
 
 

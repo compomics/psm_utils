@@ -43,7 +43,6 @@ RESCORING_FEATURES = [
     "binom score",
     "Weighted Probability",
     "Nr of matched peaks",
-    "Amanda Score",
 ]
 
 

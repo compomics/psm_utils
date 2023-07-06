@@ -82,10 +82,10 @@ class TSVReader(ReaderBase):
         if "protein_list" in entry and entry["protein_list"]:
             try:
                 entry["protein_list"] = ast.literal_eval(entry["protein_list"])
-            except ValueError:
+            except ValueError as e:
                 raise PSMUtilsIOException(
                     f"Could not parse protein list: `{entry['protein_list']}`"
-                )
+                ) from e
 
         # Extract dict properties
         parsed_entry = {}
@@ -192,11 +192,11 @@ class TSVWriter(WriterBase):
         entry = self._psm_to_entry(psm)
         try:
             self._writer.writerow(entry)
-        except AttributeError:
+        except AttributeError as e:
             raise PSMUtilsIOException(
                 f"`write_psm` method can only be called if `{self.__class__.__qualname__}`"
                 "is opened in context (i.e., using the `with` statement)."
-            )
+            ) from e
 
     def write_file(self, psm_list: PSMList):
         """

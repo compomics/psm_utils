@@ -323,11 +323,11 @@ class PercolatorTabWriter(WriterBase):
             entry["ScanNr"] = None
         try:
             self._writer.writerow(entry)
-        except AttributeError:
+        except AttributeError as e:
             raise PSMUtilsIOException(
                 f"`write_psm` method can only be called if `{self.__class__.__qualname__}`"
                 "is opened in context (i.e., using the `with` statement)."
-            )
+            ) from e
         else:
             self._last_scan_number = entry["ScanNr"]
 

@@ -5,6 +5,25 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [0.4.0] - 2023-07-06
+
+### Added
+
+- Add + operator support for `PSMList`
+- Add utility functions for m/z-mass conversion in new module `psm_utils.utils`
+- `peptidoform`: Catch `ProFormaError` and reraise `PeptidoformException` with invalid peptidoform in message
+
+### Changed
+
+- `io.msamanda`: Changed `REQUIRED_COLUMNS` to include new features from the MS Amanda output CSV file
+- `io.peptide_record`Catch the `IndexError` when a modification has a position that is out of range for the peptide, and raise an `InvalidPeprecModificationError` instead.
+- Rename optional dependency `doc` to `docs`
+- Implement "raise from e" when applicable throughout package
+
+### Fixed
+
+- Added missing `io.msamanda` API docs
+
 ## [0.3.1] - 2023-06-19
 
 ### Changed

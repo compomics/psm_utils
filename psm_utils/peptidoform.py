@@ -1,9 +1,10 @@
 from __future__ import annotations
 
-from pyteomics import mass, proforma
 import numpy as np
+from pyteomics import mass, proforma
 
 from psm_utils.exceptions import PSMUtilsException
+from psm_utils.utils import mass_to_mz
 
 
 class Peptidoform:
@@ -34,7 +35,12 @@ class Peptidoform:
             Dict with sequence-wide properties.
 
         """
-        self.parsed_sequence, self.properties = proforma.parse(proforma_sequence)
+        try:
+            self.parsed_sequence, self.properties = proforma.parse(proforma_sequence)
+        except proforma.ProFormaError as e:
+            raise PeptidoformException(
+                f"Could not parse ProForma sequence: {proforma_sequence}"
+            ) from e
 
         if self.properties["isotopes"]:
             raise NotImplementedError(
@@ -54,7 +60,7 @@ class Peptidoform:
         try:
             return self.proforma == __o.proforma
         except AttributeError:
-            raise NotImplemented("Object is not a Peptidoform")
+            raise NotImplementedError("Object is not a Peptidoform")
 
     @property
     def proforma(self) -> str:
@@ -155,10 +161,10 @@ class Peptidoform:
             for tag in self.properties["n_term"]:
                 try:
                     n_term += tag.composition
-                except (AttributeError, KeyError):
+                except (AttributeError, KeyError) as e:
                     raise ModificationException(
                         f"Cannot resolve composition for modification {tag.value}."
-                    )
+                    ) from e
         comp_list.append(n_term)
 
         # Sequence
@@ -166,10 +172,10 @@ class Peptidoform:
             # Amino acid
             try:
                 position_comp = mass.std_aa_comp[aa].copy()
-            except (AttributeError, KeyError):
+            except (AttributeError, KeyError) as e:
                 raise AmbiguousResidueException(
                     f"Cannot resolve composition for amino acid {aa}."
-                )
+                ) from e
             # Fixed modifications
             if aa in fixed_rules:
                 position_comp += fixed_rules[aa]
@@ -178,11 +184,11 @@ class Peptidoform:
                 for tag in tags:
                     try:
                         position_comp += tag.composition
-                    except (AttributeError, KeyError):
+                    except (AttributeError, KeyError) as e:
                         raise ModificationException(
                             "Cannot resolve composition for modification "
                             f"{tag.value}."
-                        )
+                        ) from e
             comp_list.append(position_comp)
 
         # C-terminus
@@ -191,10 +197,10 @@ class Peptidoform:
             for tag in self.properties["c_term"]:
                 try:
                     c_term += tag.composition
-                except (AttributeError, KeyError):
+                except (AttributeError, KeyError) as e:
                     raise ModificationException(
                         f"Cannot resolve composition for modification {tag.value}."
-                    )
+                    ) from e
         comp_list.append(c_term)
 
         return comp_list
@@ -218,17 +224,17 @@ class Peptidoform:
         for tag in self.properties["labile_modifications"]:
             try:
                 comp += tag.composition
-            except (AttributeError, KeyError):
+            except (AttributeError, KeyError) as e:
                 raise ModificationException(
                     f"Cannot resolve composition for modification {tag.value}."
-                )
+                ) from e
         for tag in self.properties["unlocalized_modifications"]:
             try:
                 comp += tag.composition
-            except (AttributeError, KeyError):
+            except (AttributeError, KeyError) as e:
                 raise ModificationException(
                     f"Cannot resolve composition for modification {tag.value}."
-                )
+                ) from e
         return comp
 
     @property
@@ -264,10 +270,10 @@ class Peptidoform:
             for tag in self.properties["n_term"]:
                 try:
                     n_term += tag.mass
-                except (AttributeError, KeyError):
+                except (AttributeError, KeyError) as e:
                     raise ModificationException(
                         f"Cannot resolve mass for modification {tag.value}."
-                    )
+                    ) from e
         mass_list.append(n_term)
 
         # Sequence
@@ -275,10 +281,10 @@ class Peptidoform:
             # Amino acid
             try:
                 position_mass = mass.std_aa_mass[aa]
-            except (AttributeError, KeyError):
+            except (AttributeError, KeyError) as e:
                 raise AmbiguousResidueException(
                     f"Cannot resolve mass for amino acid {aa}."
-                )
+                ) from e
             # Fixed modifications
             if aa in fixed_rules:
                 position_mass += fixed_rules[aa]
@@ -287,10 +293,10 @@ class Peptidoform:
                 for tag in tags:
                     try:
                         position_mass += tag.mass
-                    except (AttributeError, KeyError):
+                    except (AttributeError, KeyError) as e:
                         raise ModificationException(
                             "Cannot resolve mass for modification " f"{tag.value}."
-                        )
+                        ) from e
             mass_list.append(position_mass)
 
         # C-terminus
@@ -299,10 +305,10 @@ class Peptidoform:
             for tag in self.properties["c_term"]:
                 try:
                     c_term += tag.mass
-                except (AttributeError, KeyError):
+                except (AttributeError, KeyError) as e:
                     raise ModificationException(
                         f"Cannot resolve mass for modification {tag.value}."
-                    )
+                    ) from e
         mass_list.append(c_term)
 
         return mass_list
@@ -323,17 +329,17 @@ class Peptidoform:
         for tag in self.properties["labile_modifications"]:
             try:
                 mass += tag.mass
-            except (AttributeError, KeyError):
+            except (AttributeError, KeyError) as e:
                 raise ModificationException(
                     f"Cannot resolve mass for modification {tag.value}."
-                )
+                ) from e
         for tag in self.properties["unlocalized_modifications"]:
             try:
                 mass += tag.mass
-            except (AttributeError, KeyError):
+            except (AttributeError, KeyError) as e:
                 raise ModificationException(
                     f"Cannot resolve mass for modification {tag.value}."
-                )
+                ) from e
         return mass
 
     @property
@@ -353,10 +359,7 @@ class Peptidoform:
 
         """
         if self.precursor_charge:
-            return (
-                self.theoretical_mass
-                + (mass.nist_mass["H"][1][0] * self.precursor_charge)
-            ) / self.precursor_charge
+            return mass_to_mz(self.theoretical_mass, self.precursor_charge)
         else:
             return None
 

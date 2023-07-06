@@ -328,11 +328,11 @@ class PeptideRecordWriter(WriterBase):
         entry = self._psm_to_entry(psm)
         try:
             self._writer.writerow(entry)
-        except AttributeError:
+        except AttributeError as e:
             raise PSMUtilsIOException(
                 f"`write_psm` method can only be called if `{self.__class__.__qualname__}`"
                 "is opened in context (i.e., using the `with` statement)."
-            )
+            ) from e
 
     # TODO: Support appending to existing file?
     def write_file(self, psm_list: PSMList):
@@ -396,14 +396,14 @@ def peprec_to_proforma(
     ):
         try:
             peptide[int(position)] += f"[{label}]"
-        except ValueError:
+        except ValueError as e:
             raise InvalidPeprecModificationError(
                 f"Could not parse PEPREC modification `{modifications}`."
-            )
-        except IndexError:
+            ) from e
+        except IndexError as e:
             raise InvalidPeprecModificationError(
                 f"PEPREC modification has invalid position {position} in peptide `{''.join(peptide)}`."
-            )
+            ) from e
 
     # Add dashes between residues and termini, and join sequence
     peptide[0] = peptide[0] + "-" if peptide[0] else ""

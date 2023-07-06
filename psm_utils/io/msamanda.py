@@ -42,7 +42,8 @@ RESCORING_FEATURES = [
     "assigned intensity fraction",
     "binom score",
     "Weigthed Probability",
-    "Nr of matched peaks"
+    "Nr of matched peaks",
+    "Amanda Score",
 ]
 
 

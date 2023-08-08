@@ -184,19 +184,11 @@ class PercolatorTabReader(ReaderBase):
             peptidoform=peptidoform,
             spectrum_id=entry[self.id_column],
             is_decoy=is_decoy,
-            score=float(entry[self.score_column.lower()])
-            if self.score_column
-            else None,
+            score=float(entry[self.score_column.lower()]) if self.score_column else None,
             qvalue=entry["q-value"] if "q-value" in entry else None,
-            pep=entry["posterior_error_prob"]
-            if "posterior_error_prob" in entry
-            else None,
-            precursor_mz=float(entry[self.mz_column.lower()])
-            if self.mz_column
-            else None,
-            retention_time=float(entry[self.rt_column.lower()])
-            if self.rt_column
-            else None,
+            pep=entry["posterior_error_prob"] if "posterior_error_prob" in entry else None,
+            precursor_mz=float(entry[self.mz_column.lower()]) if self.mz_column else None,
+            retention_time=float(entry[self.rt_column.lower()]) if self.rt_column else None,
             protein_list=protein_list,
             source="percolator",
             provenance_data={"filename": str(self.filename)},
@@ -211,6 +203,7 @@ class PercolatorTabWriter(WriterBase):
         filename: str | Path,
         style: str = "pin",
         feature_names: Optional[list[str]] = None,
+        add_basic_features: bool = False,
         *args,
         **kwargs,
     ) -> None:
@@ -234,16 +227,21 @@ class PercolatorTabWriter(WriterBase):
             If :py:const:`None`, no rescoring features will be written to the file. If appending to
             an existing file, the existing header will be used to determine the feature
             names. Only has effect with ``pin`` style.
+        add_basic_features: bool, optional
+            If :py:const:`True`, add ``PSMScore`` and ``ChargeN`` features to the file. Only has
+            effect with ``pin`` style. Default is :py:const:`False`.
 
         """
         super().__init__(filename, *args, **kwargs)
         self.feature_names = list(feature_names) if feature_names else []
+        self.add_basic_features = add_basic_features
 
         if style == "pin":
+            basic_features = ["PSMScore", "ChargeN"] if add_basic_features else []
             self._columns = (
                 ["SpecId", "Label", "ScanNr"]
+                + basic_features
                 + self.feature_names
-                + ["PSMScore", "ChargeN"]
                 + ["Peptide", "Proteins"]
             )
         elif style == "pout":
@@ -257,9 +255,7 @@ class PercolatorTabWriter(WriterBase):
                 "proteinIds",
             ]
         else:
-            raise ValueError(
-                "Invalid Percolator Tab style. Should be one of {`pin`, `pout`}."
-            )
+            raise ValueError("Invalid Percolator Tab style. Should be one of {`pin`, `pout`}.")
         self.style = style
         self._open_file = None
         self._writer = None
@@ -280,9 +276,7 @@ class PercolatorTabWriter(WriterBase):
                     fieldnames = line.strip().split("\t")
                     break
                 else:
-                    raise ValueError(
-                        f"File {self.filename} is not a valid Percolator Tab file."
-                    )
+                    raise ValueError(f"File {self.filename} is not a valid Percolator Tab file.")
                 # Determine last scan number
                 open_file.seek(0)
                 last_line = None
@@ -349,13 +343,13 @@ class PercolatorTabWriter(WriterBase):
             entry = {
                 "SpecId": psm.spectrum_id,
                 "Label": None if psm.is_decoy is None else -1 if psm.is_decoy else 1,
-                "ChargeN": psm.peptidoform.precursor_charge,
-                "PSMScore": psm.score,
                 "Peptide": "." + re.sub(r"/\d+$", "", psm.peptidoform.proforma) + ".",
                 "Proteins": self._protein_separator.join(psm.protein_list)
                 if psm.protein_list
                 else "PEP_" + psm.peptidoform.proforma,
             }
+            if self.add_basic_features:
+                entry.update({"ChargeN": psm.peptidoform.precursor_charge, "PSMScore": psm.score})
             try:
                 entry.update(psm.rescoring_features)
             except TypeError:

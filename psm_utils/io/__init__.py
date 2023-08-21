@@ -17,6 +17,7 @@ import psm_utils.io.percolator as percolator
 import psm_utils.io.tsv as tsv
 import psm_utils.io.xtandem as xtandem
 import psm_utils.io.sage as sage
+import psm_utils.io.ionbot as ionbot
 from psm_utils.io._base_classes import WriterBase
 from psm_utils.io.exceptions import PSMUtilsIOException
 from psm_utils.psm import PSM
@@ -76,6 +77,12 @@ FILETYPES = {
         "writer": None,
         "extension": ".tsv",
         "filename_pattern": r"^.*(?:_|\.).sage.tsv$",
+    },
+    "ionbot":{
+        "reader": ionbot.IonbotReader,
+        "writer": None,
+        "extension": "ionbot.first.csv",
+        "filename_pattern": r"^ionbot.first.csv$"
     },
 }
 READERS = {k: v["reader"] for k, v in FILETYPES.items() if v["reader"]}

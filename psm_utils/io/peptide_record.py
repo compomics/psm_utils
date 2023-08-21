@@ -233,10 +233,10 @@ class PeptideRecordReader(ReaderBase):
             is_decoy_map = {"-1": True, "1": False}
             try:
                 is_decoy = is_decoy_map[entry.label]
-            except (ValueError, KeyError):
-                InvalidPeprecError(
+            except (ValueError, KeyError) as e:
+                raise InvalidPeprecError(
                     f"Could not parse value for `label` {entry.label}. Should be `1` or `-1`."
-                )
+                ) from e
         else:
             is_decoy = None
 
@@ -247,7 +247,7 @@ class PeptideRecordReader(ReaderBase):
             retention_time=entry.observed_retention_time,
             score=entry.score,
             source="PeptideRecord",
-            provenance_data={"peprec_filename": filename},
+            provenance_data={"peprec_filename": str(filename)},
         )
 
 
@@ -328,11 +328,11 @@ class PeptideRecordWriter(WriterBase):
         entry = self._psm_to_entry(psm)
         try:
             self._writer.writerow(entry)
-        except AttributeError:
+        except AttributeError as e:
             raise PSMUtilsIOException(
                 f"`write_psm` method can only be called if `{self.__class__.__qualname__}`"
                 "is opened in context (i.e., using the `with` statement)."
-            )
+            ) from e
 
     # TODO: Support appending to existing file?
     def write_file(self, psm_list: PSMList):
@@ -396,10 +396,14 @@ def peprec_to_proforma(
     ):
         try:
             peptide[int(position)] += f"[{label}]"
-        except ValueError:
+        except ValueError as e:
             raise InvalidPeprecModificationError(
                 f"Could not parse PEPREC modification `{modifications}`."
-            )
+            ) from e
+        except IndexError as e:
+            raise InvalidPeprecModificationError(
+                f"PEPREC modification has invalid position {position} in peptide `{''.join(peptide)}`."
+            ) from e
 
     # Add dashes between residues and termini, and join sequence
     peptide[0] = peptide[0] + "-" if peptide[0] else ""
@@ -520,10 +524,6 @@ def to_dataframe(psm_list: PSMList) -> pd.DataFrame:
 class InvalidPeprecError(PSMUtilsIOException):
     """Invalid Peptide Record file."""
 
-    pass
-
 
 class InvalidPeprecModificationError(InvalidPeprecError):
     """Invalid Peptide Record modification."""
-
-    pass

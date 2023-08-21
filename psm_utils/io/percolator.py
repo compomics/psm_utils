@@ -8,10 +8,8 @@ Notes
 -----
 
 * While :py:class:`PercolatorTabReader` supports reading the peptide notation with
-  preceding and following amino acids (e.g. ``R.ACDEK.F``),
-  :py:class:`PercolatorTabWriter` simply writes peptides in Proforma format, without
-  preceding and following amino acids.
-
+  preceding and following amino acids (e.g. ``R.ACDEK.F``), these amino acids are not stored and
+  are not written by :py:class:`PercolatorTabWriter`.
 
 """
 
@@ -149,7 +147,7 @@ class PercolatorTabReader(ReaderBase):
     def _parse_peptidoform(percolator_peptide, charge):
         """Parse Percolator TSV peptide notation to Peptidoform."""
         # Remove leading and trailing amino acids
-        match = re.match("^[A-Z-]\.(.+)\.[A-Z-]$", percolator_peptide)
+        match = re.match("^(?:[A-Z-])?\.(.+)\.(?:[A-Z-])?$", percolator_peptide)
         peptidoform = match[1] if match else percolator_peptide
         if charge:
             peptidoform += f"/{charge}"
@@ -171,7 +169,7 @@ class PercolatorTabReader(ReaderBase):
         label = entry["label"] if "label" in entry else None
         is_decoy = True if label == "-1" else False if label == "1" else None
         rescoring_features = {
-            k: v for k, v in entry.items() if k not in self.non_feature_columns
+            k: str(v) for k, v in entry.items() if k not in self.non_feature_columns
         }
         charge = self._parse_charge(entry)
         peptidoform = self._parse_peptidoform(entry["peptide"], charge)
@@ -225,10 +223,10 @@ class PercolatorTabWriter(WriterBase):
             Path to PSM file.
         style: str
             Percolator Tab style. One of {``pin``, ``pout``}. If ``pin``, the columns
-            ``PSMId``, ``Label``, ``ScanNr``, ``Peptide`` and ``Proteins`` are written
-            alongside the requested feature names (see ``feature_names``). If ``pout``,
-            the columns ``PSMId``, ``Label``, ``score``, ``q-value``,
-            ``posterior_error_prob``, ``peptide``, and ``proteinIds`` are written.
+            ``SpecId``, ``Label``, ``ScanNr``, ``ChargeN``, ``PSMScore``, ``Peptide``, and
+            ``Proteins`` are written             alongside the requested feature names
+            (see ``feature_names``). If ``pout``, the columns ``PSMId``, ``Label``, ``score``,
+            ``q-value``, ``posterior_error_prob``, ``peptide``, and ``proteinIds`` are written.
         feature_names: list[str], optional
             List of feature names to extract from PSMs and write to file. List values
             should correspond to keys in the
@@ -243,8 +241,9 @@ class PercolatorTabWriter(WriterBase):
 
         if style == "pin":
             self._columns = (
-                ["PSMId", "Label", "ScanNr"]
+                ["SpecId", "Label", "ScanNr"]
                 + self.feature_names
+                + ["PSMScore", "ChargeN"]
                 + ["Peptide", "Proteins"]
             )
         elif style == "pout":
@@ -265,6 +264,7 @@ class PercolatorTabWriter(WriterBase):
         self._open_file = None
         self._writer = None
         self._protein_separator = "|||"
+        self._last_scan_number = None
 
     def __enter__(self) -> PercolatorTabWriter:
         """Either open existing file in append mode or new file in write mode."""
@@ -275,6 +275,7 @@ class PercolatorTabWriter(WriterBase):
         )
         if file_existed:
             with open(self.filename, "rt") as open_file:
+                # Read header
                 for line in open_file:
                     fieldnames = line.strip().split("\t")
                     break
@@ -282,8 +283,21 @@ class PercolatorTabWriter(WriterBase):
                     raise ValueError(
                         f"File {self.filename} is not a valid Percolator Tab file."
                     )
+                # Determine last scan number
+                open_file.seek(0)
+                last_line = None
+                for line in open_file:
+                    if line.strip():
+                        last_line = line
+            if last_line:
+                last_line = {k: v for k, v in zip(fieldnames, last_line.strip().split("\t"))}
+            try:
+                self._last_scan_number = int(last_line["ScanNr"])
+            except ValueError:
+                self._last_scan_number = None
         else:
             fieldnames = self._columns
+            self._last_scan_number = -1
         self._writer = csv.DictWriter(
             self._open_file,
             fieldnames=fieldnames,
@@ -298,17 +312,24 @@ class PercolatorTabWriter(WriterBase):
         self._open_file.close()
         self._open_file = None
         self._writer = None
+        self._last_scan_number = None
 
     def write_psm(self, psm: PSM):
         """Write a single PSM to the PSM file."""
         entry = self._psm_to_entry(psm)
+        if self._last_scan_number is not None:
+            entry["ScanNr"] = self._last_scan_number + 1
+        else:
+            entry["ScanNr"] = None
         try:
             self._writer.writerow(entry)
-        except AttributeError:
+        except AttributeError as e:
             raise PSMUtilsIOException(
                 f"`write_psm` method can only be called if `{self.__class__.__qualname__}`"
                 "is opened in context (i.e., using the `with` statement)."
-            )
+            ) from e
+        else:
+            self._last_scan_number = entry["ScanNr"]
 
     def write_file(self, psm_list: PSMList):
         """Write an entire PSMList to the PSM file."""
@@ -317,20 +338,23 @@ class PercolatorTabWriter(WriterBase):
         ) as f:
             writer = csv.DictWriter(f, fieldnames=self._columns, delimiter="\t")
             writer.writeheader()
-            for psm in psm_list:
-                writer.writerow(self._psm_to_entry(psm))
+            for i, psm in enumerate(psm_list):
+                entry = self._psm_to_entry(psm)
+                entry["ScanNr"] = i
+                writer.writerow(entry)
 
     def _psm_to_entry(self, psm: PSM):
         """Parse PSM to Percolator Tab entry."""
         if self.style == "pin":
             entry = {
-                "PSMId": psm.spectrum_id,
+                "SpecId": psm.spectrum_id,
                 "Label": None if psm.is_decoy is None else -1 if psm.is_decoy else 1,
-                "ScanNr": None,  # TODO
+                "ChargeN": psm.peptidoform.precursor_charge,
+                "PSMScore": psm.score,
                 "Peptide": "." + re.sub(r"/\d+$", "", psm.peptidoform.proforma) + ".",
                 "Proteins": self._protein_separator.join(psm.protein_list)
                 if psm.protein_list
-                else None,
+                else "PEP_" + psm.peptidoform.proforma,
             }
             try:
                 entry.update(psm.rescoring_features)

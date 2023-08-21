@@ -37,7 +37,7 @@ dev = [
     "pytest",
     "pytest-cov"
 ]
-doc = [
+docs = [
     "sphinx",
     "numpydoc>=1,<2",
     "recommonmark",
@@ -54,7 +54,7 @@ online = [
 
 [project.urls]
 GitHub = "https://github.com/compomics/psm_utils"
-ReadTheDocs = "https://psm_utils.readthedocs.io"
+ReadTheDocs = "https://psm-utils.readthedocs.io"
 PyPi = "https://pypi.org/project/psm-utils/"
 CompOmics = "https://www.compomics.com"
 
@@ -70,3 +70,7 @@ name = "psm_utils"
 
 [tool.isort]
 profile = "black"
+
+[tool.black]
+line-length = 99
+target-version = ['py37']

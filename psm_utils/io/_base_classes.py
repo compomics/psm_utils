@@ -42,7 +42,7 @@ class ReaderBase(ABC):
         raise NotImplementedError()
 
     @abstractmethod
-    def read_file() -> PSMList:
+    def read_file(self) -> PSMList:
         """Read full PSM file into a PSMList object."""
         raise NotImplementedError()
 

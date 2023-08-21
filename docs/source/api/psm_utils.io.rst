@@ -24,6 +24,14 @@ psm_utils.io.maxquant
    :inherited-members:
 
 
+psm_utils.io.msamanda
+##########################
+
+.. automodule:: psm_utils.io.msamanda
+   :members:
+   :inherited-members:
+
+
 
 psm_utils.io.mzid
 #####################
@@ -47,6 +55,15 @@ psm_utils.io.percolator
 ###########################
 
 .. automodule:: psm_utils.io.percolator
+   :members:
+   :inherited-members:
+
+
+
+psm_utils.io.sage
+###########################
+
+.. automodule:: psm_utils.io.sage
    :members:
    :inherited-members:
 

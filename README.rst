@@ -18,11 +18,11 @@ engine results in Python.
    :alt: Bioconda
    :target: http://bioconda.github.io/recipes/psm-utils/README.html
 
-.. image:: https://img.shields.io/github/workflow/status/compomics/psm_utils/Test?label=tests&style=flat-square
+.. image:: https://img.shields.io/github/actions/workflow/status/compomics/psm_utils/test.yml?branch=main&label=test&style=flat-square
    :alt: GitHub Actions tests status
    :target: https://github.com/compomics/psm_utils/actions/workflows/test.yml
 
-.. image:: https://img.shields.io/github/workflow/status/compomics/psm_utils/Publish?label=build&style=flat-square
+.. image:: https://img.shields.io/github/actions/workflow/status/compomics/psm_utils/publish.yml?event=release&style=flat-square
    :alt: GitHub Actions build status
    :target: https://github.com/compomics/psm_utils/actions/workflows/publish.yml
 
@@ -95,11 +95,12 @@ Supported file formats
  `mzIdentML <https://psidev.info/mzidentml>`_                                                                          ``mzid``        ✅              ✅
  `Peptide Record <https://psm-utils.readthedocs.io/en/stable/api/psm_utils.io/#module-psm_utils.io.peptide_record>`_   ``peprec``      ✅              ✅
  `Percolator tab <https://github.com/percolator/percolator/wiki/Interface>`_                                           ``percolator``  ✅              ✅
+ `Sage <https://github.com/lazear/sage/blob/v0.12.0/DOCS.md#interpreting-sage-output>`_                                ``sage``        ✅              ❌
  `TSV <https://psm-utils.readthedocs.io/en/stable/api/psm_utils.io/#module-psm_utils.io.tsv>`_                         ``tsv``         ✅              ✅
  `X!Tandem XML <https://www.thegpm.org/tandem/>`_                                                                      ``xtandem``     ✅              ❌
 ===================================================================================================================== =============== =============== ===============
 
-Legend: ✅ Supported, ❌ Unsupported, 🔧 Work in progress
+Legend: ✅ Supported, ❌ Unsupported
 
 
 
@@ -136,7 +137,7 @@ Installation
 
 .. code-block:: sh
 
-    conda install -c bioconda install psm-utils
+    conda install -c bioconda psm-utils
 
 
 
@@ -152,6 +153,6 @@ Citation
 
 If you use psm_utils for your research, please cite the following publication:
 
-   | **psm_utils: A high level Python API for parsing and handling peptide-spectrum-matches and proteomics search results.**
+   | **psm_utils: A high-level Python API for parsing and handling peptide-spectrum-matches and proteomics search results.**
    | Ralf Gabriels, Arthur Declercq, Robbin Bouwmeester, Sven Degroeve, Lennart Martens.
-   | ChemRxiv (2022). `doi:10.26434/chemrxiv-2022-9506r <https://doi.org/10.26434/chemrxiv-2022-9506r>`_
+   | Journal of Proteome Research (2022). `doi:10.1021/acs.jproteome.2c00609 <https://doi.org/10.1021/acs.jproteome.2c00609>`_

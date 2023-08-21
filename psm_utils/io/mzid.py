@@ -12,7 +12,7 @@ import logging
 import re
 import xml.etree.ElementTree as ET
 from pathlib import Path
-from typing import Optional
+from typing import Union
 
 from psims.mzid import MzIdentMLWriter
 from pyteomics import mzid, proforma
@@ -28,6 +28,7 @@ from psm_utils.psm_list import PSMList
 logger = logging.getLogger(__name__)
 
 # Excerpt from MS:1001143 items (PSM-level search engine specific statistic)
+# Not all child terms are used, as not all statistics are direct scores.
 STANDARD_SEARCHENGINE_SCORES = [
     "Amanda:AmandaScore",
     "Andromeda:score",
@@ -41,7 +42,8 @@ STANDARD_SEARCHENGINE_SCORES = [
     "MS-GF:RawScore",
     "MS-GF:DeNovoScore",
     "MSFit:Mowse score",
-    "MSPathFinder:RawScore" "MSPepSearch:score",
+    "MSPathFinder:RawScore",
+    "MSPepSearch:score",
     "Mascot:score",
     "MetaMorpheus:score",
     "OMSSA:evalue",
@@ -65,12 +67,27 @@ STANDARD_SEARCHENGINE_SCORES = [
     "ZCore:probScore:",
     "Percolator:score",
     "xi:score",
+    "search engine specific score",
+]
+Q_VALUE_TERMS = [
+    "PSM-level q-value",
+    "MS-GF:QValue",
+    "MSPathFinder:QValue",
+    "ProSight:spectral Q-value",
+]
+PEP_TERMS = [
+    "PSM-level local FDR",
+    "Andromeda:PEP",
+    "Byonic:PEP",
+    "MaxQuant-DIA PEP",
+    "MS-GF:PEP",
+    "OpenMS:ConsensusID PEP",
+    "percolator:PEP",
 ]
 
 
 class MzidReader(ReaderBase):
     def __init__(self, filename: str | Path, *args, **kwargs) -> None:
-
         """
         Reader for mzIdentML PSM files.
 
@@ -97,11 +114,25 @@ class MzidReader(ReaderBase):
         >>> mzid_reader = MzidReader("peptides_1_1_0.mzid")
         >>> psm_list = mzid_reader.read_file()
 
+        Notes
+        -----
+        - :py:class:`MzidReader` looks for the ``retention time`` or ``scan start time`` cvParams
+          in both SpectrumIdentificationResult and SpectrumIdentificationItem levels. Note that
+          according to the mzIdentML specification document (v1.1.1) neither cvParams are expected
+          to be present at either levels.
+        - For the :py:attr:`PSM.spectrum_id` property, the ``spectrum title`` cvParam is preferred
+          over the ``spectrumID`` attribute, as these titles always match the titles in the  peak
+          list files. ``spectrumID`` is then saved in ``PSM.metadata["mzid_spectrum_id"]``.
+          If ``spectrum title`` is absent, ``spectrumID`` is saved to :py:attr:`PSM.spectrum_id`.
+
         """
         super().__init__(filename, *args, **kwargs)
         self._non_metadata_keys = None
         self._score_key = None
         self._rt_key = None
+        self._spectrum_rt_key = None
+        self._qvalue_key = None
+        self._pep_key = None
 
         self._source = self._infer_source()
 
@@ -109,24 +140,35 @@ class MzidReader(ReaderBase):
         """Iterate over file and return PSMs one-by-one."""
         with mzid.read(str(self.filename)) as reader:
             for spectrum in reader:
+                # Check if RT is encoded in spectrum metadata
+                if "retention time" in spectrum:
+                    self._spectrum_rt_key = "retention time"
+                elif "scan start time" in spectrum:
+                    self._spectrum_rt_key = "scan start time"
+                else:
+                    self._spectrum_rt_key = None
+                # Parse PSM non-metadata keys, rt key, and score key
+                self._get_non_metadata_keys(spectrum["SpectrumIdentificationItem"][0].keys())
+                break
+
+            for spectrum in reader:
+                # Parse spectrum metadata
                 spectrum_id = spectrum["spectrumID"]
-                raw_file = Path(spectrum["location"]).stem
+                spectrum_title = (
+                    spectrum["spectrum title"] if "spectrum title" in spectrum else None
+                )
+                run = Path(spectrum["location"]).stem if "location" in spectrum else None
+                rt = float(spectrum[self._spectrum_rt_key]) if self._spectrum_rt_key else None
+
+                # Parse PSMs from spectrum
                 for entry in spectrum["SpectrumIdentificationItem"]:
-                    if not self._non_metadata_keys:
-                        self._get_non_metadata_keys(entry.keys())
-                    try:
-                        psm = self._get_peptide_spectrum_match(
-                            spectrum_id, raw_file, entry, spectrum["spectrum title"]
-                        )
-                    except KeyError:
-                        psm = self._get_peptide_spectrum_match(
-                            spectrum_id, raw_file, entry
-                        )
-                    yield psm
+                    yield self._get_peptide_spectrum_match(
+                        spectrum_id, spectrum_title, run, rt, entry
+                    )
 
     def read_file(self) -> PSMList:
         """Read full mzid file to PSM list object."""
-        return PSMList(psm_list=[psm for psm in self.__iter__()])
+        return PSMList(psm_list=[psm for psm in self])
 
     @staticmethod
     def _get_xml_namespace(root_tag):
@@ -139,20 +181,13 @@ class MzidReader(ReaderBase):
         mzid_xml = ET.parse(self.filename)
         root = mzid_xml.getroot()
         name_space = self._get_xml_namespace(root.tag)
-        return root.find(f".//{name_space}AnalysisSoftware").attrib["name"]
+        try:
+            return root.find(f".//{name_space}AnalysisSoftware").attrib["name"]
+        except KeyError:
+            return None
 
     @staticmethod
-    def _infer_score_name(keys) -> str:
-        """Infer the score from the known list of PSM scores."""
-
-        for score in STANDARD_SEARCHENGINE_SCORES:
-            if score in keys:
-                return score
-        else:
-            raise UnknownMzidScore("No known score metric found in mzIdentML file.")
-
-    @staticmethod
-    def _parse_peptidoform(seq: str, modification_list: list[dict], charge: int):
+    def _parse_peptidoform(seq: str, modification_list: list[dict], charge: Union[int, None]):
         """Parse mzid sequence and modifications to Peptidoform."""
         peptide = [""] + list(seq) + [""]
 
@@ -166,68 +201,79 @@ class MzidReader(ReaderBase):
         proforma_seq = "".join(peptide)
 
         # Add charge state
-        proforma_seq += f"/{charge}"
+        if charge:
+            proforma_seq += f"/{charge}"
 
         return Peptidoform(proforma_seq)
 
     @staticmethod
     def _parse_peptide_evidence_ref(peptide_evidence_list: list[dict]):
-        """Parse peptide evidence References of PSM."""
-        isdecoy = peptide_evidence_list[0]["isDecoy"]
-        protein_list = [
-            d["accession"] for d in peptide_evidence_list if "accession" in d.keys()
-        ]
+        """
+        Parse PeptideEvidence list of PSM.
+
+        Notes
+        -----
+        If multiple PeptideEvidence entries are associated with the PSM, the PSM is only considered
+        a decoy entry if ALL PeptideEvidence entries are decoy entries. If a target PeptideEvidence
+        entry is present, it should get priority over decoy entries. In theory, no overlap between
+        target and decoy peptide sequence should be present in the search space, although this
+        might not have been filtered for by the search engine.
+
+        """
+        isdecoy = all(
+            [entry["isDecoy"] if "isDecoy" in entry else None for entry in peptide_evidence_list]
+        )
+        protein_list = [d["accession"] for d in peptide_evidence_list if "accession" in d.keys()]
         return isdecoy, protein_list
 
     def _get_peptide_spectrum_match(
         self,
         spectrum_id: str,
-        raw_file: str,
+        spectrum_title: Union[str, None],
+        run: Union[str, None],
+        rt: Union[float, None],
         spectrum_identification_item: dict[str, str | float | list],
-        spectrum_title: Optional[str] = None,
     ) -> PSM:
         """Parse single mzid entry to :py:class:`~psm_utils.peptidoform.Peptidoform`."""
         sii = spectrum_identification_item
-
         try:
             modifications = sii["Modification"]
         except KeyError:
             modifications = []
         sequence = sii["PeptideSequence"]
-        peptidoform = self._parse_peptidoform(
-            sequence, modifications, sii["chargeState"]
-        )
-        is_decoy, protein_list = self._parse_peptide_evidence_ref(
-            sii["PeptideEvidenceRef"]
-        )
+        charge = sii["chargeState"] if "chargeState" in sii else None
+        peptidoform = self._parse_peptidoform(sequence, modifications, charge)
+        is_decoy, protein_list = self._parse_peptide_evidence_ref(sii["PeptideEvidenceRef"])
         try:
             precursor_mz = sii["experimentalMassToCharge"]
         except KeyError:
             precursor_mz = None
 
+        # Override spectrum-level RT if present at PSM level
         if self._rt_key:
-            rt = sii[self._rt_key]
-        else:
-            rt = float("nan")
+            rt = float(sii[self._rt_key])
 
-        metadata = {
-            col: str(sii[col])
-            for col in sii.keys()
-            if col not in self._non_metadata_keys
-        }
+        metadata = {col: str(sii[col]) for col in sii.keys() if col not in self._non_metadata_keys}
+
+        # Prefer spectrum title (identical to titles in MGF), fall back to spectrumID
         if spectrum_title:
-            metadata["spectrum title"] = spectrum_title
+            metadata["mzid_spectrum_id"] = spectrum_id
+            psm_spectrum_id = spectrum_title
+        else:
+            psm_spectrum_id = spectrum_id
 
         psm = PSM(
             peptidoform=peptidoform,
-            spectrum_id=spectrum_id,
-            run=raw_file,
+            spectrum_id=psm_spectrum_id,
+            run=run,
             is_decoy=is_decoy,
             score=sii[self._score_key],
+            qvalue=sii[self._qvalue_key] if self._qvalue_key else None,
+            pep=sii[self._pep_key] if self._pep_key else None,
             precursor_mz=precursor_mz,
             retention_time=rt,
             protein_list=protein_list,
-            rank=sii["rank"],
+            rank=sii["rank"] if "rank" in sii else None,
             source=self._source,
             provenance_data={"mzid_filename": str(self.filename)},
             metadata=metadata,
@@ -236,7 +282,6 @@ class MzidReader(ReaderBase):
 
     def _get_non_metadata_keys(self, keys: list):
         """Gather all the keys that should not be written to metadata"""
-
         # All keys required to create PSM object
         default_keys = [
             "chargeState",
@@ -250,6 +295,16 @@ class MzidReader(ReaderBase):
         self._score_key = self._infer_score_name(keys)
         default_keys.append(self._score_key)
 
+        # Get the q-value key and add to default keys
+        self._qvalue_key = self._infer_qvalue_name(keys)
+        if self._qvalue_key:
+            default_keys.append(self._qvalue_key)
+
+        # Get the PEP key and add to default keys
+        self._pep_key = self._infer_pep_name(keys)
+        if self._pep_key:
+            default_keys.append(self._pep_key)
+
         # Get retention time key
         for rt_key in ["retention time", "scan start time"]:
             if rt_key in keys:
@@ -261,6 +316,34 @@ class MzidReader(ReaderBase):
         self._non_metadata_keys = ["ContactRole", "passThreshold"]
         self._non_metadata_keys.extend(default_keys)
 
+    @staticmethod
+    def _infer_score_name(keys) -> str:
+        """Infer the score from the list of known PSM scores."""
+
+        for score in STANDARD_SEARCHENGINE_SCORES:
+            if score in keys:
+                return score
+        else:
+            raise UnknownMzidScore("No known score metric found in mzIdentML file.")
+
+    @staticmethod
+    def _infer_qvalue_name(keys) -> Union[str, None]:
+        """Infer the q-value term from the list of known terms."""
+        for qvalue in Q_VALUE_TERMS:
+            if qvalue in keys:
+                return qvalue
+        else:
+            return None
+
+    @staticmethod
+    def _infer_pep_name(keys) -> Union[str, None]:
+        """Infer the PEP term from the list of known terms."""
+        for pep in PEP_TERMS:
+            if pep in keys:
+                return pep
+        else:
+            return None
+
 
 class MzidWriter(WriterBase):
     """Writer for MzIdentMl files."""
@@ -268,8 +351,8 @@ class MzidWriter(WriterBase):
     def __init__(
         self,
         filename: str | Path,
-        show_progressbar: bool = False,
         *args,
+        show_progressbar: bool = False,
         **kwargs,
     ):
         """
@@ -284,10 +367,15 @@ class MzidWriter(WriterBase):
 
         Notes
         -----
-        Unlike other psm_utils.io writer classes, :py:class:`MzidWriter` does not
-        support writing a single PSM to a file with the :py:meth:`write_psm` method.
-        Only writing a full PSMList to a file at once with the :py:meth:`write_file`
-        method is currently supported.
+        - Unlike other psm_utils.io writer classes, :py:class:`MzidWriter` does not support writing
+          a single PSM to a file with the :py:meth:`write_psm` method. Only writing a full PSMList
+          to a file at once with the :py:meth:`write_file` method is currently supported.
+        - While not required according to the mzIdentML specification document (v1.1.1), the
+          retention time is written as cvParam ``retention time`` to the
+          SpectrumIdentificationItem element. As the actual unit is not known in psm_utils,
+          the unit is written as seconds.
+        - As the actual PSM score type is not known in psm_utils, the score is written as cvParam
+          ``MS:1001153`` to the SpectrumIdentificationItem element.
 
         """
         super().__init__(filename, *args, **kwargs)
@@ -316,7 +404,7 @@ class MzidWriter(WriterBase):
     def write_file(self, psm_list: PSMList):
         """Write entire PSMList to mzid file."""
         file = open(self.filename, "wb")
-        with Progress(disable=(not self.show_progressbar)) as progress:
+        with Progress(disable=not self.show_progressbar) as progress:
             with MzIdentMLWriter(file, close=True) as writer:
                 writer.controlled_vocabularies()
                 writer.provenance(
@@ -338,13 +426,12 @@ class MzidWriter(WriterBase):
                 proteins = {
                     prot
                     for prot_list in list(psm_list["protein_list"])
+                    if prot_list
                     for prot in prot_list
                 }
 
                 spec_id_dict = psm_list.get_psm_dict()
-                task1 = progress.add_task(
-                    "[cyan]Writing Proteins to mzid", total=len(proteins)
-                )
+                task1 = progress.add_task("[cyan]Writing Proteins to mzid", total=len(proteins))
                 task2 = progress.add_task(
                     "[cyan]Writing Peptide and PeptideEvidence items",
                     total=len(psm_list),
@@ -364,20 +451,21 @@ class MzidWriter(WriterBase):
                             writer.write_peptide(**self._create_peptide_object(peptide))
                             peptide_ids.add(peptide)
 
-                        for protein in psm["protein_list"]:
-                            peptide_evidence_id = (
-                                f"PeptideEvidence_{peptide.proforma}_{protein}"
-                            )
-                            if peptide_evidence_id not in peptide_evidence_ids:
-                                peptide_evidence_ids.add(peptide_evidence_id)
-                                writer.write_peptide_evidence(
-                                    peptide_id="Peptide_" + peptide.proforma,
-                                    db_sequence_id=protein,
-                                    id=peptide_evidence_id,
-                                    start_position=None,
-                                    end_position=None,
-                                    is_decoy=psm["is_decoy"],
+                        if psm["protein_list"]:
+                            for protein in psm["protein_list"]:
+                                peptide_evidence_id = (
+                                    f"PeptideEvidence_{peptide.proforma}_{protein}"
                                 )
+                                if peptide_evidence_id not in peptide_evidence_ids:
+                                    peptide_evidence_ids.add(peptide_evidence_id)
+                                    writer.write_peptide_evidence(
+                                        peptide_id="Peptide_" + peptide.proforma,
+                                        db_sequence_id=protein,
+                                        id=peptide_evidence_id,
+                                        start_position=None,
+                                        end_position=None,
+                                        is_decoy=psm["is_decoy"],
+                                    )
                         progress.update(task2, advance=1)
                 with writer.analysis_collection():
                     writer.SpectrumIdentification([1], [1]).write(writer)
@@ -391,7 +479,8 @@ class MzidWriter(WriterBase):
                     )
                     writer.inputs(
                         source_files=[],
-                        # search_databases=transform_search_database(), # if fasta file is given we can parse here and add protein information
+                        # # if fasta file is given, we can parse here and add protein information
+                        # search_databases=transform_search_database(),
                         spectra_data=spectra_data,
                     )
 
@@ -403,9 +492,7 @@ class MzidWriter(WriterBase):
                                     "/".join(filter(None, [collection, run]))
                                 ]
                                 for spec_id in spec_id_dict[collection][run].keys():
-                                    identified_psms = spec_id_dict[collection][run][
-                                        spec_id
-                                    ]
+                                    identified_psms = spec_id_dict[collection][run][spec_id]
                                     writer.write_spectrum_identification_result(
                                         **self._transform_spectrum_identification_result(
                                             spec_id, identified_psms, spectra_data_id
@@ -413,9 +500,7 @@ class MzidWriter(WriterBase):
                                     )
                                     progress.update(
                                         task3,
-                                        advance=len(
-                                            spec_id_dict[collection][run][spec_id]
-                                        ),
+                                        advance=len(spec_id_dict[collection][run][spec_id]),
                                     )
 
     @staticmethod
@@ -449,9 +534,7 @@ class MzidWriter(WriterBase):
             modifications.extend(parse_modifications(mods, loc))
         modifications.extend(parse_modifications(peptidoform.properties["n_term"], 0))
         modifications.extend(
-            parse_modifications(
-                peptidoform.properties["c_term"], len(peptidoform.sequence) + 1
-            )
+            parse_modifications(peptidoform.properties["c_term"], len(peptidoform.sequence) + 1)
         )
 
         peptide_object = {
@@ -494,57 +577,57 @@ class MzidWriter(WriterBase):
         return spectra_data, collection_run_id_dict
 
     @staticmethod
-    def _transform_spectrum_identification_item(candidate_psm, i=0):
+    def _transform_spectrum_identification_item(candidate_psm):
         """Create SpectrumIdentificationItem for each candidate PSM."""
         peptide = candidate_psm["peptidoform"].proforma
         if candidate_psm["metadata"]:
             params = [{k: v} for k, v in candidate_psm["metadata"].items()]
         else:
             params = []
+
+        for key, label, unit in [
+            ("retention_time", "retention time", "second"),
+            ("qvalue", "PSM-level q-value", None),
+            ("pep", "PSM-level local FDR", None),
+        ]:
+            if candidate_psm[key]:
+                if unit:
+                    params.append({"name": label, "value": candidate_psm[key], "unit_name": unit})
+                else:
+                    params.append({"name": label, "value": candidate_psm[key]})
+
         candidate_psm_dict = {
             "charge_state": candidate_psm["peptidoform"].precursor_charge,
-            "peptide_id": f"Peptide_" + peptide,
-            # TODO: add which search engine score cv param
-            "score": {"score": candidate_psm["score"]},
+            "peptide_id": f"Peptide_{peptide}",
+            "score": {"search engine specific score": candidate_psm["score"]},
             "experimental_mass_to_charge": candidate_psm["precursor_mz"],
             "calculated_mass_to_charge": candidate_psm["peptidoform"].theoretical_mz,
             "rank": candidate_psm["rank"],
             "params": params,
         }
         items = []
-        for prot_acc in candidate_psm["protein_list"]:
-            protein_specific_items = {
-                "peptide_evidence_id": f"PeptideEvidence_{peptide}_{prot_acc}",
-                "id": f"SII_{candidate_psm['spectrum_id']}_{peptide}_{prot_acc}",
-            }
-            items.append(dict(candidate_psm_dict, **protein_specific_items))
+        if candidate_psm["protein_list"]:
+            for prot_acc in candidate_psm["protein_list"]:
+                protein_specific_items = {
+                    "peptide_evidence_id": f"PeptideEvidence_{peptide}_{prot_acc}",
+                    "id": f"SII_{candidate_psm['spectrum_id']}_{peptide}_{prot_acc}",
+                }
+                items.append(dict(candidate_psm_dict, **protein_specific_items))
         return items
 
-    def _transform_spectrum_identification_result(
-        self, spec_id, identified_psms, spectra_data_id
-    ):
+    def _transform_spectrum_identification_result(self, spec_id, identified_psms, spectra_data_id):
         """Create mzid SpectrumIdentificationResult object for PSMs that match the same spectrum."""
         spectrum_id_result = {
             "id": f"SIR_{spec_id}",
             "spectrum_id": spec_id,
             "spectra_data_id": spectra_data_id,
-            "params": [
-                {
-                    "name": "scan start time",
-                    "value": identified_psms[0]["retention_time"],
-                }
-            ],  # add function to determine the unit
         }
         identifications = []
-        for i, candidate in enumerate(identified_psms):
-            identifications.extend(
-                self._transform_spectrum_identification_item(candidate, i)
-            )
+        for candidate in identified_psms:
+            identifications.extend(self._transform_spectrum_identification_item(candidate))
         spectrum_id_result["identifications"] = identifications
         return spectrum_id_result
 
 
 class UnknownMzidScore(PSMUtilsIOException):
-    """Exception while handling or parsing peptide modifications."""
-
-    pass
+    """No known score metric found in mzIdentML file."""

@@ -25,9 +25,9 @@ class PSM(BaseModel):
     protein_list: Optional[List[str]] = None
     rank: Optional[int] = None
     source: Optional[str] = None
-    provenance_data: Optional[Dict[str, str]] = None
-    metadata: Optional[Dict[str, str]] = None
-    rescoring_features: Optional[Dict[str, str]] = None
+    provenance_data: Optional[Dict[str, str]] = dict()
+    metadata: Optional[Dict[str, str]] = dict()
+    rescoring_features: Optional[Dict[str, str]] = dict()
 
     class Config:
         arbitrary_types_allowed = True  # Allows non-pydantic class Peptidoform
@@ -62,6 +62,10 @@ class PSM(BaseModel):
             (``False``).
         score : float, optional
             Search engine score.
+        qvalue : float, optional
+            PSM-level q-value.
+        pep : float, optional
+            PSM-level posterior error probability.
         precursor_mz : float, optional
             Precursor m/z.
         retention_time : float, optional

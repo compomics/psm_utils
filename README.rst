@@ -86,19 +86,20 @@ Goals and non-goals
 Supported file formats
 **********************
 
-===================================================================================================================== =============== =============== ===============
- File format                                                                                                           psm_utils tag   Read support    Write support
-===================================================================================================================== =============== =============== ===============
- `OpenMS idXML <https://www.openms.de/>`_                                                                              ``idxml``       ✅              ❌
- `MaxQuant msms.txt <https://www.maxquant.org/>`_                                                                      ``msms``        ✅              ❌
- `MS Amanda CSV <https://ms.imp.ac.at/?goto=msamanda>`_                                                                ``msamanda``    ✅              ❌
- `mzIdentML <https://psidev.info/mzidentml>`_                                                                          ``mzid``        ✅              ✅
- `Peptide Record <https://psm-utils.readthedocs.io/en/stable/api/psm_utils.io/#module-psm_utils.io.peptide_record>`_   ``peprec``      ✅              ✅
- `Percolator tab <https://github.com/percolator/percolator/wiki/Interface>`_                                           ``percolator``  ✅              ✅
- `Sage <https://github.com/lazear/sage/blob/v0.12.0/DOCS.md#interpreting-sage-output>`_                                ``sage``        ✅              ❌
- `TSV <https://psm-utils.readthedocs.io/en/stable/api/psm_utils.io/#module-psm_utils.io.tsv>`_                         ``tsv``         ✅              ✅
- `X!Tandem XML <https://www.thegpm.org/tandem/>`_                                                                      ``xtandem``     ✅              ❌
-===================================================================================================================== =============== =============== ===============
+===================================================================================================================== ======================== =============== ===============
+ File format                                                                                                           psm_utils tag            Read support    Write support
+===================================================================================================================== ======================== =============== ===============
+ `OpenMS idXML <https://www.openms.de/>`_                                                                              ``idxml``                ✅              ❌
+ `MaxQuant msms.txt <https://www.maxquant.org/>`_                                                                      ``msms``                 ✅              ❌
+ `MS Amanda CSV <https://ms.imp.ac.at/?goto=msamanda>`_                                                                ``msamanda``             ✅              ❌
+ `mzIdentML <https://psidev.info/mzidentml>`_                                                                          ``mzid``                 ✅              ✅
+ `Peptide Record <https://psm-utils.readthedocs.io/en/stable/api/psm_utils.io/#module-psm_utils.io.peptide_record>`_   ``peprec``               ✅              ✅
+ `Percolator tab <https://github.com/percolator/percolator/wiki/Interface>`_                                           ``percolator``           ✅              ✅
+ Proteome Discoverer MSF                                                                                               ``proteome_discoverer``  ✅              ❌
+ `Sage <https://github.com/lazear/sage/blob/v0.12.0/DOCS.md#interpreting-sage-output>`_                                ``sage``                 ✅              ❌
+ `TSV <https://psm-utils.readthedocs.io/en/stable/api/psm_utils.io/#module-psm_utils.io.tsv>`_                         ``tsv``                  ✅              ✅
+ `X!Tandem XML <https://www.thegpm.org/tandem/>`_                                                                      ``xtandem``              ✅              ❌
+===================================================================================================================== ======================== =============== ===============
 
 Legend: ✅ Supported, ❌ Unsupported
 

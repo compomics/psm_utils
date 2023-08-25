@@ -27,7 +27,7 @@ class PSM(BaseModel):
     source: Optional[str] = None
     provenance_data: Optional[Dict[str, str]] = dict()
     metadata: Optional[Dict[str, str]] = dict()
-    rescoring_features: Optional[Dict[str, str]] = dict()
+    rescoring_features: Optional[Dict[str, float]] = dict()
 
     class Config:
         arbitrary_types_allowed = True  # Allows non-pydantic class Peptidoform

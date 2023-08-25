@@ -14,6 +14,7 @@ import psm_utils.io.msamanda as msamanda
 import psm_utils.io.mzid as mzid
 import psm_utils.io.peptide_record as peptide_record
 import psm_utils.io.percolator as percolator
+import psm_utils.io.proteome_discoverer as proteome_discoverer
 import psm_utils.io.tsv as tsv
 import psm_utils.io.xtandem as xtandem
 import psm_utils.io.sage as sage
@@ -52,6 +53,12 @@ FILETYPES = {
         "writer": percolator.PercolatorTabWriter,
         "extension": ".percolator.txt",
         "filename_pattern": r"^.*\.(?:(?:pin)|(?:pout))$",
+    },
+    "proteome_discoverer": {
+        "reader": proteome_discoverer.MSFReader,
+        "writer": None,
+        "extension": ".msf",
+        "filename_pattern": r"^.*\.msf$",
     },
     "tsv": {
         "reader": tsv.TSVReader,

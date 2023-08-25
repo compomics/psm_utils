@@ -2,12 +2,12 @@
 name = "psm-utils"
 description = "Common utilities for parsing and handling peptide-spectrum matches and search engine results."
 readme = "README.rst"
-license = {file = "LICENSE"}
+license = { file = "LICENSE" }
 keywords = ["proteomics", "peptide", "spectrum", "identification", "parsing"]
 authors = [
-    {name = "Ralf Gabriels", email = "ralf@gabriels.dev"},
-    {name = "Robbin Bouwmeester", email = "robbin.bouwmeester@ugent.be"},
-    {name = "Arthur Declercq", email = "arthur.declercq@ugent.be"},
+    { name = "Ralf Gabriels", email = "ralf@gabriels.dev" },
+    { name = "Robbin Bouwmeester", email = "robbin.bouwmeester@ugent.be" },
+    { name = "Arthur Declercq", email = "arthur.declercq@ugent.be" },
 ]
 classifiers = [
     "Intended Audience :: Science/Research",
@@ -28,15 +28,11 @@ dependencies = [
     "click",
     "rich",
     "pydantic",
+    "sqlalchemy",
 ]
 
 [project.optional-dependencies]
-dev = [
-    "black",
-    "isort>5",
-    "pytest",
-    "pytest-cov"
-]
+dev = ["black", "isort>5", "pytest", "pytest-cov"]
 docs = [
     "sphinx",
     "numpydoc>=1,<2",
@@ -47,10 +43,7 @@ docs = [
     "sphinx_rtd_theme",
     "sphinx-autobuild",
 ]
-online = [
-    "streamlit",
-    "plotly",
-]
+online = ["streamlit", "plotly"]
 
 [project.urls]
 GitHub = "https://github.com/compomics/psm_utils"
@@ -74,3 +67,7 @@ profile = "black"
 [tool.black]
 line-length = 99
 target-version = ['py37']
+
+[tool.ruff]
+line-length = 99
+target-version = 'py37'

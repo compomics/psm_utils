@@ -92,9 +92,7 @@ WRITERS = {k: v["writer"] for k, v in FILETYPES.items() if v["writer"]}
 def _infer_filetype(filename: str):
     """Infer filetype from filename."""
     for filetype, properties in FILETYPES.items():
-        if re.fullmatch(
-            properties["filename_pattern"], str(filename), flags=re.IGNORECASE
-        ):
+        if re.fullmatch(properties["filename_pattern"], str(filename), flags=re.IGNORECASE):
             return filetype
     else:
         raise PSMUtilsIOException("Could not infer filetype.")
@@ -260,9 +258,7 @@ def convert(
     if _supports_write_psm(writer_cls):
         # Setup iterator, potentially with progress bar
         iterator = (
-            track(reader, description="[green]Converting file")
-            if show_progressbar
-            else reader
+            track(reader, description="[green]Converting file") if show_progressbar else reader
         )
 
         # Get example PSM and instantiate writer

@@ -45,6 +45,7 @@ class ReaderBase(ABC):
         """Read full PSM file into a PSMList object."""
         return PSMList(psm_list=[psm for psm in self.__iter__()])
 
+
 class WriterBase(ABC):
     """Abstract base class for PSM file writers."""
 

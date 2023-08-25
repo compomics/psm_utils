@@ -84,10 +84,6 @@ class MSMSReader(ReaderBase):
                 psm = self._get_peptide_spectrum_match(psm_dict)
                 yield psm
 
-    def read_file(self) -> PSMList:
-        """Read full MaxQuant msms.txt PSM file into a PSMList object."""
-        return PSMList(psm_list=[psm for psm in self.__iter__()])
-
     def _validate_msms(self) -> None:
         with open(self.filename, "r") as msms_file:
             msms_reader = csv.DictReader(msms_file, delimiter="\t")
@@ -97,23 +93,17 @@ class MSMSReader(ReaderBase):
     def _evaluate_columns(columns) -> bool:
         """Case insensitive column evaluation msms file."""
         columns = list(map(lambda col: col.lower(), columns))
-        column_check = [
-            True if col.lower() in columns else False for col in MSMS_REQUIRED_COLUMNS
-        ]
+        column_check = [True if col.lower() in columns else False for col in MSMS_REQUIRED_COLUMNS]
         if not all(column_check):
             raise MSMSParsingError(
                 f"Missing columns: {list(compress(MSMS_REQUIRED_COLUMNS, list(~np.array(column_check))))}"
             )
 
-    def _get_peptide_spectrum_match(
-        self, psm_dict: dict[str, str | float]
-    ) -> PSM:
+    def _get_peptide_spectrum_match(self, psm_dict: dict[str, str | float]) -> PSM:
         """Return a PSM object from MaxQuant msms.txt PSM file."""
 
         psm = PSM(
-            peptidoform=self._parse_peptidoform(
-                psm_dict["Modified sequence"], psm_dict["Charge"]
-            ),
+            peptidoform=self._parse_peptidoform(psm_dict["Modified sequence"], psm_dict["Charge"]),
             spectrum_id=psm_dict["Scan number"],
             run=psm_dict["Raw file"],
             is_decoy=psm_dict["Reverse"] == "+",
@@ -148,21 +138,15 @@ class MSMSReader(ReaderBase):
 
             # if N-term mod
             if match.start() == 0:
-                modified_seq = re.sub(
-                    f"\({se_mod_string}\)", f"[{match[1]}]-", modified_seq
-                )
+                modified_seq = re.sub(f"\({se_mod_string}\)", f"[{match[1]}]-", modified_seq)
 
             # if C-term mod
             elif match.end() == modified_seq_len:
-                modified_seq = re.sub(
-                    f"\({se_mod_string}\)", f"-[{match[1]}]", modified_seq
-                )
+                modified_seq = re.sub(f"\({se_mod_string}\)", f"-[{match[1]}]", modified_seq)
 
             # if modification on amino acid
             else:
-                modified_seq = re.sub(
-                    f"\({se_mod_string}\)", f"[{match[1]}]", modified_seq
-                )
+                modified_seq = re.sub(f"\({se_mod_string}\)", f"[{match[1]}]", modified_seq)
 
         modified_seq += f"/{charge}"
 

@@ -68,10 +68,6 @@ class TSVReader(ReaderBase):
             for row in reader:
                 yield PSM(**self._parse_entry(row))
 
-    def read_file(self) -> PSMList:
-        """Read full PSM file into a PSMList object."""
-        return PSMList(psm_list=[psm for psm in self.__iter__()])
-
     @staticmethod
     def _parse_entry(entry: dict):
         """Parse single TSV entry to :py:class:`~psm_utils.psm.PSM`."""
@@ -211,7 +207,9 @@ class TSVWriter(WriterBase):
         if not self.fieldnames:
             raise ValueError("`example_psm` required when writing to new file.")
         with open(self.filename, "wt", newline="") as f:
-            writer = csv.DictWriter(f, fieldnames=self.fieldnames, delimiter="\t")
+            writer = csv.DictWriter(
+                f, fieldnames=self.fieldnames, delimiter="\t", extrasaction="ignore"
+            )
             writer.writeheader()
             for psm in psm_list:
                 writer.writerow(self._psm_to_entry(psm))
@@ -228,15 +226,11 @@ class TSVWriter(WriterBase):
 
         # Flatten dictionary items
         if entry["provenance_data"]:
-            entry.update(
-                {"provenance:" + k: v for k, v in entry["provenance_data"].items()}
-            )
+            entry.update({"provenance:" + k: v for k, v in entry["provenance_data"].items()})
         if entry["metadata"]:
             entry.update({"meta:" + k: v for k, v in entry["metadata"].items()})
         if entry["rescoring_features"]:
-            entry.update(
-                {"rescoring:" + k: v for k, v in entry["rescoring_features"].items()}
-            )
+            entry.update({"rescoring:" + k: v for k, v in entry["rescoring_features"].items()})
         del entry["provenance_data"]
         del entry["metadata"]
         del entry["rescoring_features"]

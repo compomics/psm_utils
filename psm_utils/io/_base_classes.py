@@ -41,11 +41,9 @@ class ReaderBase(ABC):
     def __iter__(self):
         raise NotImplementedError()
 
-    @abstractmethod
     def read_file(self) -> PSMList:
         """Read full PSM file into a PSMList object."""
-        raise NotImplementedError()
-
+        return PSMList(psm_list=[psm for psm in self.__iter__()])
 
 class WriterBase(ABC):
     """Abstract base class for PSM file writers."""
@@ -63,6 +61,7 @@ class WriterBase(ABC):
     @abstractmethod
     def write_psm(self, psm: PSM):
         """Write a single PSM to the PSM file."""
+        raise NotImplementedError()
 
     @abstractmethod
     def write_file(self, psm_list: PSMList):

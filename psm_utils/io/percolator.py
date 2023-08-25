@@ -111,13 +111,6 @@ class PercolatorTabReader(ReaderBase):
                     psm = self._parse_entry(entry)
                     yield psm
 
-    def read_file(self) -> PSMList:
-        """Read full PSM file into a PSMList object."""
-        psm_list = []
-        for psm in self.__iter__():
-            psm_list.append(psm)
-        return PSMList(psm_list=psm_list)
-
     @staticmethod
     def _read_header(filename):
         with open(filename, "rt") as f:
@@ -184,19 +177,11 @@ class PercolatorTabReader(ReaderBase):
             peptidoform=peptidoform,
             spectrum_id=entry[self.id_column],
             is_decoy=is_decoy,
-            score=float(entry[self.score_column.lower()])
-            if self.score_column
-            else None,
+            score=float(entry[self.score_column.lower()]) if self.score_column else None,
             qvalue=entry["q-value"] if "q-value" in entry else None,
-            pep=entry["posterior_error_prob"]
-            if "posterior_error_prob" in entry
-            else None,
-            precursor_mz=float(entry[self.mz_column.lower()])
-            if self.mz_column
-            else None,
-            retention_time=float(entry[self.rt_column.lower()])
-            if self.rt_column
-            else None,
+            pep=entry["posterior_error_prob"] if "posterior_error_prob" in entry else None,
+            precursor_mz=float(entry[self.mz_column.lower()]) if self.mz_column else None,
+            retention_time=float(entry[self.rt_column.lower()]) if self.rt_column else None,
             protein_list=protein_list,
             source="percolator",
             provenance_data={"filename": str(self.filename)},
@@ -224,7 +209,7 @@ class PercolatorTabWriter(WriterBase):
         style: str
             Percolator Tab style. One of {``pin``, ``pout``}. If ``pin``, the columns
             ``SpecId``, ``Label``, ``ScanNr``, ``ChargeN``, ``PSMScore``, ``Peptide``, and
-            ``Proteins`` are written             alongside the requested feature names
+            ``Proteins`` are written alongside the requested feature names
             (see ``feature_names``). If ``pout``, the columns ``PSMId``, ``Label``, ``score``,
             ``q-value``, ``posterior_error_prob``, ``peptide``, and ``proteinIds`` are written.
         feature_names: list[str], optional
@@ -257,9 +242,7 @@ class PercolatorTabWriter(WriterBase):
                 "proteinIds",
             ]
         else:
-            raise ValueError(
-                "Invalid Percolator Tab style. Should be one of {`pin`, `pout`}."
-            )
+            raise ValueError("Invalid Percolator Tab style. Should be one of {`pin`, `pout`}.")
         self.style = style
         self._open_file = None
         self._writer = None
@@ -280,9 +263,7 @@ class PercolatorTabWriter(WriterBase):
                     fieldnames = line.strip().split("\t")
                     break
                 else:
-                    raise ValueError(
-                        f"File {self.filename} is not a valid Percolator Tab file."
-                    )
+                    raise ValueError(f"File {self.filename} is not a valid Percolator Tab file.")
                 # Determine last scan number
                 open_file.seek(0)
                 last_line = None
@@ -336,7 +317,9 @@ class PercolatorTabWriter(WriterBase):
         with _PercolatorTabIO(
             self.filename, "wt", newline="", protein_separator=self._protein_separator
         ) as f:
-            writer = csv.DictWriter(f, fieldnames=self._columns, delimiter="\t")
+            writer = csv.DictWriter(
+                f, fieldnames=self._columns, delimiter="\t", extrasaction="ignore"
+            )
             writer.writeheader()
             for i, psm in enumerate(psm_list):
                 entry = self._psm_to_entry(psm)

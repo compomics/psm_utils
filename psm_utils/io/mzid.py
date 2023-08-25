@@ -166,10 +166,6 @@ class MzidReader(ReaderBase):
                         spectrum_id, spectrum_title, run, rt, entry
                     )
 
-    def read_file(self) -> PSMList:
-        """Read full mzid file to PSM list object."""
-        return PSMList(psm_list=[psm for psm in self])
-
     @staticmethod
     def _get_xml_namespace(root_tag):
         """Get the namespace of the xml root."""

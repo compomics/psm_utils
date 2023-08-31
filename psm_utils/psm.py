@@ -131,3 +131,9 @@ class PSM(BaseModel):
         if as_url:
             usi = "http://proteomecentral.proteomexchange.org/usi/?usi=" + usi
         return usi
+
+    @property
+    def get_mass_shift(self) -> float:
+        """Get the mass shift of the PSM."""
+        theoretical_mz = self.peptidoform.theoretical_mz
+        return self.precursor_mz - theoretical_mz

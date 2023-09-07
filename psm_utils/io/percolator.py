@@ -111,13 +111,6 @@ class PercolatorTabReader(ReaderBase):
                     psm = self._parse_entry(entry)
                     yield psm
 
-    def read_file(self) -> PSMList:
-        """Read full PSM file into a PSMList object."""
-        psm_list = []
-        for psm in self.__iter__():
-            psm_list.append(psm)
-        return PSMList(psm_list=psm_list)
-
     @staticmethod
     def _read_header(filename):
         with open(filename, "rt") as f:
@@ -217,7 +210,7 @@ class PercolatorTabWriter(WriterBase):
         style: str
             Percolator Tab style. One of {``pin``, ``pout``}. If ``pin``, the columns
             ``SpecId``, ``Label``, ``ScanNr``, ``ChargeN``, ``PSMScore``, ``Peptide``, and
-            ``Proteins`` are written             alongside the requested feature names
+            ``Proteins`` are written alongside the requested feature names
             (see ``feature_names``). If ``pout``, the columns ``PSMId``, ``Label``, ``score``,
             ``q-value``, ``posterior_error_prob``, ``peptide``, and ``proteinIds`` are written.
         feature_names: list[str], optional
@@ -330,7 +323,9 @@ class PercolatorTabWriter(WriterBase):
         with _PercolatorTabIO(
             self.filename, "wt", newline="", protein_separator=self._protein_separator
         ) as f:
-            writer = csv.DictWriter(f, fieldnames=self._columns, delimiter="\t")
+            writer = csv.DictWriter(
+                f, fieldnames=self._columns, delimiter="\t", extrasaction="ignore"
+            )
             writer.writeheader()
             for i, psm in enumerate(psm_list):
                 entry = self._psm_to_entry(psm)

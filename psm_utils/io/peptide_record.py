@@ -199,9 +199,7 @@ class PeptideRecordReader(ReaderBase):
         # Define named tuple for single Peptide Record entries, based on
         # configured columns
         columns = self._peprec.required_columns + self._peprec.optional_columns
-        self.PeprecEntry = namedtuple(
-            "PeprecEntry", columns, defaults=[None for _ in columns]
-        )
+        self.PeprecEntry = namedtuple("PeprecEntry", columns, defaults=[None for _ in columns])
 
     def __iter__(self) -> Iterable[PSM]:
         """Iterate over file and return PSMs one-by-one."""
@@ -211,16 +209,6 @@ class PeptideRecordReader(ReaderBase):
                 entry = self.PeprecEntry(**row)
                 psm = self._entry_to_psm(entry, filename=self.filename)
                 yield psm
-
-    def read_file(self) -> PSMList:
-        """Read full Peptide Record PSM file into a PSMList object."""
-        psm_list = []
-        with open(self.filename) as peprec_in:
-            reader = csv.DictReader(peprec_in, delimiter=self._peprec.separator)
-            for row in reader:
-                entry = self.PeprecEntry(**row)
-                psm_list.append(self._entry_to_psm(entry, filename=self.filename))
-        return PSMList(psm_list=psm_list)
 
     @staticmethod
     def _entry_to_psm(entry: NamedTuple, filename: Optional[str] = None) -> PSM:
@@ -280,8 +268,7 @@ class PeptideRecordWriter(WriterBase):
             self._open_file = open(self.filename, "wt", newline="")
             self._writer = csv.DictWriter(
                 self._open_file,
-                fieldnames=_PeptideRecord.required_columns
-                + _PeptideRecord.optional_columns,
+                fieldnames=_PeptideRecord.required_columns + _PeptideRecord.optional_columns,
                 extrasaction="ignore",
                 delimiter=" ",
             )
@@ -352,9 +339,7 @@ class PeptideRecordWriter(WriterBase):
 
         """
         with open(self.filename, "wt", newline="") as f:
-            fieldnames = (
-                _PeptideRecord.required_columns + _PeptideRecord.optional_columns
-            )
+            fieldnames = _PeptideRecord.required_columns + _PeptideRecord.optional_columns
             writer = csv.DictWriter(f, fieldnames=fieldnames, delimiter=" ")
             writer.writeheader()
             for psm in psm_list:
@@ -391,9 +376,7 @@ def peprec_to_proforma(
     peptide = [""] + list(peptide) + [""]
 
     # Add modification labels
-    for position, label in zip(
-        modifications.split("|")[::2], modifications.split("|")[1::2]
-    ):
+    for position, label in zip(modifications.split("|")[::2], modifications.split("|")[1::2]):
         try:
             peptide[int(position)] += f"[{label}]"
         except ValueError as e:
@@ -402,7 +385,8 @@ def peprec_to_proforma(
             ) from e
         except IndexError as e:
             raise InvalidPeprecModificationError(
-                f"PEPREC modification has invalid position {position} in peptide `{''.join(peptide)}`."
+                f"PEPREC modification has invalid position {position} in "
+                f"peptide `{''.join(peptide)}`."
             ) from e
 
     # Add dashes between residues and termini, and join sequence

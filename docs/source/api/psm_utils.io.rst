@@ -8,7 +8,7 @@ psm_utils.io
 
 
 psm_utils.io.idxml
-#####################
+##################
 
 .. automodule:: psm_utils.io.idxml
    :members:
@@ -25,7 +25,7 @@ psm_utils.io.maxquant
 
 
 psm_utils.io.msamanda
-##########################
+#####################
 
 .. automodule:: psm_utils.io.msamanda
    :members:
@@ -34,7 +34,7 @@ psm_utils.io.msamanda
 
 
 psm_utils.io.mzid
-#####################
+#################
 
 .. automodule:: psm_utils.io.mzid
    :members:
@@ -52,7 +52,7 @@ psm_utils.io.peptide_record
 
 
 psm_utils.io.percolator
-###########################
+#######################
 
 .. automodule:: psm_utils.io.percolator
    :members:
@@ -60,8 +60,16 @@ psm_utils.io.percolator
 
 
 
+psm_utils.io.proteome_discoverer
+################################
+.. automodule:: psm_utils.io.proteome_discoverer
+   :members:
+   :inherited-members:
+
+
+
 psm_utils.io.sage
-###########################
+#################
 
 .. automodule:: psm_utils.io.sage
    :members:
@@ -70,7 +78,7 @@ psm_utils.io.sage
 
 
 psm_utils.io.tsv
-##########################
+################
 
 .. automodule:: psm_utils.io.tsv
    :members:
@@ -79,7 +87,7 @@ psm_utils.io.tsv
 
 
 psm_utils.io.xtandem
-##########################
+####################
 
 .. automodule:: psm_utils.io.xtandem
    :members:

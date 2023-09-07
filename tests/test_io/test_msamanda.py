@@ -1,7 +1,6 @@
 import pytest
 
 import psm_utils.io.msamanda as msamanda
-from psm_utils import peptidoform, psm, psm_list
 
 TEST_COL = [
     "Title",

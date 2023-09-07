@@ -15,9 +15,9 @@ import psm_utils.io.mzid as mzid
 import psm_utils.io.peptide_record as peptide_record
 import psm_utils.io.percolator as percolator
 import psm_utils.io.proteome_discoverer as proteome_discoverer
+import psm_utils.io.sage as sage
 import psm_utils.io.tsv as tsv
 import psm_utils.io.xtandem as xtandem
-import psm_utils.io.sage as sage
 from psm_utils.io._base_classes import WriterBase
 from psm_utils.io.exceptions import PSMUtilsIOException
 from psm_utils.psm import PSM
@@ -135,8 +135,12 @@ def read_file(filename: str | Path, *args, filetype: str = "infer", **kwargs):
     """
     if filetype == "infer":
         filetype = _infer_filetype(filename)
-
-    reader_cls = READERS[filetype]
+    try:
+        reader_cls = READERS[filetype]
+    except KeyError as e:
+        raise PSMUtilsIOException(
+            f"Filetype '{filetype}' unknown or not supported for reading."
+        ) from e
     reader = reader_cls(filename, *args, **kwargs)
     psm_list = reader.read_file()
     return psm_list
@@ -171,7 +175,12 @@ def write_file(
     """
     if filetype == "infer":
         filetype = _infer_filetype(filename)
-    writer_cls = WRITERS[filetype]
+    try:
+        writer_cls = WRITERS[filetype]
+    except KeyError as e:
+        raise PSMUtilsIOException(
+            f"Filetype {filetype} unknown or not supported for writing."
+        ) from e
 
     # Remove file if already exists to avoid appending:
     if Path(filename).is_file():

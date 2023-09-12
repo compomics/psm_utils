@@ -121,16 +121,15 @@ class MSAmandaReader(ReaderBase):
         "Parse MSAmanda sequence, modifications and charge to proforma sequence"
         peptide = [""] + [aa.upper() for aa in seq] + [""]
         pattern = re.compile(
-            r"(?P<site>[A-Z])(?P<loc>-term|\d+)\((?P<mod_name>[A-Za-z]+)\|([-0-9.]+)\|(variable|fixed)\);?"
+            r"(?:(?:(?P<site>[A-Z])(?P<loc>\d+))|(?P<term>[CN]-Term))\((?P<mod_name>[^|()]+)\|(?P<mz>[-0-9.]+)\|(?P<type>variable|fixed)\);?"
         )
 
         for match in pattern.finditer(modifications):
-            if match.group("loc") == "-term":
-                if match.group("site") == "N":
-                    peptide[0] = peptide[0] + f'[{match.group("mod_name")}]'
-                elif match.group("site") == "C":
-                    peptide[-1] = peptide[-1] + f'[{match.group("mod_name")}]'
-            else:
+            if match.group("term") == "N-Term":
+                peptide[0] = peptide[0] + f'[{match.group("mod_name")}]'
+            elif match.group("term") == "C-Term":
+                peptide[-1] = peptide[-1] + f'[{match.group("mod_name")}]'
+            if match.group("loc") is not None: 
                 peptide[int(match.group("loc"))] = (
                     peptide[int(match.group("loc"))] + f'[{match.group("mod_name")}]'
                 )

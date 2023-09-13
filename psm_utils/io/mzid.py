@@ -159,7 +159,6 @@ class MzidReader(ReaderBase):
                     yield self._get_peptide_spectrum_match(
                         spectrum_id, spectrum_title, run, rt, ionmobility, entry
                     )
-                break
 
     def read_file(self) -> PSMList:
         """Read full mzid file to PSM list object."""

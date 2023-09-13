@@ -127,7 +127,7 @@ class MzidReader(ReaderBase):
 
         """
         super().__init__(filename, *args, **kwargs)
-        self._non_metadata_keys = None
+        self._non_metadata_keys = ["ContactRole", "passThreshold"]
         self._score_key = None
         self._rt_key = None
         self._spectrum_rt_key = None
@@ -140,13 +140,10 @@ class MzidReader(ReaderBase):
     def __iter__(self):
         """Iterate over file and return PSMs one-by-one."""
         with mzid.read(str(self.filename)) as reader:
-            for spectrum in reader:
-                # Parse PSM non-metadata keys, rt key, ion  and score key
-                self._get_non_metadata_keys(spectrum.keys())  # check in both levels of mzid
-                self._get_non_metadata_keys(spectrum["SpectrumIdentificationItem"][0].keys())
-                if not self._score_key:
-                    raise UnknownMzidScore("No known score metric found in mzIdentML file.")
-                break
+            # Parse spectrum metadata
+            self._get_toplevel_non_metadata_keys(reader[0].keys())
+            # Parse PSM non-metadata keys, rt key, ion  and score key
+            self._get_non_metadata_keys(reader[0]["SpectrumIdentificationItem"][0].keys())
 
             for spectrum in reader:
                 # Parse spectrum metadata
@@ -162,6 +159,7 @@ class MzidReader(ReaderBase):
                     yield self._get_peptide_spectrum_match(
                         spectrum_id, spectrum_title, run, rt, ionmobility, entry
                     )
+                break
 
     def read_file(self) -> PSMList:
         """Read full mzid file to PSM list object."""
@@ -294,6 +292,8 @@ class MzidReader(ReaderBase):
         self._score_key = self._infer_score_name(keys)
         if self._score_key:
             default_keys.append(self._score_key)
+        else:
+            raise UnknownMzidScore("No known score metric found in mzIdentML file.")
 
         # Get the q-value key and add to default keys
         self._qvalue_key = self._infer_qvalue_name(keys)
@@ -312,16 +312,22 @@ class MzidReader(ReaderBase):
                 default_keys.append(rt_key)
                 break
 
-        # Get ion mobility key
+        # Keys that are not necessary for metadata
+        self._non_metadata_keys.extend(default_keys)
+
+    def _get_toplevel_non_metadata_keys(self, keys: list):
+        # Check if RT is encoded in spectrum metadata
+        for key in ["retention time", "scan start time"]:
+            if key in keys:
+                self._spectrum_rt_key = key
+                break
+
+        # Check if ion mobility is encoded in spectrum metadata
         for im_key in ["inverse reduced ion mobility"]:
             if im_key in keys:
                 self._im_key = im_key
-                default_keys.append(im_key)
                 break
-
-        # Keys that are not necessary for metadata
-        self._non_metadata_keys = ["ContactRole", "passThreshold"]
-        self._non_metadata_keys.extend(default_keys)
+        self._non_metadata_keys.extend([self._im_key, self._spectrum_rt_key])
 
     @staticmethod
     def _infer_score_name(keys) -> str:

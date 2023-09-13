@@ -92,14 +92,14 @@ class StreamlitPageStats(StreamlitPage):
                     "Score type: order",
                     options=[True, False],
                     format_func=lambda x: "Higher score is better"
-                    if x == True
+                    if x
                     else "Lower score is better",
                 )
                 self.state["log_scale"] = row[1].radio(
                     "Score type: scale",
                     options=[False, True],
                     format_func=lambda x: "Logarithmic scale (e.g., e-value)"
-                    if x == True
+                    if x
                     else "Linear scale (e.g., Andromeda score)",
                     help=(
                         """
@@ -142,9 +142,7 @@ class StreamlitPageStats(StreamlitPage):
                 # Write file to disk for psm_utils; then read
                 with NamedTemporaryFile(mode="wb", delete=False) as tmp_file:
                     if self.state["input_file"].name.lower().endswith(".gz"):
-                        tmp_file.write(
-                            gzip.decompress(self.state["input_file"].getvalue())
-                        )
+                        tmp_file.write(gzip.decompress(self.state["input_file"].getvalue()))
                     else:
                         tmp_file.write(self.state["input_file"].getvalue())
                     tmp_file.flush()
@@ -179,7 +177,7 @@ class StreamlitPageStats(StreamlitPage):
             )
 
         # If no q-values, try to calculate
-        if (psm_list["qvalue"] == None).any():
+        if (psm_list["qvalue"] == None).any():  # noqa: E711
             # If no decoys, display error
             if percent_decoys == 0.0:
                 st.error(
@@ -231,13 +229,9 @@ class StreamlitPageStats(StreamlitPage):
 
         n_collections = psm_df["collection"].unique().shape[0]
         n_runs = psm_df[["run", "collection"]].drop_duplicates().shape[0]
-        n_spectra = (
-            psm_df[["spectrum_id", "run", "collection"]].drop_duplicates().shape[0]
-        )
+        n_spectra = psm_df[["spectrum_id", "run", "collection"]].drop_duplicates().shape[0]
         n_psms = psm_df.shape[0]
-        n_peptidoforms = (
-            psm_df["peptidoform"].apply(lambda x: x.proforma).unique().shape[0]
-        )
+        n_peptidoforms = psm_df["peptidoform"].apply(lambda x: x.proforma).unique().shape[0]
         percent_decoys = np.count_nonzero(psm_list["is_decoy"]) / len(psm_list)
 
         row_1 = st.columns(3)
@@ -262,19 +256,12 @@ class StreamlitPageStats(StreamlitPage):
         else:
             psm_df_filtered = psm_df[psm_df["qvalue"] <= self.state["fdr_threshold"]]
             n_spectra = (
-                psm_df_filtered[["spectrum_id", "run", "collection"]]
-                .drop_duplicates()
-                .shape[0]
+                psm_df_filtered[["spectrum_id", "run", "collection"]].drop_duplicates().shape[0]
             )
             n_psms = psm_df_filtered.shape[0]
-            n_peptides = (
-                psm_df["peptidoform"].apply(lambda x: x.sequence).unique().shape[0]
-            )
+            n_peptides = psm_df["peptidoform"].apply(lambda x: x.sequence).unique().shape[0]
             n_peptidoforms = (
-                psm_df_filtered["peptidoform"]
-                .apply(lambda x: x.proforma)
-                .unique()
-                .shape[0]
+                psm_df_filtered["peptidoform"].apply(lambda x: x.proforma).unique().shape[0]
             )
 
             row_3 = st.columns(4)

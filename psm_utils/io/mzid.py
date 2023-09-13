@@ -29,7 +29,9 @@ logger = logging.getLogger(__name__)
 
 # Excerpt from MS:1001143 items (PSM-level search engine specific statistic)
 # Not all child terms are used, as not all statistics are direct scores.
+# Items are sorted by priority (if more scores are present, the first found one is used)
 STANDARD_SEARCHENGINE_SCORES = [
+    "PeptideShaker PSM score",
     "Amanda:AmandaScore",
     "Andromeda:score",
     "Byonic:Score",
@@ -49,7 +51,6 @@ STANDARD_SEARCHENGINE_SCORES = [
     "OMSSA:evalue",
     "OpenPepXL:score",
     "PEAKS:peptideScore",
-    "PeptideShaker PSM score",
     "Phenyx:Pepzscore",
     "ProLuCID:xcorr",
     "ProSight:specral C-score",

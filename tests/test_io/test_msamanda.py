@@ -50,7 +50,7 @@ class TestMSMSReader:
                     4,
                 ),
                 ("TLPMFHDEEHAR", "", 3),
-                ("VSAGEIAVTGAGR", "C-term(Amidated|-0.984016|variable)", 2),
+                ("VSAGEIAVTGAGR", "C-Term(Amidated|-0.984016|variable)", 2),
                 ("VQAELDETK", "", 2),
             ],
             "expected_output": [

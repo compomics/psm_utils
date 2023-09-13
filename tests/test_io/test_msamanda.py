@@ -46,7 +46,7 @@ class TestMSMSReader:
                 ),
                 (
                     "LRDTcLQK",
-                    "N-term(Acetyl|40|variable);C5(Carbamidomethyl|57.021464|fixed)",
+                    "N-Term(Acetyl|40|variable);C5(Carbamidomethyl|57.021464|fixed)",
                     4,
                 ),
                 ("TLPMFHDEEHAR", "", 3),

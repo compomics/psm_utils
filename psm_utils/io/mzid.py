@@ -133,6 +133,7 @@ class MzidReader(ReaderBase):
         self._spectrum_rt_key = None
         self._qvalue_key = None
         self._pep_key = None
+        self._im_key = None
 
         self._source = self._infer_source()
 
@@ -140,15 +141,11 @@ class MzidReader(ReaderBase):
         """Iterate over file and return PSMs one-by-one."""
         with mzid.read(str(self.filename)) as reader:
             for spectrum in reader:
-                # Check if RT is encoded in spectrum metadata
-                if "retention time" in spectrum:
-                    self._spectrum_rt_key = "retention time"
-                elif "scan start time" in spectrum:
-                    self._spectrum_rt_key = "scan start time"
-                else:
-                    self._spectrum_rt_key = None
-                # Parse PSM non-metadata keys, rt key, and score key
+                # Parse PSM non-metadata keys, rt key, ion  and score key
+                self._get_non_metadata_keys(spectrum.keys())  # check in both levels of mzid
                 self._get_non_metadata_keys(spectrum["SpectrumIdentificationItem"][0].keys())
+                if not self._score_key:
+                    raise UnknownMzidScore("No known score metric found in mzIdentML file.")
                 break
 
             for spectrum in reader:
@@ -159,11 +156,11 @@ class MzidReader(ReaderBase):
                 )
                 run = Path(spectrum["location"]).stem if "location" in spectrum else None
                 rt = float(spectrum[self._spectrum_rt_key]) if self._spectrum_rt_key else None
-
+                ionmobility = float(spectrum[self._im_key]) if self._im_key else None
                 # Parse PSMs from spectrum
                 for entry in spectrum["SpectrumIdentificationItem"]:
                     yield self._get_peptide_spectrum_match(
-                        spectrum_id, spectrum_title, run, rt, entry
+                        spectrum_id, spectrum_title, run, rt, ionmobility, entry
                     )
 
     def read_file(self) -> PSMList:
@@ -232,6 +229,7 @@ class MzidReader(ReaderBase):
         spectrum_title: Union[str, None],
         run: Union[str, None],
         rt: Union[float, None],
+        ionmobility: Union[float, None],
         spectrum_identification_item: dict[str, str | float | list],
     ) -> PSM:
         """Parse single mzid entry to :py:class:`~psm_utils.peptidoform.Peptidoform`."""
@@ -250,7 +248,7 @@ class MzidReader(ReaderBase):
             precursor_mz = None
 
         # Override spectrum-level RT if present at PSM level
-        if self._rt_key:
+        if self._rt_key in sii.keys():
             rt = float(sii[self._rt_key])
 
         metadata = {col: str(sii[col]) for col in sii.keys() if col not in self._non_metadata_keys}
@@ -272,6 +270,7 @@ class MzidReader(ReaderBase):
             pep=sii[self._pep_key] if self._pep_key else None,
             precursor_mz=precursor_mz,
             retention_time=rt,
+            ion_mobility=ionmobility,
             protein_list=protein_list,
             rank=sii["rank"] if "rank" in sii else None,
             source=self._source,
@@ -293,7 +292,8 @@ class MzidReader(ReaderBase):
         ]
         # Get the score key and add to default keys
         self._score_key = self._infer_score_name(keys)
-        default_keys.append(self._score_key)
+        if self._score_key:
+            default_keys.append(self._score_key)
 
         # Get the q-value key and add to default keys
         self._qvalue_key = self._infer_qvalue_name(keys)
@@ -312,6 +312,13 @@ class MzidReader(ReaderBase):
                 default_keys.append(rt_key)
                 break
 
+        # Get ion mobility key
+        for im_key in ["inverse reduced ion mobility"]:
+            if im_key in keys:
+                self._im_key = im_key
+                default_keys.append(im_key)
+                break
+
         # Keys that are not necessary for metadata
         self._non_metadata_keys = ["ContactRole", "passThreshold"]
         self._non_metadata_keys.extend(default_keys)
@@ -323,8 +330,6 @@ class MzidReader(ReaderBase):
         for score in STANDARD_SEARCHENGINE_SCORES:
             if score in keys:
                 return score
-        else:
-            raise UnknownMzidScore("No known score metric found in mzIdentML file.")
 
     @staticmethod
     def _infer_qvalue_name(keys) -> Union[str, None]:

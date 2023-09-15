@@ -112,23 +112,20 @@ class IonbotReader(ReaderBase):
         peptide: str, modifications: str, charge: Union[str, int]
     ) -> Peptidoform:
         """Parse peptide, modifications, and charge to Peptidoform."""
+        # Split peptide into list of amino acids with termini
         peptide = peptide = [""] + list(peptide) + [""]
-        pattern = re.compile(r"^(?P<U>\[\S*?\])?(?P<mod>.*?)(?P<AA>\[\S*?\])?$")
 
+        # Add modifications
+        pattern = re.compile(r"^(?P<U>\[\S*?\])?(?P<mod>.*?)(?P<AA>\[\S*?\])?$")
         for position, label in zip(modifications.split("|")[::2], modifications.split("|")[1::2]):
             mod_match = pattern.search(label)
             if mod_match.group("U"):
                 parsed_label = "U:" + mod_match.group("U")[1:-1]
             else:
                 parsed_label = mod_match.group("mod")
-
-            # if (mod_match.group("AA")) and (
-            #     mod_match.group("AA")[1:-1] != peptide[int(position)]
-            # ):
-            #     print(mod_match.group("AA")[1:-1], peptide[int(position)])
-
             peptide[int(position)] += f"[{parsed_label}]"
 
+        # Add terminal modifications
         peptide[0] = peptide[0] + "-" if peptide[0] else ""
         peptide[-1] = "-" + peptide[-1] if peptide[-1] else ""
         proforma_seq = "".join(peptide)

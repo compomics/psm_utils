@@ -196,6 +196,7 @@ class PercolatorTabWriter(WriterBase):
         filename: str | Path,
         style: str = "pin",
         feature_names: Optional[list[str]] = None,
+        add_basic_features: bool = False,
         *args,
         **kwargs,
     ) -> None:
@@ -219,16 +220,21 @@ class PercolatorTabWriter(WriterBase):
             If :py:const:`None`, no rescoring features will be written to the file. If appending to
             an existing file, the existing header will be used to determine the feature
             names. Only has effect with ``pin`` style.
+        add_basic_features: bool, optional
+            If :py:const:`True`, add ``PSMScore`` and ``ChargeN`` features to the file. Only has
+            effect with ``pin`` style. Default is :py:const:`False`.
 
         """
         super().__init__(filename, *args, **kwargs)
         self.feature_names = list(feature_names) if feature_names else []
+        self.add_basic_features = add_basic_features
 
         if style == "pin":
+            basic_features = ["PSMScore", "ChargeN"] if add_basic_features else []
             self._columns = (
                 ["SpecId", "Label", "ScanNr"]
+                + basic_features
                 + self.feature_names
-                + ["PSMScore", "ChargeN"]
                 + ["Peptide", "Proteins"]
             )
         elif style == "pout":
@@ -332,13 +338,13 @@ class PercolatorTabWriter(WriterBase):
             entry = {
                 "SpecId": psm.spectrum_id,
                 "Label": None if psm.is_decoy is None else -1 if psm.is_decoy else 1,
-                "ChargeN": psm.peptidoform.precursor_charge,
-                "PSMScore": psm.score,
                 "Peptide": "." + re.sub(r"/\d+$", "", psm.peptidoform.proforma) + ".",
                 "Proteins": self._protein_separator.join(psm.protein_list)
                 if psm.protein_list
                 else "PEP_" + psm.peptidoform.proforma,
             }
+            if self.add_basic_features:
+                entry.update({"ChargeN": psm.peptidoform.precursor_charge, "PSMScore": psm.score})
             try:
                 entry.update(psm.rescoring_features)
             except TypeError:

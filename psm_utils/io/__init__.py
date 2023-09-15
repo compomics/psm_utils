@@ -14,9 +14,10 @@ import psm_utils.io.msamanda as msamanda
 import psm_utils.io.mzid as mzid
 import psm_utils.io.peptide_record as peptide_record
 import psm_utils.io.percolator as percolator
+import psm_utils.io.proteome_discoverer as proteome_discoverer
+import psm_utils.io.sage as sage
 import psm_utils.io.tsv as tsv
 import psm_utils.io.xtandem as xtandem
-import psm_utils.io.sage as sage
 from psm_utils.io._base_classes import WriterBase
 from psm_utils.io.exceptions import PSMUtilsIOException
 from psm_utils.psm import PSM
@@ -53,6 +54,12 @@ FILETYPES = {
         "extension": ".percolator.txt",
         "filename_pattern": r"^.*\.(?:(?:pin)|(?:pout))$",
     },
+    "proteome_discoverer": {
+        "reader": proteome_discoverer.MSFReader,
+        "writer": None,
+        "extension": ".msf",
+        "filename_pattern": r"^.*\.msf$",
+    },
     "tsv": {
         "reader": tsv.TSVReader,
         "writer": tsv.TSVWriter,
@@ -85,9 +92,7 @@ WRITERS = {k: v["writer"] for k, v in FILETYPES.items() if v["writer"]}
 def _infer_filetype(filename: str):
     """Infer filetype from filename."""
     for filetype, properties in FILETYPES.items():
-        if re.fullmatch(
-            properties["filename_pattern"], str(filename), flags=re.IGNORECASE
-        ):
+        if re.fullmatch(properties["filename_pattern"], str(filename), flags=re.IGNORECASE):
             return filetype
     else:
         raise PSMUtilsIOException("Could not infer filetype.")
@@ -130,8 +135,12 @@ def read_file(filename: str | Path, *args, filetype: str = "infer", **kwargs):
     """
     if filetype == "infer":
         filetype = _infer_filetype(filename)
-
-    reader_cls = READERS[filetype]
+    try:
+        reader_cls = READERS[filetype]
+    except KeyError as e:
+        raise PSMUtilsIOException(
+            f"Filetype '{filetype}' unknown or not supported for reading."
+        ) from e
     reader = reader_cls(filename, *args, **kwargs)
     psm_list = reader.read_file()
     return psm_list
@@ -166,7 +175,12 @@ def write_file(
     """
     if filetype == "infer":
         filetype = _infer_filetype(filename)
-    writer_cls = WRITERS[filetype]
+    try:
+        writer_cls = WRITERS[filetype]
+    except KeyError as e:
+        raise PSMUtilsIOException(
+            f"Filetype {filetype} unknown or not supported for writing."
+        ) from e
 
     # Remove file if already exists to avoid appending:
     if Path(filename).is_file():
@@ -253,9 +267,7 @@ def convert(
     if _supports_write_psm(writer_cls):
         # Setup iterator, potentially with progress bar
         iterator = (
-            track(reader, description="[green]Converting file")
-            if show_progressbar
-            else reader
+            track(reader, description="[green]Converting file") if show_progressbar else reader
         )
 
         # Get example PSM and instantiate writer

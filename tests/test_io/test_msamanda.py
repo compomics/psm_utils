@@ -1,7 +1,6 @@
 import pytest
 
 import psm_utils.io.msamanda as msamanda
-from psm_utils import peptidoform, psm, psm_list
 
 TEST_COL = [
     "Title",
@@ -47,11 +46,11 @@ class TestMSMSReader:
                 ),
                 (
                     "LRDTcLQK",
-                    "N-term(Acetyl|40|variable);C5(Carbamidomethyl|57.021464|fixed)",
+                    "N-Term(Acetyl|40|variable);C5(Carbamidomethyl|57.021464|fixed)",
                     4,
                 ),
                 ("TLPMFHDEEHAR", "", 3),
-                ("VSAGEIAVTGAGR", "C-term(Amidated|-0.984016|variable)", 2),
+                ("VSAGEIAVTGAGR", "C-Term(Amidated|-0.984016|variable)", 2),
                 ("VQAELDETK", "", 2),
             ],
             "expected_output": [

@@ -29,7 +29,9 @@ logger = logging.getLogger(__name__)
 
 # Excerpt from MS:1001143 items (PSM-level search engine specific statistic)
 # Not all child terms are used, as not all statistics are direct scores.
+# Items are sorted by priority (if more scores are present, the first found one is used)
 STANDARD_SEARCHENGINE_SCORES = [
+    "PeptideShaker PSM score",
     "Amanda:AmandaScore",
     "Andromeda:score",
     "Byonic:Score",
@@ -49,7 +51,6 @@ STANDARD_SEARCHENGINE_SCORES = [
     "OMSSA:evalue",
     "OpenPepXL:score",
     "PEAKS:peptideScore",
-    "PeptideShaker PSM score",
     "Phenyx:Pepzscore",
     "ProLuCID:xcorr",
     "ProSight:specral C-score",
@@ -57,6 +58,7 @@ STANDARD_SEARCHENGINE_SCORES = [
     "ProteinProspector:score",
     "ProteinScape:SequestMetaScore",
     "ProteomeDiscoverer:Delta Score",
+    "Proteome Discoverer Delta Score",
     "SEQUEST:xcorr",
     "SIM-XL score ",
     "SQID:score ",
@@ -87,7 +89,7 @@ PEP_TERMS = [
 
 
 class MzidReader(ReaderBase):
-    def __init__(self, filename: str | Path, *args, **kwargs) -> None:
+    def __init__(self, filename: str | Path, *args, score_key: str = None, **kwargs) -> None:
         """
         Reader for mzIdentML PSM files.
 
@@ -95,6 +97,9 @@ class MzidReader(ReaderBase):
         ----------
         filename: str, pathlib.Path
             Path to PSM file.
+        score_key: str, optional
+            Name of the score metric to use as PSM score. If not provided, the score metric is
+            inferred from the file if one of the child parameters of ``MS:1001143`` is present.
 
         Examples
         --------
@@ -127,8 +132,10 @@ class MzidReader(ReaderBase):
 
         """
         super().__init__(filename, *args, **kwargs)
+
+        self.score_key = score_key
+
         self._non_metadata_keys = None
-        self._score_key = None
         self._rt_key = None
         self._spectrum_rt_key = None
         self._qvalue_key = None
@@ -258,12 +265,17 @@ class MzidReader(ReaderBase):
         else:
             psm_spectrum_id = spectrum_id
 
+        try:
+            score = sii[self.score_key]
+        except KeyError:
+            score = None
+
         psm = PSM(
             peptidoform=peptidoform,
             spectrum_id=psm_spectrum_id,
             run=run,
             is_decoy=is_decoy,
-            score=sii[self._score_key],
+            score=score,
             qvalue=sii[self._qvalue_key] if self._qvalue_key else None,
             pep=sii[self._pep_key] if self._pep_key else None,
             precursor_mz=precursor_mz,
@@ -288,8 +300,9 @@ class MzidReader(ReaderBase):
             "Modification",
         ]
         # Get the score key and add to default keys
-        self._score_key = self._infer_score_name(keys)
-        default_keys.append(self._score_key)
+        if not self.score_key:
+            self.score_key = self._infer_score_name(keys)
+        default_keys.append(self.score_key)
 
         # Get the q-value key and add to default keys
         self._qvalue_key = self._infer_qvalue_name(keys)

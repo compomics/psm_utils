@@ -1,7 +1,6 @@
 from __future__ import annotations
 
 import re
-from itertools import compress
 from typing import Iterable, List, Sequence
 
 import numpy as np
@@ -99,7 +98,12 @@ class PSMList(BaseModel):
             return PSMList(psm_list=self.psm_list[item])
         elif isinstance(item, str):
             # Return PSM property as array across full PSMList
-            return np.array([psm[item] for psm in self.psm_list])
+            try:
+                # Let NumPy coerce dtype (e.g., multidimensional arrays)
+                return np.array([psm[item] for psm in self.psm_list])
+            except ValueError:
+                # If dtype is not consistent, force dtype to be object
+                return np.array([psm[item] for psm in self.psm_list], dtype=object)
         elif _is_iterable_of_bools(item):
             # Return new PSMList with items that were True
             return PSMList(psm_list=[self.psm_list[i] for i in np.flatnonzero(item)])
@@ -121,7 +125,7 @@ class PSMList(BaseModel):
     @property
     def collections(self) -> list:
         """List of collections in :py:class:`PSMList`."""
-        if (self["collection"] != None).any():
+        if (self["collection"] != None).any():  # noqa: E711
             return list(np.unique(self["collection"]))
         else:
             return [None]
@@ -129,10 +133,18 @@ class PSMList(BaseModel):
     @property
     def runs(self) -> list:
         """List of runs in :py:class:`PSMList`."""
-        if (self["run"] != None).any():
+        if (self["run"] != None).any():  # noqa: E711
             return list(np.unique(self["run"]))
         else:
             return [None]
+
+    def append(self, psm: PSM) -> None:
+        """Append PSM to :py:class:`PSMList`."""
+        self.psm_list.append(psm)
+
+    def extend(self, psm_list: PSMList) -> None:
+        """Extend :py:class:`PSMList` with another :py:class:`PSMList`."""
+        self.psm_list.extend(psm_list)
 
     def get_psm_dict(self):
         """Get nested dictionary of PSMs by collection, run, and spectrum_id."""
@@ -199,9 +211,7 @@ class PSMList(BaseModel):
         """
         decoy_pattern = re.compile(decoy_pattern)
         for psm in self:
-            psm.is_decoy = all(
-                [decoy_pattern.search(p) is not None for p in psm.protein_list]
-            )
+            psm.is_decoy = all([decoy_pattern.search(p) is not None for p in psm.protein_list])
 
     def calculate_qvalues(self, reverse: bool = True, **kwargs) -> None:
         """
@@ -289,9 +299,7 @@ class PSMList(BaseModel):
         ]
         for psm in self.psm_list:
             if psm.peptidoform.properties["fixed_modifications"]:
-                psm.peptidoform.properties["fixed_modifications"].extend(
-                    modification_rules
-                )
+                psm.peptidoform.properties["fixed_modifications"].extend(modification_rules)
             else:
                 psm.peptidoform.properties["fixed_modifications"] = modification_rules
 

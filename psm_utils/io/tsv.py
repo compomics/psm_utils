@@ -52,6 +52,8 @@ import csv
 from pathlib import Path
 from typing import Optional
 
+from pydantic import ValidationError
+
 from psm_utils.io._base_classes import ReaderBase, WriterBase
 from psm_utils.io.exceptions import PSMUtilsIOException
 from psm_utils.psm import PSM
@@ -66,10 +68,13 @@ class TSVReader(ReaderBase):
         with open(self.filename, "rt") as open_file:
             reader = csv.DictReader(open_file, delimiter="\t")
             for row in reader:
-                yield PSM(**self._parse_entry(row))
+                try:
+                    yield PSM(**self._parse_entry(row))
+                except ValidationError as e:
+                    raise PSMUtilsIOException(f"Could not parse PSM from row: `{row}`") from e
 
     @staticmethod
-    def _parse_entry(entry: dict):
+    def _parse_entry(entry: dict) -> dict:
         """Parse single TSV entry to :py:class:`~psm_utils.psm.PSM`."""
         # Replace empty strings with None
         entry = {k: v if v else None for k, v in entry.items()}

@@ -132,31 +132,23 @@ class MzidReader(ReaderBase):
 
         """
         super().__init__(filename, *args, **kwargs)
-
-        self.score_key = score_key
-
-        self._non_metadata_keys = None
+        self._non_metadata_keys = ["ContactRole", "passThreshold"]
+        self._score_key = None
         self._rt_key = None
         self._spectrum_rt_key = None
         self._qvalue_key = None
         self._pep_key = None
+        self._im_key = None
 
         self._source = self._infer_source()
 
     def __iter__(self):
         """Iterate over file and return PSMs one-by-one."""
         with mzid.read(str(self.filename)) as reader:
-            for spectrum in reader:
-                # Check if RT is encoded in spectrum metadata
-                if "retention time" in spectrum:
-                    self._spectrum_rt_key = "retention time"
-                elif "scan start time" in spectrum:
-                    self._spectrum_rt_key = "scan start time"
-                else:
-                    self._spectrum_rt_key = None
-                # Parse PSM non-metadata keys, rt key, and score key
-                self._get_non_metadata_keys(spectrum["SpectrumIdentificationItem"][0].keys())
-                break
+            # Parse spectrum metadata
+            self._get_toplevel_non_metadata_keys(reader[0].keys())
+            # Parse PSM non-metadata keys, rt key and score key
+            self._get_non_metadata_keys(reader[0]["SpectrumIdentificationItem"][0].keys())
 
             for spectrum in reader:
                 # Parse spectrum metadata
@@ -166,11 +158,12 @@ class MzidReader(ReaderBase):
                 )
                 run = Path(spectrum["location"]).stem if "location" in spectrum else None
                 rt = float(spectrum[self._spectrum_rt_key]) if self._spectrum_rt_key else None
+                ion_mobility = float(spectrum[self._im_key]) if self._im_key else None
 
                 # Parse PSMs from spectrum
                 for entry in spectrum["SpectrumIdentificationItem"]:
                     yield self._get_peptide_spectrum_match(
-                        spectrum_id, spectrum_title, run, rt, entry
+                        spectrum_id, spectrum_title, run, rt, ion_mobility, entry
                     )
 
     @staticmethod
@@ -235,6 +228,7 @@ class MzidReader(ReaderBase):
         spectrum_title: Union[str, None],
         run: Union[str, None],
         rt: Union[float, None],
+        ion_mobility: Union[float, None],
         spectrum_identification_item: dict[str, str | float | list],
     ) -> PSM:
         """Parse single mzid entry to :py:class:`~psm_utils.peptidoform.Peptidoform`."""
@@ -275,11 +269,12 @@ class MzidReader(ReaderBase):
             spectrum_id=psm_spectrum_id,
             run=run,
             is_decoy=is_decoy,
-            score=score,
+            score=sii[self._score_key] if self._score_key else None,
             qvalue=sii[self._qvalue_key] if self._qvalue_key else None,
             pep=sii[self._pep_key] if self._pep_key else None,
             precursor_mz=precursor_mz,
             retention_time=rt,
+            ion_mobility=ion_mobility,
             protein_list=protein_list,
             rank=sii["rank"] if "rank" in sii else None,
             source=self._source,
@@ -289,7 +284,7 @@ class MzidReader(ReaderBase):
         return psm
 
     def _get_non_metadata_keys(self, keys: list):
-        """Gather all the keys that should not be written to metadata"""
+        """Gather all the keys at PSM-level that should not be written to metadata."""
         # All keys required to create PSM object
         default_keys = [
             "chargeState",
@@ -300,9 +295,13 @@ class MzidReader(ReaderBase):
             "Modification",
         ]
         # Get the score key and add to default keys
-        if not self.score_key:
-            self.score_key = self._infer_score_name(keys)
-        default_keys.append(self.score_key)
+        self._score_key = self._infer_score_name(keys)
+        if self._score_key:
+            default_keys.append(self._score_key)
+        else:
+            logger.warning(
+                "No known score metric found in mzIdentML file. Scores will be set to None."
+            )
 
         # Get the q-value key and add to default keys
         self._qvalue_key = self._infer_qvalue_name(keys)
@@ -322,18 +321,30 @@ class MzidReader(ReaderBase):
                 break
 
         # Keys that are not necessary for metadata
-        self._non_metadata_keys = ["ContactRole", "passThreshold"]
         self._non_metadata_keys.extend(default_keys)
+
+    def _get_toplevel_non_metadata_keys(self, keys: list):
+        """Gather all keys at spectrum-level that should not be written to metadata."""
+        # Check if RT is encoded in spectrum metadata
+        for key in ["retention time", "scan start time"]:
+            if key in keys:
+                self._spectrum_rt_key = key
+                self._non_metadata_keys.append(key)
+                break
+
+        # Check if ion mobility is encoded in spectrum metadata
+        for im_key in ["inverse reduced ion mobility"]:
+            if im_key in keys:
+                self._im_key = im_key
+                self._non_metadata_keys.append(im_key)
+                break
 
     @staticmethod
     def _infer_score_name(keys) -> str:
         """Infer the score from the list of known PSM scores."""
-
         for score in STANDARD_SEARCHENGINE_SCORES:
             if score in keys:
                 return score
-        else:
-            raise UnknownMzidScore("No known score metric found in mzIdentML file.")
 
     @staticmethod
     def _infer_qvalue_name(keys) -> Union[str, None]:
@@ -407,6 +418,7 @@ class MzidWriter(WriterBase):
         ------
         NotImplementedError
             MzidWriter currently does not support write_psm.
+
         """
         raise NotImplementedError("MzidWriter currently does not support write_psm.")
 

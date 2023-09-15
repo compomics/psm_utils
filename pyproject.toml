@@ -70,4 +70,4 @@ target-version = ['py37']
 
 [tool.ruff]
 line-length = 99
-target-version = 'py37'
+target-version = "py37"

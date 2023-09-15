@@ -103,6 +103,12 @@ class PSM(BaseModel):
     def __setitem__(self, item, value: any) -> None:
         setattr(self, item, value)
 
+    @property
+    def precursor_mz_error(self) -> float:
+        """Difference between observed and theoretical m/z in Da."""
+        theoretical_mz = self.peptidoform.theoretical_mz
+        return self.precursor_mz - theoretical_mz
+
     def get_precursor_charge(self) -> int:
         """Precursor charge, as embedded in :py:attr:`PSM.peptidoform`."""
         return self.peptidoform.precursor_charge

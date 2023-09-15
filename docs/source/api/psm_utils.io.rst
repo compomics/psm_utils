@@ -84,3 +84,10 @@ psm_utils.io.xtandem
 .. automodule:: psm_utils.io.xtandem
    :members:
    :inherited-members:
+
+psm_utils.io.ionbot
+##########################
+
+.. automodule:: psm_utils.io.ionbot
+   :members:
+   :inherited-members:

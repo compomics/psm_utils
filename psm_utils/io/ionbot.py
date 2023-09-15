@@ -40,7 +40,33 @@ class IonbotReader(ReaderBase):
         *args,
         **kwargs,
     ) -> None:
+        """
+        Reader for ionbot PSM files.
 
+        Parameters
+        ----------
+        filename: str, pathlib.Path
+            Path to PSM file.
+
+        Examples
+        --------
+
+        IonbotReader supports iteration:
+
+        >>> from psm_utils.io.ionbot import IonbotReader
+        >>> for psm in IonbotReader("peptides_1_1_0.mzid"):
+        ...     print(psm.peptidoform.proforma)
+        ACDEK
+        AC[Carbamidomethyl]DEFGR
+        [Acetyl]-AC[Carbamidomethyl]DEFGHIK
+
+        Or a full file can be read at once into a :py:class:`psm_utils.psm_list.PSMList`
+        object:
+
+        >>> ionbot_reader = IonbotReader("peptides_1_1_0.mzid")
+        >>> psm_list = ionbot_reader.read_file()
+
+        """
         super().__init__(filename, *args, **kwargs)
         self.filename = filename
 
@@ -53,39 +79,33 @@ class IonbotReader(ReaderBase):
                 yield psm
 
     def read_file(self) -> PSMList:
-        """Read full Peptide Record PSM file into a PSMList object."""
-        psm_list = []
-        with open(self.filename) as ionbot_in:
-            reader = csv.DictReader(ionbot_in, delimiter=",")
-            for row in reader:
-                psm_list.append(self._get_peptide_spectrum_match(row))
-        return PSMList(psm_list=psm_list)
+        """Read full mzid file to PSM list object."""
+        return PSMList(psm_list=[psm for psm in self])
 
     def _get_peptide_spectrum_match(self, psm_dict: dict[str, str | float]) -> PSM:
-
         return PSM(
             peptidoform=self._parse_peptidoform(
-                psm_dict["database_peptide"],
+                psm_dict["matched_peptide"],
                 psm_dict["modifications"],
                 psm_dict["charge"],
             ),
             spectrum_id=psm_dict["spectrum_title"],
             run=psm_dict["spectrum_file"],
-            is_decoy=psm_dict["database"] == "D",
+            is_decoy=True
+            if psm_dict["database"] == "D"
+            else False
+            if psm_dict["database"] == "T"
+            else None,
             score=float(psm_dict["psm_score"]),
-            # precursor_mz=float(psm_dict["m/z"]),
+            precursor_mz=float(psm_dict["m/z"]),
             retention_time=float(psm_dict["observed_retention_time"]),
-            protein_list=psm_dict["proteins"].split(
-                "||"
-            ),  # what is the ionbot separator?
-            source="Ionbot",
+            protein_list=psm_dict["proteins"].split("||"),
+            source="ionbot",
             qvalue=float(psm_dict["q-value"]),
             pep=float(psm_dict["PEP"]),
-            provenance_data=({"Ionbot_filename": str(self.filename)}),
+            provenance_data=({"ionbot_filename": str(self.filename)}),
             metadata={
-                col: str(psm_dict[col])
-                for col in psm_dict.keys()
-                if col not in REQUIRED_COLUMNS
+                col: str(psm_dict[col]) for col in psm_dict.keys() if col not in REQUIRED_COLUMNS
             },
         )
 
@@ -94,14 +114,10 @@ class IonbotReader(ReaderBase):
         peptide = peptide = [""] + list(peptide) + [""]
         pattern = re.compile(r"^(?P<U>\[\S*?\])?(?P<mod>.*?)(?P<AA>\[\S*?\])?$")
 
-        for position, label in zip(
-            modifications.split("|")[::2], modifications.split("|")[1::2]
-        ):
+        for position, label in zip(modifications.split("|")[::2], modifications.split("|")[1::2]):
             mod_match = pattern.search(label)
-
             if mod_match.group("U"):
                 parsed_label = "U:" + mod_match.group("U")[1:-1]
-
             else:
                 parsed_label = mod_match.group("mod")
 
@@ -120,16 +136,10 @@ class IonbotReader(ReaderBase):
         if charge:
             proforma_seq += f"/{charge}"
 
-        return proforma_seq
+        return Peptidoform(proforma_seq)
 
 
-class InvalidPeprecError(PSMUtilsIOException):
-    """Invalid Peptide Record file."""
-
-    pass
-
-
-class InvalidIonbotModificationError(InvalidPeprecError):
+class InvalidIonbotModificationError(PSMUtilsIOException):
     """Invalid Peptide Record modification."""
 
     pass

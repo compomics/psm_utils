@@ -6,13 +6,10 @@ from __future__ import annotations
 
 import csv
 import re
-from collections import namedtuple
 from pathlib import Path
-from typing import Iterable, NamedTuple, Optional
+from typing import Iterable
 
-import pandas as pd
-
-from psm_utils.io._base_classes import ReaderBase, WriterBase
+from psm_utils.io._base_classes import ReaderBase
 from psm_utils.io.exceptions import PSMUtilsIOException
 from psm_utils.peptidoform import Peptidoform
 from psm_utils.psm import PSM

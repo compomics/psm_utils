@@ -1,5 +1,7 @@
 """
-ionbot first csv file parser
+Interface with ionbot PSM files.
+
+Currently only supports the ionbot.first.csv files.
 """
 
 from __future__ import annotations
@@ -7,7 +9,7 @@ from __future__ import annotations
 import csv
 import re
 from pathlib import Path
-from typing import Iterable
+from typing import Dict, Iterable, Union
 
 from psm_utils.io._base_classes import ReaderBase
 from psm_utils.io.exceptions import PSMUtilsIOException
@@ -38,7 +40,7 @@ class IonbotReader(ReaderBase):
         **kwargs,
     ) -> None:
         """
-        Reader for ionbot PSM files.
+        Reader for ``ionbot.first.csv`` PSM files.
 
         Parameters
         ----------
@@ -51,7 +53,7 @@ class IonbotReader(ReaderBase):
         IonbotReader supports iteration:
 
         >>> from psm_utils.io.ionbot import IonbotReader
-        >>> for psm in IonbotReader("peptides_1_1_0.mzid"):
+        >>> for psm in IonbotReader("ionbot.first.csv"):
         ...     print(psm.peptidoform.proforma)
         ACDEK
         AC[Carbamidomethyl]DEFGR
@@ -60,7 +62,7 @@ class IonbotReader(ReaderBase):
         Or a full file can be read at once into a :py:class:`psm_utils.psm_list.PSMList`
         object:
 
-        >>> ionbot_reader = IonbotReader("peptides_1_1_0.mzid")
+        >>> ionbot_reader = IonbotReader("ionbot.first.csv")
         >>> psm_list = ionbot_reader.read_file()
 
         """
@@ -72,14 +74,13 @@ class IonbotReader(ReaderBase):
         with open(self.filename, "rt") as open_file:
             reader = csv.DictReader(open_file, delimiter=",")
             for row in reader:
-                psm = self._get_peptide_spectrum_match(row)
-                yield psm
+                yield self._get_peptide_spectrum_match(row)
 
     def read_file(self) -> PSMList:
-        """Read full mzid file to PSM list object."""
+        """Read full PSM file into a PSMList object."""
         return PSMList(psm_list=[psm for psm in self])
 
-    def _get_peptide_spectrum_match(self, psm_dict: dict[str, str | float]) -> PSM:
+    def _get_peptide_spectrum_match(self, psm_dict: Dict[str, str | float]) -> PSM:
         return PSM(
             peptidoform=self._parse_peptidoform(
                 psm_dict["matched_peptide"],
@@ -107,7 +108,10 @@ class IonbotReader(ReaderBase):
         )
 
     @staticmethod
-    def _parse_peptidoform(peptide, modifications, charge):
+    def _parse_peptidoform(
+        peptide: str, modifications: str, charge: Union[str, int]
+    ) -> Peptidoform:
+        """Parse peptide, modifications, and charge to Peptidoform."""
         peptide = peptide = [""] + list(peptide) + [""]
         pattern = re.compile(r"^(?P<U>\[\S*?\])?(?P<mod>.*?)(?P<AA>\[\S*?\])?$")
 
@@ -130,8 +134,7 @@ class IonbotReader(ReaderBase):
         proforma_seq = "".join(peptide)
 
         # Add charge state
-        if charge:
-            proforma_seq += f"/{charge}"
+        proforma_seq += f"/{charge}"
 
         return Peptidoform(proforma_seq)
 

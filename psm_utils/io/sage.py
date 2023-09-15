@@ -48,13 +48,6 @@ class SageReader(ReaderBase):
                 psm = self._get_peptide_spectrum_match(row)
                 yield psm
 
-    def read_file(self) -> PSMList:
-        """Read full PSM file into a PSMList object."""
-        psm_list = []
-        for psm in self.__iter__():
-            psm_list.append(psm)
-        return PSMList(psm_list=psm_list)
-
     def _get_peptide_spectrum_match(self, psm_dict) -> PSM:
         """Parse a single PSM from a sage PSM file."""
         rescoring_features = {}
@@ -96,8 +89,10 @@ class SageReader(ReaderBase):
             spectrum_id=psm_dict["scannr"],
             run=Path(psm_dict["filename"]).stem,
             is_decoy=True
-            if psm_dict["label"] == "-1" else False
-            if psm_dict["label"] == "1" else None,
+            if psm_dict["label"] == "-1"
+            else False
+            if psm_dict["label"] == "1"
+            else None,
             qvalue=psm_dict["spectrum_q"],
             score=float(psm_dict[self.score_column]),
             precursor_mz=self._parse_precursor_mz(psm_dict["expmass"], psm_dict["charge"]),

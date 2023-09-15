@@ -52,6 +52,8 @@ import csv
 from pathlib import Path
 from typing import Optional
 
+from pydantic import ValidationError
+
 from psm_utils.io._base_classes import ReaderBase, WriterBase
 from psm_utils.io.exceptions import PSMUtilsIOException
 from psm_utils.psm import PSM
@@ -66,14 +68,13 @@ class TSVReader(ReaderBase):
         with open(self.filename, "rt") as open_file:
             reader = csv.DictReader(open_file, delimiter="\t")
             for row in reader:
-                yield PSM(**self._parse_entry(row))
-
-    def read_file(self) -> PSMList:
-        """Read full PSM file into a PSMList object."""
-        return PSMList(psm_list=[psm for psm in self.__iter__()])
+                try:
+                    yield PSM(**self._parse_entry(row))
+                except ValidationError as e:
+                    raise PSMUtilsIOException(f"Could not parse PSM from row: `{row}`") from e
 
     @staticmethod
-    def _parse_entry(entry: dict):
+    def _parse_entry(entry: dict) -> dict:
         """Parse single TSV entry to :py:class:`~psm_utils.psm.PSM`."""
         # Replace empty strings with None
         entry = {k: v if v else None for k, v in entry.items()}
@@ -211,7 +212,9 @@ class TSVWriter(WriterBase):
         if not self.fieldnames:
             raise ValueError("`example_psm` required when writing to new file.")
         with open(self.filename, "wt", newline="") as f:
-            writer = csv.DictWriter(f, fieldnames=self.fieldnames, delimiter="\t")
+            writer = csv.DictWriter(
+                f, fieldnames=self.fieldnames, delimiter="\t", extrasaction="ignore"
+            )
             writer.writeheader()
             for psm in psm_list:
                 writer.writerow(self._psm_to_entry(psm))
@@ -228,15 +231,11 @@ class TSVWriter(WriterBase):
 
         # Flatten dictionary items
         if entry["provenance_data"]:
-            entry.update(
-                {"provenance:" + k: v for k, v in entry["provenance_data"].items()}
-            )
+            entry.update({"provenance:" + k: v for k, v in entry["provenance_data"].items()})
         if entry["metadata"]:
             entry.update({"meta:" + k: v for k, v in entry["metadata"].items()})
         if entry["rescoring_features"]:
-            entry.update(
-                {"rescoring:" + k: v for k, v in entry["rescoring_features"].items()}
-            )
+            entry.update({"rescoring:" + k: v for k, v in entry["rescoring_features"].items()})
         del entry["provenance_data"]
         del entry["metadata"]
         del entry["rescoring_features"]

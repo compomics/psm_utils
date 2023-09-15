@@ -57,9 +57,7 @@ from psm_utils.psm_list import PSMList
 
 
 class XTandemReader(ReaderBase):
-    def __init__(
-        self, filename: str | Path, *args, decoy_prefix="DECOY_", **kwargs
-    ) -> None:
+    def __init__(self, filename: str | Path, *args, decoy_prefix="DECOY_", **kwargs) -> None:
         """
         Reader for X!Tandem XML PSM files.
 
@@ -100,14 +98,6 @@ class XTandemReader(ReaderBase):
             for entry in reader:
                 psm = self._parse_entry(entry)
                 yield psm
-
-    def read_file(self) -> PSMList:
-        """Read full PSM file into a PSMList object."""
-        psm_list = []
-        with tandem.read(str(self.filename)) as reader:
-            for entry in reader:
-                psm_list.append(self._parse_entry(entry))
-        return PSMList(psm_list=psm_list)
 
     def _parse_peptidoform(self, peptide_entry, charge: int) -> Peptidoform:
         """Parse X!Tandem XML peptide entry to :py:class:`~psm_utils.peptidoform.Peptidoform`."""

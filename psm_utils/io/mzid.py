@@ -29,7 +29,9 @@ logger = logging.getLogger(__name__)
 
 # Excerpt from MS:1001143 items (PSM-level search engine specific statistic)
 # Not all child terms are used, as not all statistics are direct scores.
+# Items are sorted by priority (if more scores are present, the first found one is used)
 STANDARD_SEARCHENGINE_SCORES = [
+    "PeptideShaker PSM score",
     "Amanda:AmandaScore",
     "Andromeda:score",
     "Byonic:Score",
@@ -49,7 +51,6 @@ STANDARD_SEARCHENGINE_SCORES = [
     "OMSSA:evalue",
     "OpenPepXL:score",
     "PEAKS:peptideScore",
-    "PeptideShaker PSM score",
     "Phenyx:Pepzscore",
     "ProLuCID:xcorr",
     "ProSight:specral C-score",
@@ -57,6 +58,7 @@ STANDARD_SEARCHENGINE_SCORES = [
     "ProteinProspector:score",
     "ProteinScape:SequestMetaScore",
     "ProteomeDiscoverer:Delta Score",
+    "Proteome Discoverer Delta Score",
     "SEQUEST:xcorr",
     "SIM-XL score ",
     "SQID:score ",
@@ -87,7 +89,7 @@ PEP_TERMS = [
 
 
 class MzidReader(ReaderBase):
-    def __init__(self, filename: str | Path, *args, **kwargs) -> None:
+    def __init__(self, filename: str | Path, *args, score_key: str = None, **kwargs) -> None:
         """
         Reader for mzIdentML PSM files.
 
@@ -95,6 +97,9 @@ class MzidReader(ReaderBase):
         ----------
         filename: str, pathlib.Path
             Path to PSM file.
+        score_key: str, optional
+            Name of the score metric to use as PSM score. If not provided, the score metric is
+            inferred from the file if one of the child parameters of ``MS:1001143`` is present.
 
         Examples
         --------
@@ -160,10 +165,6 @@ class MzidReader(ReaderBase):
                     yield self._get_peptide_spectrum_match(
                         spectrum_id, spectrum_title, run, rt, ion_mobility, entry
                     )
-
-    def read_file(self) -> PSMList:
-        """Read full mzid file to PSM list object."""
-        return PSMList(psm_list=[psm for psm in self])
 
     @staticmethod
     def _get_xml_namespace(root_tag):
@@ -257,6 +258,11 @@ class MzidReader(ReaderBase):
             psm_spectrum_id = spectrum_title
         else:
             psm_spectrum_id = spectrum_id
+
+        try:
+            score = sii[self.score_key]
+        except KeyError:
+            score = None
 
         psm = PSM(
             peptidoform=peptidoform,

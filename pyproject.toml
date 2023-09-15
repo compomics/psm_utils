@@ -28,6 +28,7 @@ dependencies = [
     "click",
     "rich",
     "pydantic",
+    "sqlalchemy",
 ]
 
 [project.optional-dependencies]

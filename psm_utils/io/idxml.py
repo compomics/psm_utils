@@ -35,10 +35,6 @@ class IdXMLReader(ReaderBase):
                 for peptide_hit in entry["PeptideHit"]:
                     yield self._parse_psm(entry, peptide_hit)
 
-    def read_file(self) -> PSMList:
-        """Read full PSM file into a PSMList object."""
-        return PSMList(psm_list=[psm for psm in self.__iter__()])
-
     @staticmethod
     def _parse_peptidoform(sequence: str, charge: int):
         """
@@ -74,9 +70,7 @@ class IdXMLReader(ReaderBase):
     def _parse_psm(self, entry: dict, peptide_hit: dict) -> PSM:
         """Parse idXML PSM to :py:class:`~psm_utils.psm.PSM`."""
         return PSM(
-            peptidoform=self._parse_peptidoform(
-                peptide_hit["sequence"], peptide_hit["charge"]
-            ),
+            peptidoform=self._parse_peptidoform(peptide_hit["sequence"], peptide_hit["charge"]),
             spectrum_id=entry["spectrum_reference"],
             is_decoy=self._parse_is_decoy(peptide_hit["target_decoy"]),
             score=peptide_hit["score"],

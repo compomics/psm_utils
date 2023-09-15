@@ -12,20 +12,15 @@ class Peptidoform:
     Peptide sequence, modifications and charge state represented in ProForma notation.
     """
 
-    def __init__(self, proforma_sequence: str) -> None:
+    def __init__(self, proforma_sequence: [str, proforma.ProForma]) -> None:
         """
         Peptide sequence, modifications and charge state represented in ProForma notation.
 
         Parameters
         ----------
-        proforma_sequence : str
-            Peptidoform sequence in ProForma v2 notation.
-
-        Examples
-        --------
-        >>> peptidoform = Peptidoform("ACDM[Oxidation]EK")
-        >>> peptidoform.theoretical_mass
-        711.2567622919099
+        proforma_sequence
+            Peptidoform sequence in ProForma v2 notation as :py:class:`str` or
+            :py:class:`pyteomics.proforma.ProForma` object.
 
         Attributes
         ----------
@@ -34,18 +29,30 @@ class Peptidoform:
         properties : dict[str, Any]
             Dict with sequence-wide properties.
 
+        Examples
+        --------
+        >>> peptidoform = Peptidoform("ACDM[Oxidation]EK")
+        >>> peptidoform.theoretical_mass
+        711.2567622919099
+
         """
-        try:
-            self.parsed_sequence, self.properties = proforma.parse(proforma_sequence)
-        except proforma.ProFormaError as e:
-            raise PeptidoformException(
-                f"Could not parse ProForma sequence: {proforma_sequence}"
-            ) from e
+        if isinstance(proforma_sequence, str):
+            try:
+                self.parsed_sequence, self.properties = proforma.parse(proforma_sequence)
+            except proforma.ProFormaError as e:
+                raise PeptidoformException(
+                    f"Could not parse ProForma sequence: {proforma_sequence}"
+                ) from e
+        elif isinstance(proforma_sequence, proforma.ProForma):
+            self.parsed_sequence = proforma_sequence.sequence
+            self.properties = proforma_sequence.properties
+        else:
+            raise TypeError(
+                f"Expected ProForma sequence or ProForma object, got {type(proforma_sequence)}."
+            )
 
         if self.properties["isotopes"]:
-            raise NotImplementedError(
-                "Peptidoforms with isotopes are currently not supported."
-            )
+            raise NotImplementedError("Peptidoforms with isotopes are currently not supported.")
 
     def __repr__(self) -> str:
         return f"{self.__class__.__qualname__}('{self.proforma}')"
@@ -186,8 +193,7 @@ class Peptidoform:
                         position_comp += tag.composition
                     except (AttributeError, KeyError) as e:
                         raise ModificationException(
-                            "Cannot resolve composition for modification "
-                            f"{tag.value}."
+                            "Cannot resolve composition for modification " f"{tag.value}."
                         ) from e
             comp_list.append(position_comp)
 
@@ -282,9 +288,7 @@ class Peptidoform:
             try:
                 position_mass = mass.std_aa_mass[aa]
             except (AttributeError, KeyError) as e:
-                raise AmbiguousResidueException(
-                    f"Cannot resolve mass for amino acid {aa}."
-                ) from e
+                raise AmbiguousResidueException(f"Cannot resolve mass for amino acid {aa}.") from e
             # Fixed modifications
             if aa in fixed_rules:
                 position_mass += fixed_rules[aa]
@@ -428,9 +432,7 @@ class Peptidoform:
             "fixed_modifications",
         ]:
             if self.properties[mod_type]:
-                self.properties[mod_type] = _rename_modification_list(
-                    self.properties[mod_type]
-                )
+                self.properties[mod_type] = _rename_modification_list(self.properties[mod_type])
 
     def add_fixed_modifications(
         self, modification_rules: list[tuple[str, list[str]]] | dict[str, list[str]]

@@ -13,7 +13,6 @@ import numpy as np
 from psm_utils.exceptions import PSMUtilsException
 from psm_utils.io._base_classes import ReaderBase
 from psm_utils.psm import PSM, Peptidoform
-from psm_utils.psm_list import PSMList
 
 logger = logging.getLogger(__name__)
 
@@ -66,10 +65,6 @@ class MSAmandaReader(ReaderBase):
             for psm_dict in reader:
                 yield self._get_peptide_spectrum_match(psm_dict)
 
-    def read_file(self) -> PSMList:
-        """Read full PSM file into a PSMList object."""
-        return PSMList(psm_list=[psm for psm in self.__iter__()])
-
     def _evaluate_columns(self, columns) -> bool:
         """Column evaluation for MS Amanda file."""
         # Check if required columns are present
@@ -84,9 +79,7 @@ class MSAmandaReader(ReaderBase):
             self._present_columns.append("Rank")
 
         # Get list of present rescoring features
-        self._rescoring_feature_columns = [
-            col for col in RESCORING_FEATURES if col in columns
-        ]
+        self._rescoring_feature_columns = [col for col in RESCORING_FEATURES if col in columns]
 
         # Add remaining columns to metadata
         self._metadata_columns = [
@@ -116,9 +109,7 @@ class MSAmandaReader(ReaderBase):
                 if col in self._rescoring_feature_columns
             },
             metadata={
-                col: str(value)
-                for col, value in psm_dict.items()
-                if col in self._metadata_columns
+                col: str(value) for col, value in psm_dict.items() if col in self._metadata_columns
             },
         )
         if self._has_rank_column:
@@ -130,16 +121,15 @@ class MSAmandaReader(ReaderBase):
         "Parse MSAmanda sequence, modifications and charge to proforma sequence"
         peptide = [""] + [aa.upper() for aa in seq] + [""]
         pattern = re.compile(
-            r"(?P<site>[A-Z])(?P<loc>-term|\d+)\((?P<mod_name>[A-Za-z]+)\|([-0-9.]+)\|(variable|fixed)\);?"
+            r"(?:(?:(?P<site>[A-Z])(?P<loc>\d+))|(?P<term>[CN]-Term))\((?P<mod_name>[^|()]+)\|(?P<mz>[-0-9.]+)\|(?P<type>variable|fixed)\);?"
         )
 
         for match in pattern.finditer(modifications):
-            if match.group("loc") == "-term":
-                if match.group("site") == "N":
-                    peptide[0] = peptide[0] + f'[{match.group("mod_name")}]'
-                elif match.group("site") == "C":
-                    peptide[-1] = peptide[-1] + f'[{match.group("mod_name")}]'
-            else:
+            if match.group("term") == "N-Term":
+                peptide[0] = peptide[0] + f'[{match.group("mod_name")}]'
+            elif match.group("term") == "C-Term":
+                peptide[-1] = peptide[-1] + f'[{match.group("mod_name")}]'
+            if match.group("loc") is not None: 
                 peptide[int(match.group("loc"))] = (
                     peptide[int(match.group("loc"))] + f'[{match.group("mod_name")}]'
                 )

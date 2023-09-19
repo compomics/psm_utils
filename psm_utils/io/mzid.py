@@ -133,7 +133,7 @@ class MzidReader(ReaderBase):
         """
         super().__init__(filename, *args, **kwargs)
         self._non_metadata_keys = ["ContactRole", "passThreshold"]
-        self._score_key = None
+        self._score_key = score_key
         self._rt_key = None
         self._spectrum_rt_key = None
         self._qvalue_key = None
@@ -260,16 +260,15 @@ class MzidReader(ReaderBase):
             psm_spectrum_id = spectrum_id
 
         try:
-            score = sii[self.score_key]
+            score = sii[self._score_key]
         except KeyError:
             score = None
-
         psm = PSM(
             peptidoform=peptidoform,
             spectrum_id=psm_spectrum_id,
             run=run,
             is_decoy=is_decoy,
-            score=sii[self._score_key] if self._score_key else None,
+            score=score,
             qvalue=sii[self._qvalue_key] if self._qvalue_key else None,
             pep=sii[self._pep_key] if self._pep_key else None,
             precursor_mz=precursor_mz,
@@ -295,7 +294,8 @@ class MzidReader(ReaderBase):
             "Modification",
         ]
         # Get the score key and add to default keys
-        self._score_key = self._infer_score_name(keys)
+        if not self._score_key:
+            self._score_key = self._infer_score_name(keys)
         if self._score_key:
             default_keys.append(self._score_key)
         else:

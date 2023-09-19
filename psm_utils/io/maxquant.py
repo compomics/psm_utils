@@ -134,19 +134,19 @@ class MSMSReader(ReaderBase):
         for match in pattern.finditer(modified_seq):
             # take match object string, remove leading and trailing bracket
             # and escape remaining brackets
-            se_mod_string = match[1].replace("(", "\(").replace(")", "\)")
+            se_mod_string = match[1].replace("(", r"\(").replace(")", r"\)")
 
             # if N-term mod
             if match.start() == 0:
-                modified_seq = re.sub(f"\({se_mod_string}\)", f"[{match[1]}]-", modified_seq)
+                modified_seq = re.sub(rf"\({se_mod_string}\)", rf"[{match[1]}]-", modified_seq)
 
             # if C-term mod
             elif match.end() == modified_seq_len:
-                modified_seq = re.sub(f"\({se_mod_string}\)", f"-[{match[1]}]", modified_seq)
+                modified_seq = re.sub(rf"\({se_mod_string}\)", rf"-[{match[1]}]", modified_seq)
 
             # if modification on amino acid
             else:
-                modified_seq = re.sub(f"\({se_mod_string}\)", f"[{match[1]}]", modified_seq)
+                modified_seq = re.sub(rf"\({se_mod_string}\)", rf"[{match[1]}]", modified_seq)
 
         modified_seq += f"/{charge}"
 

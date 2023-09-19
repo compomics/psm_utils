@@ -17,7 +17,10 @@ from sqlalchemy import (
     UniqueConstraint,
     text,
 )
-from sqlalchemy.ext.declarative import declarative_base
+try:
+    from sqlalchemy.orm import declarative_base
+except ImportError:
+    from sqlalchemy.ext.declarative import declarative_base
 from sqlalchemy.sql.sqltypes import NullType
 
 Base = declarative_base()

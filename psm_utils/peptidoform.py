@@ -1,5 +1,7 @@
 from __future__ import annotations
 
+from typing import Iterable, List, Tuple, Union
+
 import numpy as np
 from pyteomics import mass, proforma
 
@@ -68,6 +70,12 @@ class Peptidoform:
             return self.proforma == __o.proforma
         except AttributeError:
             raise NotImplementedError("Object is not a Peptidoform")
+
+    def __iter__(self) -> Iterable[Tuple[str, Union[None, List[proforma.TagBase]]]]:
+        return self.parsed_sequence.__iter__()
+
+    def __len__(self) -> int:
+        return self.parsed_sequence.__len__()
 
     @property
     def proforma(self) -> str:

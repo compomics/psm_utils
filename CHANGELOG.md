@@ -8,19 +8,37 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 # [0.5.0] - 2023-09-20
 ### Added
 
-- Added new `io.ionbot` reader
-- `io.mzid`: Parse inverse reduced ion mobility from mzid files (PEAKS)
-- `peptidoform`: Added support for `iter()` and `len()` methods
+- `Peptidoform`: Added support for `iter()` and `len()` methods
+- `Peptidoform`: Added support for initialization from a `pyteomics.proforma.ProForma` object
+- `PSM`: Add `precursor_mz_error` property
+- `PSMList`: Added support for `append()` and `extend()` methods.
+- `io`: Added new `io.ionbot` reader
+- `io`: Added support for Proteome Discoverer MSF files
+- `io.mzid`: Parse inverse reduced ion mobility from mzid files (e.g. from PEAKS)
+- `io.mzid`: Add support for user to define custom score key
+- `io.mzid`: Add `Proteome Discoverer Delta Score` to known scores (with spaces, no colons)
+- `io.mzid`: Allow inconsistent presence of score in PSMs in a single mzid file
 
 ### Changed
+- `PSM`: Values of the `rescoring_features` dictionary are now coerced to floats
+- io: Raise `PSMUtilsIOException` when passed filetype is not known
+- `io`: Make io reader `read_file` method inheritable (code cleanup)
 - `io.mzid`: Throw warning when no known score can be parsed from mzid file instead of error
 - `io.mzid`: Move spectrum level parsing of rt and ion mobility to function
+- `io.mzid`: Give `PeptideShaker PSM score` priority over other potential search engine scores (required for correct PeptideShaker mzid parsing)
+- `io.percolator`: Add option to write `PSMScore` and `ChargeN` as features to PIN file. Default is now `False`.
+- Formatting: Increase max line length to 99 (code formatting)
 
 ### Fixed
+- `PSMList`: Fix issue where `psm_list["protein_list"]` resulted in a Numpy error due to the inconsistent shape of the lists.
 - `io.tsv`: Throw more descriptive `PSMUtilsIOException` when handeling tsv errors
-- `psm`: Rename `psm` method `get_mass_shift` to `precursor_mz_error`
+- `io.msamanda`: Fix support for N/C-terminal modifications
+- `io.Percolator.PercolatorTabWriter`: Allow rescoring features that are not in `feature_names` (`extrasaction` is now specified in `DictWriter`)
 - Use raw strings for escape characters where needed
 - Fix compatibility with sqlalchemy 2.0 (move of `declarative_base`)
+- online: Remove useless == True
+- docs: Set newer `build>os` configuration for readthedocs.org
+- CI: Upgrade Github action versions
 
 # [0.4.1] - 2023-07-06
 

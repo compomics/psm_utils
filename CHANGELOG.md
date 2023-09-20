@@ -5,9 +5,26 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+# [0.5.0] - 2023-09-20
+### Added
+
+- Added new `io.ionbot` reader
+- Parse inverse reduced ion mobility from mzid files (PEAKS)
+- Added iter and len methods for `peptidoform`
+
+### Changed
+- Throw warning when no known score can be parsed from mzid file instead of error
+- Move spectrum level parsing of rt and ion mobility to function
+
+
+### Fixed
+- Throw more descriptive `PSMUtilsIOException` when handeling tsv errors
+- Use `matched_peptide` rather than `database_peptide` in `io.ionbot`
+- Rename `psm` method `get_mass_shift` to `precursor_mz_error` 
+
 # [0.4.1] - 2023-07-06
 
-## Fixed
+### Fixed
 
 - `PSMList`: Revert comparison operator change from v0.4.0 that results in broken `calculate_qvalues()` method (E711; Numpy array, not singleton)
 

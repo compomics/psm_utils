@@ -9,18 +9,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Added
 
 - Added new `io.ionbot` reader
-- Parse inverse reduced ion mobility from mzid files (PEAKS)
-- Added iter and len methods for `peptidoform`
+- `io.mzid`: Parse inverse reduced ion mobility from mzid files (PEAKS)
+- `peptidoform`: Added support for `iter()` and `len()` methods
 
 ### Changed
-- Throw warning when no known score can be parsed from mzid file instead of error
-- Move spectrum level parsing of rt and ion mobility to function
-
+- `io.mzid`: Throw warning when no known score can be parsed from mzid file instead of error
+- `io.mzid`: Move spectrum level parsing of rt and ion mobility to function
 
 ### Fixed
-- Throw more descriptive `PSMUtilsIOException` when handeling tsv errors
-- Use `matched_peptide` rather than `database_peptide` in `io.ionbot`
-- Rename `psm` method `get_mass_shift` to `precursor_mz_error` 
+- `io.tsv`: Throw more descriptive `PSMUtilsIOException` when handeling tsv errors
+- `psm`: Rename `psm` method `get_mass_shift` to `precursor_mz_error`
+- Use raw strings for escape characters where needed
+- Fix compatibility with sqlalchemy 2.0 (move of `declarative_base`)
 
 # [0.4.1] - 2023-07-06
 

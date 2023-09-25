@@ -61,6 +61,12 @@ FILETYPES = {
         "extension": ".msf",
         "filename_pattern": r"^.*\.msf$",
     },
+    "sage": {
+        "reader": sage.SageReader,
+        "writer": None,
+        "extension": ".tsv",
+        "filename_pattern": r"^.*\.sage.tsv$",
+    },
     "tsv": {
         "reader": tsv.TSVReader,
         "writer": tsv.TSVWriter,
@@ -78,12 +84,6 @@ FILETYPES = {
         "writer": None,
         "extension": ".csv",
         "filename_pattern": r"^.*(?:_|\.)msamanda.csv$",
-    },
-    "sage": {
-        "reader": sage.SageReader,
-        "writer": None,
-        "extension": ".tsv",
-        "filename_pattern": r"^.*(?:_|\.).sage.tsv$",
     },
     "ionbot": {
         "reader": ionbot.IonbotReader,

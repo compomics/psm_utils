@@ -14,7 +14,7 @@ Notes
 from __future__ import annotations
 
 from abc import abstractmethod
-from typing import Iterable, Tuple, List
+from typing import Union, Iterable, Tuple, List
 import re
 from pathlib import Path
 
@@ -75,7 +75,7 @@ RESCORING_FEATURE_LIST = [
 ]
 
 class IdXMLReader(ReaderBase):
-    def __init__(self, filename: str | Path, *args, **kwargs) -> None:
+    def __init__(self, filename: Union[Path, str], *args, **kwargs) -> None:
         """
         Reader for idXML files.
 
@@ -83,6 +83,7 @@ class IdXMLReader(ReaderBase):
         ----------
         filename: str, pathlib.Path
             Path to idXML file.
+
         Examples
         --------
         >>> from psm_utils.io import IdXMLReader
@@ -123,6 +124,7 @@ class IdXMLReader(ReaderBase):
     def _parse_peptidoform(self, sequence: str, charge: int) -> str:
         """
         Parse idXML peptide to :py:class:`~psm_utils.peptidoform.Peptidoform`.
+
         Notes
         -----
         Implemented according to the documentation on
@@ -186,7 +188,7 @@ class IdXMLReader(ReaderBase):
         keys = []
         peptide_hit.getKeys(keys)
         # Convert from byte to str and remove the keys, which values are not in the fixed list of features
-        keys = [key.decode() for key in keys if  key.decode() in RESOCRING_FEATURE_LIST]
+        keys = [key.decode() for key in keys if  key.decode() in RESCORING_FEATURE_LIST]
 
         return keys
 

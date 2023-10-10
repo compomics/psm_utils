@@ -32,7 +32,7 @@ MOD_PATTERN_CTERM = re.compile(r"\.\[((?:[^][]+|\[(?:[^][]+|\[[^][]*\])*\])*)\]$
 
 # Extracted from the OpenMS PSMFeatureExtractor, which adds and manipulates features that will be given to percolator
 # https://github.com/OpenMS/OpenMS/blob/342f6524e76a2bab3dcb428ba2f4aa2d6bfe8483/src/topp/PSMFeatureExtractor.cpp
-RESOCRING_FEATURE_LIST = [
+RESCORING_FEATURE_LIST = [
     "isotope_error"
     "MS:1002049",  # MSGFPlus unchanged RawScore
     "MS:1002050",  # MSGFPlus unchanged DeNovoScore

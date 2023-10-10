@@ -115,7 +115,7 @@ class IdXMLReader(ReaderBase):
         if len(protein_ids) == 0:
             raise IdXMLReaderEmptyListException(f"File {self.filename} contains no proteins.")
         elif len(peptide_ids) == 0:
-            raise IdXMLReaderEmptyListException(f"File {self.filename} contains no :py:class:`~pyopenms.PeptideIdentifcation` to parse.")
+            raise IdXMLReaderEmptyListException(f"File {self.filename} contains no :py:class:`~pyopenms.PeptideIdentification` to parse.")
         elif len(peptide_ids[0].getHits()) == 0:
             raise IdXMLReaderEmptyListException(f"File {self.filename} contains no :py:class:`~pyopenms.PeptideHit` (PSM) to parse.")
         else:
@@ -146,7 +146,7 @@ class IdXMLReader(ReaderBase):
     def _parse_psm(self, protein_ids: oms.ProteinIdentification, peptide_id: oms.PeptideIdentification, peptide_hit: oms.PeptideHit) -> PSM:
         """
         Parse idXML :py:class:`~pyopenms.PeptideHit` to :py:class:`~psm_utils.psm.PSM`.
-        Use additional information from :py:class:`~pyopenms.ProteinIdentification` and :py:class:`~pyopenms.PeptideIdentifcation`
+        Use additional information from :py:class:`~pyopenms.ProteinIdentification` and :py:class:`~pyopenms.PeptideIdentification`
         to annotate parameters of the :py:class:`~psm_utils.psm.PSM` object.
         """
         return PSM(

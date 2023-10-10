@@ -21,6 +21,7 @@ dynamic = ["version"]
 requires-python = ">=3.7"
 dependencies = [
     "pyteomics >= 4",
+    "pyopenms",
     "lxml",
     "psims",
     "pandas",
@@ -44,7 +45,6 @@ docs = [
     "sphinx-autobuild",
 ]
 online = ["streamlit", "plotly"]
-pyopenms = ["pyopenms"]
 
 [project.urls]
 GitHub = "https://github.com/compomics/psm_utils"

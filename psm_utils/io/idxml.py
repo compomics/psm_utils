@@ -92,18 +92,17 @@ class IdXMLReader(ReaderBase):
         """
         super().__init__(filename, *args, **kwargs)
         self.filename = Path(filename)
-        protein_ids, peptide_ids = self._parse_idxml()
-        self.protein_ids = protein_ids
-        self.peptide_ids = peptide_ids
-        self.rescoring_features = self._get_rescoring_features(peptide_ids[0].getHits()[0])
+        self.rescoring_features = None
 
     def __iter__(self) -> Iterable[PSM]:
         """
         Iterate over file and return PSMs one-by-one.
         """
-        for peptide_id in self.peptide_ids:
+        protein_ids, peptide_ids = self._parse_idxml()
+        self.rescoring_features = self._get_rescoring_features(peptide_ids[0].getHits()[0])
+        for peptide_id in peptide_ids:
             for peptide_hit in peptide_id.getHits():
-                yield self._parse_psm(self.protein_ids, peptide_id, peptide_hit)
+                yield self._parse_psm(protein_ids, peptide_id, peptide_hit)
 
     def _parse_idxml(self) -> Tuple(oms.ProteinIdentification, oms.PeptideIdentification):
         """
@@ -113,11 +112,11 @@ class IdXMLReader(ReaderBase):
         oms.IdXMLFile().load(str(self.filename), protein_ids, peptide_ids)
 
         if len(protein_ids) == 0:
-            raise IdXMLReaderEmptyListException(f"File {self.filename} contains no proteins.")
+            raise IdXMLReaderEmptyListException(f"File {self.filename} contains no proteins. Nothing to parse.")
         elif len(peptide_ids) == 0:
-            raise IdXMLReaderEmptyListException(f"File {self.filename} contains no :py:class:`~pyopenms.PeptideIdentification` to parse.")
+            raise IdXMLReaderEmptyListException(f"File {self.filename} contains no PeptideIdentifications. Nothing to parse.")
         elif len(peptide_ids[0].getHits()) == 0:
-            raise IdXMLReaderEmptyListException(f"File {self.filename} contains no :py:class:`~pyopenms.PeptideHit` (PSM) to parse.")
+            raise IdXMLReaderEmptyListException(f"File {self.filename} contains no PeptideHits. Nothing to parse.")
         else:
             return protein_ids, peptide_ids
 
@@ -153,7 +152,7 @@ class IdXMLReader(ReaderBase):
             peptidoform = self._parse_peptidoform(peptide_hit.getSequence().toString(), peptide_hit.getCharge()),
             spectrum_id = peptide_id.getMetaValue("spectrum_reference"),
             run = self._get_run(protein_ids, peptide_id),
-            is_decoy = peptide_hit.getMetaValue("target_decoy") == "decoy",
+            is_decoy = self._is_decoy(peptide_hit),
             score = peptide_hit.getScore(),
             precursor_mz = peptide_id.getMZ(),
             retention_time = peptide_id.getRT(),
@@ -167,7 +166,8 @@ class IdXMLReader(ReaderBase):
                 "idxml:higher_score_better": str(peptide_id.isHigherScoreBetter()),
                 "idxml:significance_threshold": str(peptide_id.getSignificanceThreshold())
             },
-            rescoring_features = {key: float(peptide_hit.getMetaValue(key)) for key in self.rescoring_features if self._is_float(peptide_hit.getMetaValue(key))}
+            rescoring_features = {key: float(peptide_hit.getMetaValue(key)) for key in self.rescoring_features \
+                                  if self._is_float(peptide_hit.getMetaValue(key))}
         )
 
     def _get_run(self, protein_ids: oms.ProteinIdentification, peptide_id: oms.PeptideIdentification) -> str:
@@ -204,6 +204,14 @@ class IdXMLReader(ReaderBase):
         except ValueError:
             return False
         
+    def _is_decoy(self, peptide_hit: oms.PeptideHit) -> bool:
+        """
+        Check if PSM is target or decoy
+        """
+        if peptide_hit.metaValueExists("target_decoy"):
+            return peptide_hit.getMetaValue("target_decoy") == "decoy"
+        else:
+            return None
 
 class IdXMLReaderEmptyListException(PSMUtilsException):
     """Exception in psm_utils.io.IdXMLReader"""

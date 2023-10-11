@@ -40,6 +40,14 @@ html_css_files = ["css/custom.css"]
 autodoc_member_order = "bysource"
 autoclass_content = "init"
 
+# Intersphinx options
+intersphinx_mapping = {
+    "python": ("https://docs.python.org/3", None),
+    "pandas": ("https://pandas.pydata.org/pandas-docs/stable/", None),
+    "numpy": ("https://numpy.org/doc/stable/", None),
+    "pyteomics": ("https://pyteomics.readthedocs.io/en/latest/", None),
+    "pyopenms": ("https://pyopenms.readthedocs.io/en/latest/", None)
+}
 
 def setup(app):
     config = {

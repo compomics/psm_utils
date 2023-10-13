@@ -92,17 +92,18 @@ class IdXMLReader(ReaderBase):
         """
         super().__init__(filename, *args, **kwargs)
         self.filename = Path(filename)
-        self.rescoring_features = None
+        protein_ids, peptide_ids = self._parse_idxml()
+        self.protein_ids = protein_ids
+        self.peptide_ids = peptide_ids
+        self.rescoring_features = self._get_rescoring_features(peptide_ids[0].getHits()[0])
 
     def __iter__(self) -> Iterable[PSM]:
         """
         Iterate over file and return PSMs one-by-one.
         """
-        protein_ids, peptide_ids = self._parse_idxml()
-        self.rescoring_features = self._get_rescoring_features(peptide_ids[0].getHits()[0])
-        for peptide_id in peptide_ids:
+        for peptide_id in self.peptide_ids:
             for peptide_hit in peptide_id.getHits():
-                yield self._parse_psm(protein_ids, peptide_id, peptide_hit)
+                yield self._parse_psm(self.protein_ids, peptide_id, peptide_hit)
 
     def _parse_idxml(self) -> Tuple(oms.ProteinIdentification, oms.PeptideIdentification):
         """
@@ -119,6 +120,7 @@ class IdXMLReader(ReaderBase):
             raise IdXMLReaderEmptyListException(f"File {self.filename} contains no PeptideHits. Nothing to parse.")
         else:
             return protein_ids, peptide_ids
+
 
     def _parse_peptidoform(self, sequence: str, charge: int) -> str:
         """
@@ -148,8 +150,9 @@ class IdXMLReader(ReaderBase):
         Use additional information from :py:class:`~pyopenms.ProteinIdentification` and :py:class:`~pyopenms.PeptideIdentification`
         to annotate parameters of the :py:class:`~psm_utils.psm.PSM` object.
         """
+        peptidoform = self._parse_peptidoform(peptide_hit.getSequence().toString(), peptide_hit.getCharge())
         return PSM(
-            peptidoform = self._parse_peptidoform(peptide_hit.getSequence().toString(), peptide_hit.getCharge()),
+            peptidoform = peptidoform,
             spectrum_id = peptide_id.getMetaValue("spectrum_reference"),
             run = self._get_run(protein_ids, peptide_id),
             is_decoy = self._is_decoy(peptide_hit),
@@ -160,6 +163,8 @@ class IdXMLReader(ReaderBase):
             protein_list=[accession.decode() for accession in peptide_hit.extractProteinAccessionsSet()],
             rank = peptide_hit.getRank() + 1, # 0-based to 1-based
             source="idXML",
+            # Storing proforma notation of peptidoform and UNIMOD peptide sequence for mapping back to original sequence in writer
+            provenance_data = {str(peptidoform): peptide_hit.getSequence().toString()},
             # This is needed to calculate a qvalue before rescoring the PSMList
             metadata = {
                 "idxml:score_type": str(peptide_id.getScoreType()),
@@ -212,6 +217,7 @@ class IdXMLReader(ReaderBase):
             return peptide_hit.getMetaValue("target_decoy") == "decoy"
         else:
             return None
+
 
 class IdXMLReaderEmptyListException(PSMUtilsException):
     """Exception in psm_utils.io.IdXMLReader"""

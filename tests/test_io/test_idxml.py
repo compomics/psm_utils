@@ -53,24 +53,7 @@ class TestIdXMLReader:
 
         reader = IdXMLReader("./tests/test_data/test.idXML")
         psm = IdXMLReader._parse_psm(reader.protein_ids, reader.peptide_ids[0], reader.peptide_ids[0])
-        assert psm.peptidoform == test_psm.peptidoform
-        assert psm.spectrum_id == test_psm.spectrum_id
-        assert psm.run == test_psm.run
-        assert psm.collection == test_psm.collection
-        assert psm.spectrum == test_psm.spectrum
-        assert psm.is_decoy == test_psm.is_decoy
-        assert psm.score == test_psm.score
-        assert psm.qvalue == test_psm.qvalue
-        assert psm.pep == test_psm.pep
-        assert psm.precursor_mz == test_psm.precursor_mz
-        assert psm.retention_time == test_psm.retention_time
-        assert psm.ion_mobility == test_psm.ion_mobility
-        assert psm.protein_list == test_psm.protein_list
-        assert psm.rank == test_psm.rank
-        assert psm.source == test_psm.source
-        assert psm.provenance_data == test_psm.provenance_data
-        assert psm.metadata == test_psm.metadata
-        assert psm.rescoring_features == test_psm.rescoring_features
+        assert psm == test_psm
 
 
     def test__get_run():

@@ -46,8 +46,9 @@ intersphinx_mapping = {
     "pandas": ("https://pandas.pydata.org/pandas-docs/stable/", None),
     "numpy": ("https://numpy.org/doc/stable/", None),
     "pyteomics": ("https://pyteomics.readthedocs.io/en/latest/", None),
-    "pyopenms": ("https://pyopenms.readthedocs.io/en/latest/", None)
+    "pyopenms": ("https://pyopenms.readthedocs.io/en/latest/", None),
 }
+
 
 def setup(app):
     config = {

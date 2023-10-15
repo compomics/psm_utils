@@ -4,7 +4,6 @@ from psm_utils.peptidoform import Peptidoform
 
 
 class TestPeptidoform:
-
     def test__len__(self):
         test_cases = [
             ("ACDEFGHIK", 9),
@@ -26,7 +25,6 @@ class TestPeptidoform:
                 assert isinstance(mods, list)
                 for mod in mods:
                     assert isinstance(mod, proforma.TagBase)
-
 
     def test_rename_modifications(self):
         label_mapping = {"ac": "Acetyl", "cm": "Carbamidomethyl"}

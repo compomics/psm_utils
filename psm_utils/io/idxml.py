@@ -35,8 +35,7 @@ MOD_PATTERN_CTERM = re.compile(r"\.\[((?:[^][]+|\[(?:[^][]+|\[[^][]*\])*\])*)\]$
 # Extracted from the OpenMS PSMFeatureExtractor, which adds and manipulates features that will be given to percolator
 # https://github.com/OpenMS/OpenMS/blob/342f6524e76a2bab3dcb428ba2f4aa2d6bfe8483/src/topp/PSMFeatureExtractor.cpp
 RESCORING_FEATURE_LIST = [
-    "isotope_error"
-    "MS:1002049",  # MSGFPlus unchanged RawScore
+    "isotope_error" "MS:1002049",  # MSGFPlus unchanged RawScore
     "MS:1002050",  # MSGFPlus unchanged DeNovoScore
     "MSGF:ScoreRatio",
     "MSGF:Energy",
@@ -65,16 +64,16 @@ RESCORING_FEATURE_LIST = [
     "MASCOT:delta_score",  # delta score based on mScore
     "CONCAT:lnEvalue",
     "CONCAT:deltaLnEvalue",
-    "SAGE:ln(-poisson)"
-    "SAGE:ln(delta_best)",
+    "SAGE:ln(-poisson)" "SAGE:ln(delta_best)",
     "SAGE:ln(delta_next)",
     "SAGE:ln(matched_intensity_pct)",
     "SAGE:longest_b",
     "SAGE:longest_y",
     "SAGE:longest_y_pct",
     "SAGE:matched_peaks",
-    "SAGE:scored_candidates"
+    "SAGE:scored_candidates",
 ]
+
 
 class IdXMLReader(ReaderBase):
     def __init__(self, filename: Union[Path, str], *args, **kwargs) -> None:
@@ -99,7 +98,6 @@ class IdXMLReader(ReaderBase):
         self.peptide_ids = peptide_ids
         self.rescoring_features = self._get_rescoring_features(peptide_ids[0].getHits()[0])
 
-
     def __iter__(self) -> Iterable[PSM]:
         """
         Iterate over file and return PSMs one-by-one.
@@ -107,7 +105,6 @@ class IdXMLReader(ReaderBase):
         for peptide_id in self.peptide_ids:
             for peptide_hit in peptide_id.getHits():
                 yield self._parse_psm(self.protein_ids, peptide_id, peptide_hit)
-
 
     def _parse_idxml(self) -> Tuple(oms.ProteinIdentification, oms.PeptideIdentification):
         """
@@ -117,16 +114,22 @@ class IdXMLReader(ReaderBase):
         oms.IdXMLFile().load(str(self.filename), protein_ids, peptide_ids)
 
         if len(protein_ids) == 0:
-            raise IdXMLReaderEmptyListException(f"File {self.filename} contains no proteins. Nothing to parse.")
+            raise IdXMLReaderEmptyListException(
+                f"File {self.filename} contains no proteins. Nothing to parse."
+            )
         elif len(peptide_ids) == 0:
-            raise IdXMLReaderEmptyListException(f"File {self.filename} contains no PeptideIdentifications. Nothing to parse.")
+            raise IdXMLReaderEmptyListException(
+                f"File {self.filename} contains no PeptideIdentifications. Nothing to parse."
+            )
         elif len(peptide_ids[0].getHits()) == 0:
-            raise IdXMLReaderEmptyListException(f"File {self.filename} contains no PeptideHits. Nothing to parse.")
+            raise IdXMLReaderEmptyListException(
+                f"File {self.filename} contains no PeptideHits. Nothing to parse."
+            )
         else:
             return protein_ids, peptide_ids
 
     @staticmethod
-    def _parse_peptidoform(sequence:str, charge:int) -> str:
+    def _parse_peptidoform(sequence: str, charge: int) -> str:
         """
         Parse idXML peptide to :py:class:`~psm_utils.peptidoform.Peptidoform`.
 
@@ -148,50 +151,65 @@ class IdXMLReader(ReaderBase):
 
         return sequence
 
-
-    def _parse_psm(self, protein_ids: oms.ProteinIdentification, peptide_id: oms.PeptideIdentification, peptide_hit: oms.PeptideHit) -> PSM:
+    def _parse_psm(
+        self,
+        protein_ids: oms.ProteinIdentification,
+        peptide_id: oms.PeptideIdentification,
+        peptide_hit: oms.PeptideHit,
+    ) -> PSM:
         """
         Parse idXML :py:class:`~pyopenms.PeptideHit` to :py:class:`~psm_utils.psm.PSM`.
         Use additional information from :py:class:`~pyopenms.ProteinIdentification` and :py:class:`~pyopenms.PeptideIdentification`
         to annotate parameters of the :py:class:`~psm_utils.psm.PSM` object.
         """
-        peptidoform = self._parse_peptidoform(peptide_hit.getSequence().toString(), peptide_hit.getCharge())
+        peptidoform = self._parse_peptidoform(
+            peptide_hit.getSequence().toString(), peptide_hit.getCharge()
+        )
         return PSM(
-            peptidoform = peptidoform,
-            spectrum_id = peptide_id.getMetaValue("spectrum_reference"),
-            run = self._get_run(protein_ids, peptide_id),
-            is_decoy = self._is_decoy(peptide_hit),
-            score = peptide_hit.getScore(),
-            precursor_mz = peptide_id.getMZ(),
-            retention_time = peptide_id.getRT(),
+            peptidoform=peptidoform,
+            spectrum_id=peptide_id.getMetaValue("spectrum_reference"),
+            run=self._get_run(protein_ids, peptide_id),
+            is_decoy=self._is_decoy(peptide_hit),
+            score=peptide_hit.getScore(),
+            precursor_mz=peptide_id.getMZ(),
+            retention_time=peptide_id.getRT(),
             # NOTE: In future update of OpenMS we will be able to read out ion_mobility from idXML file
-            protein_list=[accession.decode() for accession in peptide_hit.extractProteinAccessionsSet()],
-            rank = peptide_hit.getRank() + 1, # 0-based to 1-based
+            protein_list=[
+                accession.decode() for accession in peptide_hit.extractProteinAccessionsSet()
+            ],
+            rank=peptide_hit.getRank() + 1,  # 0-based to 1-based
             source="idXML",
             # Storing proforma notation of peptidoform and UNIMOD peptide sequence for mapping back to original sequence in writer
-            provenance_data = {str(peptidoform): peptide_hit.getSequence().toString()},
+            provenance_data={str(peptidoform): peptide_hit.getSequence().toString()},
             # This is needed to calculate a qvalue before rescoring the PSMList
-            metadata = {
+            metadata={
                 "idxml:score_type": str(peptide_id.getScoreType()),
                 "idxml:higher_score_better": str(peptide_id.isHigherScoreBetter()),
-                "idxml:significance_threshold": str(peptide_id.getSignificanceThreshold())
+                "idxml:significance_threshold": str(peptide_id.getSignificanceThreshold()),
             },
-            rescoring_features = {key: float(peptide_hit.getMetaValue(key)) for key in self.rescoring_features \
-                                  if self._is_float(peptide_hit.getMetaValue(key))}
+            rescoring_features={
+                key: float(peptide_hit.getMetaValue(key))
+                for key in self.rescoring_features
+                if self._is_float(peptide_hit.getMetaValue(key))
+            },
         )
 
-
     @staticmethod
-    def _get_run(protein_ids: oms.ProteinIdentification, peptide_id: oms.PeptideIdentification) -> str:
+    def _get_run(
+        protein_ids: oms.ProteinIdentification, peptide_id: oms.PeptideIdentification
+    ) -> str:
         """
         Get run name from idXML using pyopenms
         If idXML contains merge index, use it to annotate the run name without extension
         """
         if peptide_id.metaValueExists("id_merge_index"):
-            return Path(protein_ids[0].getMetaValue("spectra_data")[peptide_id.getMetaValue("id_merge_index")].decode()).stem
+            return Path(
+                protein_ids[0]
+                .getMetaValue("spectra_data")[peptide_id.getMetaValue("id_merge_index")]
+                .decode()
+            ).stem
         else:
             return Path(protein_ids[0].getMetaValue("spectra_data")[0].decode()).stem
-
 
     @staticmethod
     def _get_rescoring_features(peptide_hit: oms.PeptideHit) -> List[str]:
@@ -202,24 +220,22 @@ class IdXMLReader(ReaderBase):
         keys = []
         peptide_hit.getKeys(keys)
         # Convert from byte to str and remove the keys, which values are not in the fixed list of features
-        keys = [key.decode() for key in keys if  key.decode() in RESCORING_FEATURE_LIST]
+        keys = [key.decode() for key in keys if key.decode() in RESCORING_FEATURE_LIST]
 
         return keys
-
 
     @staticmethod
     def _is_float(element: any) -> bool:
         """
         Check if element is float.
         """
-        if element is None: 
+        if element is None:
             return False
         try:
             float(element)
             return True
         except ValueError:
             return False
-
 
     @staticmethod
     def _is_decoy(peptide_hit: oms.PeptideHit) -> bool:
@@ -240,8 +256,8 @@ class IdXMLWriter(WriterBase):
     def __init__(
         self,
         filename: str | Path,
-        protein_ids = None,
-        peptide_ids = None,
+        protein_ids=None,
+        peptide_ids=None,
         *args,
         **kwargs,
     ) -> None:
@@ -267,14 +283,11 @@ class IdXMLWriter(WriterBase):
         self.peptide_ids = peptide_ids
         self._writer = None
 
-
     def __enter__(self) -> IdXMLWriter:
         return self
 
-
     def __exit__(self, *args, **kwargs) -> None:
         pass
-
 
     def write_psm(self, psm: PSM):
         """
@@ -290,7 +303,6 @@ class IdXMLWriter(WriterBase):
         """
         raise NotImplementedError("IdXMLWriter currently does not support write_psm.")
 
-
     def write_file(self, psm_list: PSMList) -> None:
         """
         Write an entire PSMList to the PSM file or update the :py:class:`~pyopenms.ProteinIdentification`
@@ -302,11 +314,12 @@ class IdXMLWriter(WriterBase):
             self._update_existing_ids(psm_dict)
         # Check if one of self.protein_ids or self.peptide_ids is None
         elif self.protein_ids is not None or self.peptide_ids is not None:
-            logger.warning("One of the protein_ids or peptide_ids is None. Falling back to creating new idXML files solely based on the PSMList.")
+            logger.warning(
+                "One of the protein_ids or peptide_ids is None. Falling back to creating new idXML files solely based on the PSMList."
+            )
             self._create_new_ids(psm_dict)
         else:
             self._create_new_ids(psm_dict)
-
 
     def _update_existing_ids(self, psm_dict: dict) -> None:
         """
@@ -314,7 +327,9 @@ class IdXMLWriter(WriterBase):
         and :py:class:`~pyopenms.PeptideIdentification` objects with novel features from the PSMList.
         """
         # Access run name(s) from ProteinIdentification
-        spectrum_files = [Path(run.decode()).stem for run in self.protein_ids[0].getMetaValue("spectra_data")]
+        spectrum_files = [
+            Path(run.decode()).stem for run in self.protein_ids[0].getMetaValue("spectra_data")
+        ]
         for peptide_id in self.peptide_ids:
             if len(spectrum_files) > 1:
                 run = spectrum_files[peptide_id.getMetaValue("id_merge_index")]
@@ -325,7 +340,9 @@ class IdXMLWriter(WriterBase):
             try:
                 psms = psm_dict[None][run][peptide_id.getMetaValue("spectrum_reference")]
             except KeyError:
-                print("Multiple collections are not supported when parsing single pyopenms protein and peptide objects.")
+                print(
+                    "Multiple collections are not supported when parsing single pyopenms protein and peptide objects."
+                )
             # Dict of UNIMOD peptide sequence and PSM object
             hit_dict = {psm.provenance_data[str(psm.peptidoform)]: psm for psm in psms}
             # Update PeptideHits according to the PSM objects
@@ -340,18 +357,16 @@ class IdXMLWriter(WriterBase):
 
         oms.IdXMLFile().store(str(self.filename), self.protein_ids, self.peptide_ids)
 
-
     def _update_peptide_hit(self, peptide_hit: oms.PeptideHit, psm: PSM) -> None:
         """
         Inplace update of :py:class:`~pyopenms.PeptideHit` with novel predicted features information
         from :py:class:`~psm_utils.psm.PSM`.
         """
         peptide_hit.setScore(psm.score)
-        peptide_hit.setRank(psm.rank - 1) # 1-based to 0-based
+        peptide_hit.setRank(psm.rank - 1)  # 1-based to 0-based
         for feature, value in psm.rescoring_features.items():
             if feature not in RESCORING_FEATURE_LIST:
                 peptide_hit.setMetaValue(feature, value)
-
 
     def _create_new_ids(self, psm_dict: dict) -> None:
         """
@@ -366,8 +381,10 @@ class IdXMLWriter(WriterBase):
             self.protein_ids.setMetaValue("spectra_data", msrun_reference)
             protein_list = []
             for run, psm_dict_run in runs.items():
-                for spectrum_id, psms in psm_dict_run.items():                    
-                    protein_list.append([accession for psm in psms for accession in psm.protein_list])
+                for spectrum_id, psms in psm_dict_run.items():
+                    protein_list.append(
+                        [accession for psm in psms for accession in psm.protein_list]
+                    )
 
                     # Fill PeptideIdentification object with PeptideHits
                     peptide_id = oms.PeptideIdentification()
@@ -382,13 +399,22 @@ class IdXMLWriter(WriterBase):
                     peptide_hits = []
                     for psm in psms:
                         peptide_hit = oms.PeptideHit()
-                        peptide_hit.setSequence(oms.AASequence.fromString(self._convert_proforma_to_unimod(psm.peptidoform.sequence)))
+                        peptide_hit.setSequence(
+                            oms.AASequence.fromString(
+                                self._convert_proforma_to_unimod(psm.peptidoform.sequence)
+                            )
+                        )
                         peptide_hit.setCharge(psm.peptidoform.precursor_charge)
-                        peptide_hit.setMetaValue("target_decoy", "" if psm.is_decoy is None else ("decoy" if psm.is_decoy else "target"))
+                        peptide_hit.setMetaValue(
+                            "target_decoy",
+                            ""
+                            if psm.is_decoy is None
+                            else ("decoy" if psm.is_decoy else "target"),
+                        )
                         if psm.score is not None:
                             peptide_hit.setScore(psm.score)
                         if psm.rank is not None:
-                            peptide_hit.setRank(psm.rank -1) # 1-based to 0-based
+                            peptide_hit.setRank(psm.rank - 1)  # 1-based to 0-based
                         self._add_meta_values_from_dict(peptide_hit, psm.metadata)
                         self._add_meta_values_from_dict(peptide_hit, psm.provenance_data)
                         self._add_meta_values_from_dict(peptide_hit, psm.rescoring_features)
@@ -399,7 +425,9 @@ class IdXMLWriter(WriterBase):
                     self.peptide_ids.append(peptide_id)
 
             # Get unique protein accessions
-            protein_list = list(set([accession for proteins in protein_list for accession in proteins]))
+            protein_list = list(
+                set([accession for proteins in protein_list for accession in proteins])
+            )
             protein_hits = []
             for accession in protein_list:
                 protein_hit = oms.ProteinHit()
@@ -408,8 +436,11 @@ class IdXMLWriter(WriterBase):
             self.protein_ids.setHits(protein_hits)
 
             # Write an idXML file for each collection
-            oms.IdXMLFile().store("/".join(filter(None, [collection, str(self.filename)])), [self.protein_ids], self.peptide_ids)
-
+            oms.IdXMLFile().store(
+                "/".join(filter(None, [collection, str(self.filename)])),
+                [self.protein_ids],
+                self.peptide_ids,
+            )
 
     def _convert_proforma_to_unimod(self, sequence: str) -> str:
         """
@@ -425,7 +456,6 @@ class IdXMLWriter(WriterBase):
             sequence = sequence[::-1].replace("))", ".]", 1).replace("-(", ".", 1)[::-1]
 
         return sequence
-
 
     def _add_meta_values_from_dict(self, peptide_hit: oms.PeptideHit, d: dict) -> None:
         """

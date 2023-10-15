@@ -64,8 +64,6 @@ class TestMSMSReader:
             ],
         }
 
-        for test_in, expected_out in zip(
-            test_cases["input"], test_cases["expected_output"]
-        ):
+        for test_in, expected_out in zip(test_cases["input"], test_cases["expected_output"]):
             output = msamanda.MSAmandaReader._parse_peptidoform(*test_in).proforma
             assert output == expected_out

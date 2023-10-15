@@ -9,7 +9,6 @@ MSGF_TEST_FILE = "./tests/test_data/test_msgf.mzid"
 
 class TestMzIdentMlReader:
     def test_infer_source(self):
-
         msgf = mzid.MzidReader(MSGF_TEST_FILE)
         assert msgf._source == "MS-GF+"
 
@@ -17,7 +16,6 @@ class TestMzIdentMlReader:
         assert peaks._source == "PEAKS Studio"
 
     def test_get_namespace(self):
-
         root = ET.parse(MSGF_TEST_FILE).getroot()
         root_tag = root.tag
         assert (
@@ -95,7 +93,7 @@ class TestMzIdentMlReader:
                     }
                 ],
                 2,
-            )
+            ),
         }
 
         for expected_out, test_in in test_cases.items():
@@ -103,7 +101,6 @@ class TestMzIdentMlReader:
             assert test_out == expected_out
 
     def test_parse_peptide_evidence_ref(self):
-
         test_cases = [
             [
                 {
@@ -175,10 +172,7 @@ class TestMzIdentMlReader:
             (False, ["#CONTAM#Q86YZ3", "Q86YZ3|HORN_HUMAN"]),
         ]
         for i, test_case in enumerate(test_cases):
-            assert (
-                mzid.MzidReader._parse_peptide_evidence_ref(test_case)
-                == expected_output[i]
-            )
+            assert mzid.MzidReader._parse_peptide_evidence_ref(test_case) == expected_output[i]
 
     # TODO
     def test_get_peptide_spectrum_match(self):

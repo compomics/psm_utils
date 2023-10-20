@@ -6,6 +6,14 @@ psm_utils.io
    :members:
 
 
+psm_utils.io.ionbot
+##########################
+
+.. automodule:: psm_utils.io.ionbot
+   :members:
+   :inherited-members:
+
+
 
 psm_utils.io.idxml
 ##################
@@ -22,6 +30,7 @@ psm_utils.io.maxquant
 .. automodule:: psm_utils.io.maxquant
    :members:
    :inherited-members:
+
 
 
 psm_utils.io.msamanda
@@ -99,12 +108,5 @@ psm_utils.io.xtandem
 ####################
 
 .. automodule:: psm_utils.io.xtandem
-   :members:
-   :inherited-members:
-
-psm_utils.io.ionbot
-##########################
-
-.. automodule:: psm_utils.io.ionbot
    :members:
    :inherited-members:

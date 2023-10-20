@@ -9,16 +9,17 @@ from tempfile import NamedTemporaryFile
 from rich.progress import track
 
 import psm_utils.io.idxml as idxml
+import psm_utils.io.ionbot as ionbot
 import psm_utils.io.maxquant as maxquant
 import psm_utils.io.msamanda as msamanda
 import psm_utils.io.mzid as mzid
 import psm_utils.io.peptide_record as peptide_record
+import psm_utils.io.pepxml as pepxml
 import psm_utils.io.percolator as percolator
 import psm_utils.io.proteome_discoverer as proteome_discoverer
 import psm_utils.io.sage as sage
 import psm_utils.io.tsv as tsv
 import psm_utils.io.xtandem as xtandem
-import psm_utils.io.ionbot as ionbot
 from psm_utils.io._base_classes import WriterBase
 from psm_utils.io.exceptions import PSMUtilsIOException
 from psm_utils.psm import PSM
@@ -48,6 +49,12 @@ FILETYPES = {
         "writer": peptide_record.PeptideRecordWriter,
         "extension": ".peprec.txt",
         "filename_pattern": r"(^.*\.peprec(?:\.txt)?$)|(?:^peprec\.txt$)",
+    },
+    "pepxml": {
+        "reader": pepxml.PepXMLReader,
+        "writer": None,
+        "extension": ".pepxml",
+        "filename_pattern": r"^.*\.pepxml$",
     },
     "percolator": {
         "reader": percolator.PercolatorTabReader,

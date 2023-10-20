@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.6.0] - 2023-10-19
+
+### Added
+
+- `io`: Added new `io.pepxml` reader
+
+### Fixed
+
+- Docs: Add ionbot to README.rst, fix order in API docs
+
 ## [0.5.0] - 2023-09-20
 
 ### Added
@@ -21,6 +31,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - `io.mzid`: Allow inconsistent presence of score in PSMs in a single mzid file
 
 ### Changed
+
 - `PSM`: Values of the `rescoring_features` dictionary are now coerced to floats
 - io: Raise `PSMUtilsIOException` when passed filetype is not known
 - `io`: Make io reader `read_file` method inheritable (code cleanup)
@@ -31,6 +42,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Formatting: Increase max line length to 99 (code formatting)
 
 ### Fixed
+
 - `PSMList`: Fix issue where `psm_list["protein_list"]` resulted in a Numpy error due to the inconsistent shape of the lists.
 - `io.tsv`: Throw more descriptive `PSMUtilsIOException` when handeling tsv errors
 - `io.msamanda`: Fix support for N/C-terminal modifications
@@ -69,15 +81,18 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.3.1] - 2023-06-19
 
 ### Changed
+
 - `io.sage`: Change `spectrum_fdr` to `spectrum_q` (crf. lazear/sage#64).
 
 ## [0.3.0] - 2023-06-08
 
 ### Added
+
 - Add reader for [Sage](https://github.com/lazear/sage) PSM files.
 - `io.mzid`: Add reading/writing of PEP and q-values
 
 ### Changed
+
 - `psm`: The default values of `PSM.provenance_data`, `PSM.metadata` and `PSM.rescoring_features` are now `dict()` instead of `None`.
 - `PSMList`: Also allow Numpy integers for indexing a single PSM
 - `io.mzid.MzidReader`: Attempt to parse `retention time` or `scan start time` cvParams from both SpectrumIdentificationResult as SpectrumIdentificationItem levels. Note that according to the mzIdentML specification document (v1.1.1) neither cvParams are expected to be present at either level.
@@ -88,6 +103,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Filter warnings from `psims.mzmlb` on import, as `mzmlb` is not used
 
 ### Fixed
+
 - `psm`: Fix missing qvalue and pep in docstring
 - `peptidoform`: ProForma mass modifications are now correctly parsed within the `rename_modifications` function.
 - `io.maxquant.MSMSReader`: Correctly parse empty `Proteins` column to `None`
@@ -157,7 +173,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- `PSMList`: Truncate __repr__ to first five entries only, avoiding crashing notebook output
+- `PSMList`: Truncate `__repr__` to first five entries only, avoiding crashing notebook output
 - `Peptidoform`: Minor typing fix
 - `add_fixed_modifications`: Allow input as dict as well as list of tuples
 - `io`: Fix issue where the `NamedTemporaryFile` for `_supports_write_psm` was seen as invalid Percolator file

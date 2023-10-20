@@ -9,6 +9,7 @@ from tempfile import NamedTemporaryFile
 from rich.progress import track
 
 import psm_utils.io.idxml as idxml
+import psm_utils.io.ionbot as ionbot
 import psm_utils.io.maxquant as maxquant
 import psm_utils.io.msamanda as msamanda
 import psm_utils.io.mzid as mzid
@@ -18,7 +19,6 @@ import psm_utils.io.proteome_discoverer as proteome_discoverer
 import psm_utils.io.sage as sage
 import psm_utils.io.tsv as tsv
 import psm_utils.io.xtandem as xtandem
-import psm_utils.io.ionbot as ionbot
 from psm_utils.io._base_classes import WriterBase
 from psm_utils.io.exceptions import PSMUtilsIOException
 from psm_utils.psm import PSM
@@ -27,7 +27,7 @@ from psm_utils.psm_list import PSMList
 FILETYPES = {
     "idxml": {
         "reader": idxml.IdXMLReader,
-        "writer": None,
+        "writer": idxml.IdXMLWriter,
         "extension": ".idXML",
         "filename_pattern": r"^.*\.idxml$",
     },
@@ -120,7 +120,7 @@ def _supports_write_psm(writer: WriterBase):
             supports_write_psm = True
         else:
             supports_write_psm = True
-        Path(temp_file.name).unlink()
+            Path(temp_file.name).unlink()
         return supports_write_psm
 
 

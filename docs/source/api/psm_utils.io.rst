@@ -51,6 +51,15 @@ psm_utils.io.peptide_record
 
 
 
+psm_utils.io.pepxml
+###########################
+
+.. automodule:: psm_utils.io.pepxml
+   :members:
+   :inherited-members:
+
+
+
 psm_utils.io.percolator
 #######################
 

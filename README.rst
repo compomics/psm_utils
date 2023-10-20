@@ -94,6 +94,7 @@ Supported file formats
  `MS Amanda CSV <https://ms.imp.ac.at/?goto=msamanda>`_                                                                ``msamanda``             ✅              ❌
  `mzIdentML <https://psidev.info/mzidentml>`_                                                                          ``mzid``                 ✅              ✅
  `Peptide Record <https://psm-utils.readthedocs.io/en/stable/api/psm_utils.io/#module-psm_utils.io.peptide_record>`_   ``peprec``               ✅              ✅
+ `pepXML <http://tools.proteomecenter.org/wiki/index.php?title=Formats:pepXML>`_                                       ``pepxml``               ✅              ❌
  `Percolator tab <https://github.com/percolator/percolator/wiki/Interface>`_                                           ``percolator``           ✅              ✅
  Proteome Discoverer MSF                                                                                               ``proteome_discoverer``  ✅              ❌
  `Sage <https://github.com/lazear/sage/blob/v0.12.0/DOCS.md#interpreting-sage-output>`_                                ``sage``                 ✅              ❌

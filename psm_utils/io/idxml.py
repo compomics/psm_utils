@@ -166,10 +166,13 @@ class IdXMLReader(ReaderBase):
         )
         # This is needed to calculate a qvalue before rescoring the PSMList
         peptide_id_metadata = {
-                "idxml:score_type": str(peptide_id.getScoreType()),
-                "idxml:higher_score_better": str(peptide_id.isHigherScoreBetter()),
-                "idxml:significance_threshold": str(peptide_id.getSignificanceThreshold())}
-        peptide_hit_metadata = {key: peptide_hit.getMetaValue(key) for key in self.user_params_metadata}
+            "idxml:score_type": str(peptide_id.getScoreType()),
+            "idxml:higher_score_better": str(peptide_id.isHigherScoreBetter()),
+            "idxml:significance_threshold": str(peptide_id.getSignificanceThreshold()),
+        }
+        peptide_hit_metadata = {
+            key: peptide_hit.getMetaValue(key) for key in self.user_params_metadata
+        }
         return PSM(
             peptidoform=peptidoform,
             spectrum_id=peptide_id.getMetaValue("spectrum_reference"),
@@ -190,8 +193,7 @@ class IdXMLReader(ReaderBase):
             # Store metadata of PeptideIdentification and PeptideHit objects
             metadata=peptide_id_metadata | peptide_hit_metadata,
             rescoring_features={
-                key: float(peptide_hit.getMetaValue(key))
-                for key in self.rescoring_features
+                key: float(peptide_hit.getMetaValue(key)) for key in self.rescoring_features
             },
         )
 
@@ -226,14 +228,23 @@ class IdXMLReader(ReaderBase):
         # Empty list is required for the Cython wrapper to work correctly
         keys = []
         peptide_hit.getKeys(keys)
-        keys = [key.decode() for key in keys if not self._is_float(peptide_hit.getMetaValue(key.decode()))]
+        keys = [
+            key.decode()
+            for key in keys
+            if not self._is_float(peptide_hit.getMetaValue(key.decode()))
+        ]
         return keys
-    
+
     def _get_rescoring_features(self, peptide_hit: oms.PeptideHit) -> List[str]:
         """Get list of rescoring features in UserParams attached to each PeptideHit."""
         keys = []
         peptide_hit.getKeys(keys)
-        keys = [key.decode() for key in keys if self._is_float(peptide_hit.getMetaValue(key.decode())) and key.decode() in RESCORING_FEATURE_LIST]
+        keys = [
+            key.decode()
+            for key in keys
+            if self._is_float(peptide_hit.getMetaValue(key.decode()))
+            and key.decode() in RESCORING_FEATURE_LIST
+        ]
         return keys
 
     @staticmethod
@@ -285,7 +296,7 @@ class IdXMLWriter(WriterBase):
         - If `protein_ids` and `peptide_ids` are provided, each :py:class:`~pyopenms.PeptideIdentification`
           object in the list `peptide_ids` will be updated with new `rescoring_features` from the PSMList.
           Otherwise, new pyopenms objects will be created, filled with information of PSMList and written to the idXML file.
-        
+
         Examples
         --------
         - Example with `pyopenms` objects:
@@ -408,7 +419,7 @@ class IdXMLWriter(WriterBase):
             peptide_hit.setMetaValue("q-value", psm.qvalue)
         if psm.pep is not None:
             peptide_hit.setMetaValue("PEP", psm.pep)
-        
+
         for feature, value in psm.rescoring_features.items():
             if feature not in RESCORING_FEATURE_LIST:
                 peptide_hit.setMetaValue(feature, value)
@@ -502,7 +513,7 @@ class IdXMLWriter(WriterBase):
 
     def _convert_proforma_to_unimod(self, peptidoform: Peptidoform) -> str:
         """Convert a peptidoform sequence in proforma notation to UNIMOD notation."""
-        sequence = str(peptidoform).split('/')[0]
+        sequence = str(peptidoform).split("/")[0]
 
         # Replace square brackets around modifications with parentheses
         sequence = re.sub(r"\[([^\]]+)\]", r"(\1)", sequence)

@@ -24,6 +24,7 @@ from psm_utils.exceptions import PSMUtilsException
 from psm_utils.io._base_classes import ReaderBase, WriterBase
 from psm_utils.psm import PSM
 from psm_utils.psm_list import PSMList
+from psm_utils.peptidoform import Peptidoform
 
 logger = logging.getLogger(__name__)
 
@@ -93,6 +94,7 @@ class IdXMLReader(ReaderBase):
         """
         super().__init__(filename, *args, **kwargs)
         self.protein_ids, self.peptide_ids = self._parse_idxml()
+        self.user_params_metadata = self._get_userparams_metadata(self.peptide_ids[0].getHits()[0])
         self.rescoring_features = self._get_rescoring_features(self.peptide_ids[0].getHits()[0])
 
     def __iter__(self) -> Iterable[PSM]:
@@ -162,6 +164,12 @@ class IdXMLReader(ReaderBase):
         peptidoform = self._parse_peptidoform(
             peptide_hit.getSequence().toString(), peptide_hit.getCharge()
         )
+        # This is needed to calculate a qvalue before rescoring the PSMList
+        peptide_id_metadata = {
+                "idxml:score_type": str(peptide_id.getScoreType()),
+                "idxml:higher_score_better": str(peptide_id.isHigherScoreBetter()),
+                "idxml:significance_threshold": str(peptide_id.getSignificanceThreshold())}
+        peptide_hit_metadata = {key: peptide_hit.getMetaValue(key) for key in self.user_params_metadata}
         return PSM(
             peptidoform=peptidoform,
             spectrum_id=peptide_id.getMetaValue("spectrum_reference"),
@@ -179,17 +187,11 @@ class IdXMLReader(ReaderBase):
             # Storing proforma notation of peptidoform and UNIMOD peptide sequence for mapping back
             # to original sequence in writer
             provenance_data={str(peptidoform): peptide_hit.getSequence().toString()},
-            # TODO: Can we recover any all UserParams and save them as metadata?
-            # This is needed to calculate a qvalue before rescoring the PSMList
-            metadata={
-                "idxml:score_type": str(peptide_id.getScoreType()),
-                "idxml:higher_score_better": str(peptide_id.isHigherScoreBetter()),
-                "idxml:significance_threshold": str(peptide_id.getSignificanceThreshold()),
-            },
+            # Store metadata of PeptideIdentification and PeptideHit objects
+            metadata=peptide_id_metadata | peptide_hit_metadata,
             rescoring_features={
                 key: float(peptide_hit.getMetaValue(key))
                 for key in self.rescoring_features
-                if self._is_float(peptide_hit.getMetaValue(key))
             },
         )
 
@@ -218,14 +220,20 @@ class IdXMLReader(ReaderBase):
 
         return run
 
-    @staticmethod
-    def _get_rescoring_features(peptide_hit: oms.PeptideHit) -> List[str]:
-        """Get list of rescoring features from idXML."""
+    def _get_userparams_metadata(self, peptide_hit: oms.PeptideHit) -> List[str]:
+        """Get list of string type UserParams attached to each PeptideHit."""
         # Fill the key list with all the keys from the PeptideHit
         # Empty list is required for the Cython wrapper to work correctly
         keys = []
         peptide_hit.getKeys(keys)
-        keys = [key.decode() for key in keys if key.decode() in RESCORING_FEATURE_LIST]
+        keys = [key.decode() for key in keys if not self._is_float(peptide_hit.getMetaValue(key.decode()))]
+        return keys
+    
+    def _get_rescoring_features(self, peptide_hit: oms.PeptideHit) -> List[str]:
+        """Get list of rescoring features in UserParams attached to each PeptideHit."""
+        keys = []
+        peptide_hit.getKeys(keys)
+        keys = [key.decode() for key in keys if self._is_float(peptide_hit.getMetaValue(key.decode())) and key.decode() in RESCORING_FEATURE_LIST]
         return keys
 
     @staticmethod
@@ -265,15 +273,37 @@ class IdXMLWriter(WriterBase):
         filename
             Path to PSM file.
         protein_ids
-            # TODO Add description
+            Optional :py:class:`~pyopenms.ProteinIdentification` object to be written to the idXML file.
         peptide_ids
-            # TODO Add description
+            Optional :py:class:`~pyopenms.PeptideIdentification` object to be written to the idXML file.
 
         Notes
         -----
         - Unlike other psm_utils.io writer classes, :py:class:`IdXMLWriter` does not support writing
           a single PSM to a file with the :py:meth:`write_psm` method. Only writing a full PSMList
           to a file at once with the :py:meth:`write_file` method is currently supported.
+        - If `protein_ids` and `peptide_ids` are provided, each :py:class:`~pyopenms.PeptideIdentification`
+          object in the list `peptide_ids` will be updated with new `rescoring_features` from the PSMList.
+          Otherwise, new pyopenms objects will be created, filled with information of PSMList and written to the idXML file.
+        
+        Examples
+        --------
+        - Example with `pyopenms` objects:
+
+        >>> from psm_utils.io.idxml import IdXMLReader, IdXMLWriter
+        >>> reader = IdXMLReader("psm_utils/tests/test_data/test_in.idXML"")
+        >>> psm_list = reader.read_file()
+        >>> for psm in psm_list:
+        ...     psm.rescoring_features = psm.rescoring_features | {"feature": 1}
+        >>> writer = IdXMLWriter("psm_utils/tests/test_data//test_out.idXML", reader.protein_ids, reader.peptide_ids)
+        >>> writer.write_file(psm_list)
+
+        - Example without `pyopenms` objects:
+
+        >>> from psm_utils.psm_list import PSMList
+        >>> psm_list = PSMList(psm_list=[PSM(peptidoform="ACDK", spectrum_id=1, score=140.2, retention_time=600.2)])
+        >>> writer = IdXMLWriter("psm_utils/tests/test_data//test_out.idXML")
+        >>> writer.write_file(psm_list)
 
         """
         super().__init__(filename, *args, **kwargs)
@@ -370,9 +400,15 @@ class IdXMLWriter(WriterBase):
         Inplace update of :py:class:`~pyopenms.PeptideHit` with novel predicted features
         information from :py:class:`~psm_utils.psm.PSM`.
         """
-        peptide_hit.setScore(psm.score)
-        peptide_hit.setRank(psm.rank - 1)  # 1-based to 0-based
-        # TODO: Should q-value and pep also be updated?
+        if psm.score is not None:
+            peptide_hit.setScore(psm.score)
+        if psm.rank is not None:
+            peptide_hit.setRank(psm.rank - 1)  # 1-based to 0-based
+        if psm.qvalue is not None:
+            peptide_hit.setMetaValue("q-value", psm.qvalue)
+        if psm.pep is not None:
+            peptide_hit.setMetaValue("PEP", psm.pep)
+        
         for feature, value in psm.rescoring_features.items():
             if feature not in RESCORING_FEATURE_LIST:
                 peptide_hit.setMetaValue(feature, value)
@@ -401,6 +437,9 @@ class IdXMLWriter(WriterBase):
                     peptide_id = oms.PeptideIdentification()
                     peptide_id.setMetaValue("spectrum_reference", spectrum_id)
                     peptide_id.setMetaValue("id_merge_index", msrun_reference.index(str(run)))
+                    # TODO: Question: Is there a way to infer the score type from the PSM?
+                    if psms[0].score is not None:
+                        peptide_id.setScoreType("search_engine_score")
                     if psms[0].precursor_mz is not None:
                         peptide_id.setMZ(psms[0].precursor_mz)
                     if psms[0].retention_time is not None:
@@ -412,7 +451,7 @@ class IdXMLWriter(WriterBase):
                         peptide_hit = oms.PeptideHit()
                         peptide_hit.setSequence(
                             oms.AASequence.fromString(
-                                self._convert_proforma_to_unimod(str(psm.peptidoform))
+                                self._convert_proforma_to_unimod(psm.peptidoform)
                             )
                         )
                         peptide_hit.setCharge(psm.peptidoform.precursor_charge)
@@ -422,8 +461,10 @@ class IdXMLWriter(WriterBase):
                             if psm.is_decoy is None
                             else ("decoy" if psm.is_decoy else "target"),
                         )
-                        if psm.score is not None:
-                            peptide_hit.setScore(psm.score)
+                        if psm.qvalue is not None:
+                            peptide_hit.setMetaValue("q-value", psm.qvalue)
+                        if psm.pep is not None:
+                            peptide_hit.setMetaValue("PEP", psm.pep)
                         if psm.rank is not None:
                             peptide_hit.setRank(psm.rank - 1)  # 1-based to 0-based
                         self._add_meta_values_from_dict(peptide_hit, psm.metadata)
@@ -459,16 +500,21 @@ class IdXMLWriter(WriterBase):
                 self.peptide_ids,
             )
 
-    def _convert_proforma_to_unimod(self, sequence: str) -> str:
+    def _convert_proforma_to_unimod(self, peptidoform: Peptidoform) -> str:
         """Convert a peptidoform sequence in proforma notation to UNIMOD notation."""
-        # Replace square brackets with parentheses
-        sequence = sequence.replace("[", "(").replace("]", ")")
+        sequence = str(peptidoform).split('/')[0]
+
+        # Replace square brackets around modifications with parentheses
+        sequence = re.sub(r"\[([^\]]+)\]", r"(\1)", sequence)
 
         # Check for N-terminal and C-terminal modifications
-        if sequence[:2] == "((":
-            sequence = sequence.replace("((", ".[", 1).replace(")-", ".", 1)
-        if sequence[-2:] == "))":
-            sequence = sequence[::-1].replace("))", ".]", 1).replace("-(", ".", 1)[::-1]
+        if sequence.startswith("["):
+            sequence = re.sub(r"^\[([^\]]+)\]-", r"(\1)", sequence)
+        if sequence.endswith("]"):
+            sequence = re.sub(r"-\[([^\]]+)\]$", r"-(\1)", sequence)
+
+        # Remove dashes for N-terminal and C-terminal modifications
+        sequence = sequence.replace(")-", ")").replace("-(", "(")
 
         return sequence
 

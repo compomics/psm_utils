@@ -9,10 +9,11 @@
 			</ProteinHit>
 			<UserParam type="stringList" name="spectra_data" value="[LQSRPAAPPAPGPGQLTLR]"/>
 		</ProteinIdentification>
-		<PeptideIdentification score_type="" higher_score_better="true" significance_threshold="0.0" MZ="643.03499169873669" RT="108.285399999999996" spectrum_reference="controllerType=0 controllerNumber=1 scan=30069" >
-			<PeptideHit score="1.2944585" sequence="LQSRPAAPPAPGPGQLTLR" charge="3" >
+		<PeptideIdentification score_type="search_engine_score" higher_score_better="true" significance_threshold="0.0" MZ="643.03499169873669" RT="108.285399999999996" spectrum_reference="controllerType=0 controllerNumber=1 scan=30069" >
+			<PeptideHit score="0.0" sequence="LQSRPAAPPAPGPGQLTLR" charge="3" protein_refs="PH_0" >
 				<UserParam type="string" name="target_decoy" value="target"/>
 				<UserParam type="float" name="isotope_error" value="0.0"/>
+				<UserParam type="float" name="q-value" value="1.0"/>
 				<UserParam type="string" name="sage_filename" value="./tests/test_data/results.sage.tsv"/>
 				<UserParam type="float" name="expmass" value="1926.081500000000005"/>
 				<UserParam type="float" name="calcmass" value="1926.079999999999927"/>

@@ -191,7 +191,7 @@ class IdXMLReader(ReaderBase):
             # to original sequence in writer
             provenance_data={str(peptidoform): peptide_hit.getSequence().toString()},
             # Store metadata of PeptideIdentification and PeptideHit objects
-            metadata=peptide_id_metadata | peptide_hit_metadata,
+            metadata= {**peptide_id_metadata, **peptide_hit_metadata},
             rescoring_features={
                 key: float(peptide_hit.getMetaValue(key)) for key in self.rescoring_features
             },
@@ -302,10 +302,10 @@ class IdXMLWriter(WriterBase):
         - Example with `pyopenms` objects:
 
         >>> from psm_utils.io.idxml import IdXMLReader, IdXMLWriter
-        >>> reader = IdXMLReader("psm_utils/tests/test_data/test_in.idXML"")
+        >>> reader = IdXMLReader("psm_utils/tests/test_data/test_in.idXML")
         >>> psm_list = reader.read_file()
         >>> for psm in psm_list:
-        ...     psm.rescoring_features = psm.rescoring_features | {"feature": 1}
+        ...     psm.rescoring_features = {**psm.rescoring_features, **{"feature": 1}}
         >>> writer = IdXMLWriter("psm_utils/tests/test_data//test_out.idXML", reader.protein_ids, reader.peptide_ids)
         >>> writer.write_file(psm_list)
 
@@ -448,7 +448,6 @@ class IdXMLWriter(WriterBase):
                     peptide_id = oms.PeptideIdentification()
                     peptide_id.setMetaValue("spectrum_reference", spectrum_id)
                     peptide_id.setMetaValue("id_merge_index", msrun_reference.index(str(run)))
-                    # TODO: Question: Is there a way to infer the score type from the PSM?
                     if psms[0].score is not None:
                         peptide_id.setScoreType("search_engine_score")
                     if psms[0].precursor_mz is not None:

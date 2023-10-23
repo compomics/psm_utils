@@ -434,7 +434,7 @@ class IdXMLWriter(WriterBase):
             self.peptide_ids = []
 
             # Set msrun filename with spectra_data meta value
-            msrun_reference = [str(run) for run in runs.keys()]
+            msrun_reference = [str(run).encode() for run in runs.keys()]
             self.protein_ids.setMetaValue("spectra_data", msrun_reference)
 
             protein_list = []
@@ -447,7 +447,7 @@ class IdXMLWriter(WriterBase):
                     # Fill PeptideIdentification object with PeptideHits
                     peptide_id = oms.PeptideIdentification()
                     peptide_id.setMetaValue("spectrum_reference", spectrum_id)
-                    peptide_id.setMetaValue("id_merge_index", msrun_reference.index(str(run)))
+                    peptide_id.setMetaValue("id_merge_index", msrun_reference.index(str(run).encode()))
                     if psms[0].score is not None:
                         peptide_id.setScoreType("search_engine_score")
                     if psms[0].precursor_mz is not None:

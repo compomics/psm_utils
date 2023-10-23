@@ -120,7 +120,9 @@ class PepXMLReader(ReaderBase):
             precursor_mz=mass_to_mz(
                 spectrum_query["precursor_neutral_mass"], spectrum_query["assumed_charge"]
             ),
-            retention_time=spectrum_query["retention_time_sec"],
+            retention_time=spectrum_query["retention_time_sec"]
+            if "retention_time_sec" in spectrum_query
+            else None,
             ion_mobility=spectrum_query["ion_mobility"]
             if "ion_mobility" in spectrum_query
             else None,

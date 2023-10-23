@@ -14,6 +14,7 @@ import psm_utils.io.maxquant as maxquant
 import psm_utils.io.msamanda as msamanda
 import psm_utils.io.mzid as mzid
 import psm_utils.io.peptide_record as peptide_record
+import psm_utils.io.pepxml as pepxml
 import psm_utils.io.percolator as percolator
 import psm_utils.io.proteome_discoverer as proteome_discoverer
 import psm_utils.io.sage as sage
@@ -48,6 +49,12 @@ FILETYPES = {
         "writer": peptide_record.PeptideRecordWriter,
         "extension": ".peprec.txt",
         "filename_pattern": r"(^.*\.peprec(?:\.txt)?$)|(?:^peprec\.txt$)",
+    },
+    "pepxml": {
+        "reader": pepxml.PepXMLReader,
+        "writer": None,
+        "extension": ".pepxml",
+        "filename_pattern": r"^.*\.pepxml$",
     },
     "percolator": {
         "reader": percolator.PercolatorTabReader,

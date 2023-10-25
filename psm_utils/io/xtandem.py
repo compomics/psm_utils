@@ -44,9 +44,10 @@ Notes
 
 from __future__ import annotations
 
-from pathlib import Path
-import xml.etree.ElementTree as ET
 import re
+import xml.etree.ElementTree as ET
+from pathlib import Path
+from typing import Union
 
 import numpy as np
 from pyteomics import mass, tandem
@@ -55,11 +56,17 @@ from psm_utils.exceptions import PSMUtilsException
 from psm_utils.io._base_classes import ReaderBase
 from psm_utils.peptidoform import Peptidoform
 from psm_utils.psm import PSM
-from psm_utils.psm_list import PSMList
 
 
 class XTandemReader(ReaderBase):
-    def __init__(self, filename: str | Path, *args, decoy_prefix="DECOY_", **kwargs) -> None:
+    def __init__(
+        self,
+        filename: Union[str, Path],
+        *args,
+        decoy_prefix="DECOY_",
+        score_key="expect",
+        **kwargs,
+    ) -> None:
         """
         Reader for X!Tandem XML PSM files.
 
@@ -70,6 +77,11 @@ class XTandemReader(ReaderBase):
         decoy_prefix: str, optional
             Protein name prefix used to denote decoy protein entries. Default:
             ``"DECOY_"``.
+        score_key: str, optional
+            Key of score to use as PSM score. One of ``"expect"``, ``"hyperscore"``,
+            ``"delta"``, or ``"nextscore"``. Default: ``"expect"``. The ``"expect"`` score
+            (e-value) is converted to its negative natural logarithm to facilitate downstream
+            analysis.
 
         Examples
         --------
@@ -93,6 +105,7 @@ class XTandemReader(ReaderBase):
         """
         super().__init__(filename)
         self.decoy_prefix = decoy_prefix
+        self.score_key = score_key
 
     def __iter__(self):
         """Iterate over file and return PSMs one-by-one."""
@@ -148,7 +161,9 @@ class XTandemReader(ReaderBase):
             peptidoform=self._parse_peptidoform(peptide_entry, entry["z"]),
             spectrum_id=entry["support"]["fragment ion mass spectrum"]["note"],
             is_decoy=entry["protein"][0]["label"].startswith(self.decoy_prefix),
-            score=-np.log(peptide_entry["expect"]),
+            score=-np.log(peptide_entry[self.score_key])
+            if self.score_key == "expect"
+            else peptide_entry[self.score_key],
             precursor_mz=entry["mh"] - mass.nist_mass["H"][0][0],
             retention_time=entry["rt"],
             run=run,

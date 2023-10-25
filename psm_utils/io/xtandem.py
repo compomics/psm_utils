@@ -170,7 +170,7 @@ class XTandemReader(ReaderBase):
         tree = ET.parse(str(filepath))
         root = tree.getroot()
         full_label = root.attrib["label"]
-        run_match = re.search(r"\/(?<run>\d+_?\d+)\.(?<filetype>mgf|mzML|mzml)", full_label)
+        run_match = re.search(r"\/(?P<run>\d+_?\d+)\.(?P<filetype>mgf|mzML|mzml)", full_label)
         if run_match:
             run = run_match.group("run")
 

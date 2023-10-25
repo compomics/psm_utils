@@ -4,7 +4,6 @@ from psm_utils.io.xtandem import XTandemReader
 
 
 class TestXTandemReader:
-
     reader = XTandemReader("path")
 
     def test__parse_peptidoform(self):

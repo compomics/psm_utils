@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?xml-stylesheet type="text/xsl" href="https://www.openms.de/xml-stylesheet/IdXML.xsl" ?>
+<IdXML version="1.5" xsi:noNamespaceSchemaLocation="https://www.openms.de/xml-schema/IdXML_1_5.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+	<SearchParameters id="SP_0" db="" db_version="" taxonomy="" mass_type="monoisotopic" charges="" enzyme="unknown_enzyme" missed_cleavages="0" precursor_peak_tolerance="0" precursor_peak_tolerance_ppm="false" peak_mass_tolerance="0" peak_mass_tolerance_ppm="false" >
+	</SearchParameters>
+	<IdentificationRun date="0000-00-00T00:00:00" search_engine="" search_engine_version="" search_parameters_ref="SP_0" >
+		<ProteinIdentification score_type="" higher_score_better="true" significance_threshold="0" >
+			<ProteinHit id="PH_0" accession="sp|Q99536|VAT1_HUMAN" score="0.0" sequence="" >
+			</ProteinHit>
+			<UserParam type="stringList" name="spectra_data" value="[LQSRPAAPPAPGPGQLTLR]"/>
+		</ProteinIdentification>
+		<PeptideIdentification score_type="search_engine_score" higher_score_better="true" significance_threshold="0.0" MZ="643.03499169873669" RT="108.285399999999996" spectrum_reference="controllerType=0 controllerNumber=1 scan=30069" >
+			<PeptideHit score="0.0" sequence="LQSRPAAPPAPGPGQLTLR" charge="3" protein_refs="PH_0" >
+				<UserParam type="string" name="target_decoy" value="target"/>
+				<UserParam type="float" name="isotope_error" value="0.0"/>
+				<UserParam type="float" name="q-value" value="1.0"/>
+				<UserParam type="string" name="sage_filename" value="./tests/test_data/results.sage.tsv"/>
+				<UserParam type="float" name="expmass" value="1926.081500000000005"/>
+				<UserParam type="float" name="calcmass" value="1926.079999999999927"/>
+				<UserParam type="float" name="peptide_len" value="19.0"/>
+				<UserParam type="float" name="missed_cleavages" value="0.0"/>
+				<UserParam type="float" name="precursor_ppm" value="0.8239083"/>
+				<UserParam type="float" name="fragment_ppm" value="0.5347518"/>
+				<UserParam type="float" name="hyperscore" value="71.788444602553838"/>
+				<UserParam type="float" name="delta_next" value="71.788444602553838"/>
+				<UserParam type="float" name="delta_best" value="0.0"/>
+				<UserParam type="float" name="delta_rt_model" value="0.0"/>
+				<UserParam type="float" name="aligned_rt" value="0.0"/>
+				<UserParam type="float" name="predicted_rt" value="0.0"/>
+				<UserParam type="float" name="matched_peaks" value="22.0"/>
+				<UserParam type="float" name="longest_b" value="9.0"/>
+				<UserParam type="float" name="longest_y" value="12.0"/>
+				<UserParam type="float" name="longest_y_pct" value="0.6315789"/>
+				<UserParam type="float" name="matched_intensity_pct" value="50.784999999999997"/>
+				<UserParam type="float" name="scored_candidates" value="1.0"/>
+				<UserParam type="float" name="poisson" value="-1.956281191108343"/>
+				<UserParam type="float" name="ms1_intensity" value="3.0614618e08"/>
+				<UserParam type="float" name="ms2_intensity" value="5.6930696e07"/>
+			</PeptideHit>
+			<UserParam type="int" name="id_merge_index" value="0"/>
+		</PeptideIdentification>
+	</IdentificationRun>
+</IdXML>

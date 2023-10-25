@@ -71,10 +71,34 @@ class TestPSMList:
     def test_set_ranks(self):
         psm_list = PSMList(
             psm_list=[
-                PSM(peptidoform=Peptidoform('ACDE/2'), spectrum_id=1, run=None, collection=None, score=3.3),
-                PSM(peptidoform=Peptidoform('ACDF/2'), spectrum_id=2, run=None, collection=None, score=12.0),
-                PSM(peptidoform=Peptidoform('ACDG/2'), spectrum_id=3, run=None, collection=None, score=12.2),
-                PSM(peptidoform=Peptidoform('ACDH/2'), spectrum_id=4, run=None, collection=None, score=2.5),
+                PSM(
+                    peptidoform=Peptidoform("ACDE/2"),
+                    spectrum_id=1,
+                    run=None,
+                    collection=None,
+                    score=3.3,
+                ),
+                PSM(
+                    peptidoform=Peptidoform("ACDF/2"),
+                    spectrum_id=2,
+                    run=None,
+                    collection=None,
+                    score=12.0,
+                ),
+                PSM(
+                    peptidoform=Peptidoform("ACDG/2"),
+                    spectrum_id=3,
+                    run=None,
+                    collection=None,
+                    score=12.2,
+                ),
+                PSM(
+                    peptidoform=Peptidoform("ACDH/2"),
+                    spectrum_id=4,
+                    run=None,
+                    collection=None,
+                    score=2.5,
+                ),
             ]
         )
 

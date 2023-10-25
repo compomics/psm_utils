@@ -45,6 +45,8 @@ Notes
 from __future__ import annotations
 
 from pathlib import Path
+import xml.etree.ElementTree as ET
+import re
 
 import numpy as np
 from pyteomics import mass, tandem
@@ -147,6 +149,7 @@ class XTandemReader(ReaderBase):
             score=-np.log(peptide_entry["expect"]),
             precursor_mz=entry["mh"] - mass.nist_mass["H"][0][0],
             retention_time=entry["rt"],
+            run=self._parse_run(self.filename),
             protein_list=[entry["protein"][0]["label"]],
             source="X!Tandem",
             provenance_data={
@@ -160,6 +163,18 @@ class XTandemReader(ReaderBase):
             },
         )
         return psm
+
+    def _parse_run(self, filepath):
+        """Parse X!Tandem XML run to :py:class:`~psm_utils.psm.PSM`."""
+
+        tree = ET.parse(str(filepath))
+        root = tree.getroot()
+        full_label = root.attrib["label"]
+        run_match = re.search(r"\/(?<run>\d+_?\d+)\.(?<filetype>mgf|mzML|mzml)", full_label)
+        if run_match:
+            run = run_match.group("run")
+
+        return run
 
 
 class XTandemException(PSMUtilsException):

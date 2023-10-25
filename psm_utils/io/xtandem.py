@@ -44,6 +44,8 @@ Notes
 
 from __future__ import annotations
 
+import re
+import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Union
 
@@ -107,9 +109,11 @@ class XTandemReader(ReaderBase):
 
     def __iter__(self):
         """Iterate over file and return PSMs one-by-one."""
+
         with tandem.read(str(self.filename)) as reader:
+            run = self._parse_run(self.filename)
             for entry in reader:
-                psm = self._parse_entry(entry)
+                psm = self._parse_entry(entry, run)
                 yield psm
 
     def _parse_peptidoform(self, peptide_entry, charge: int) -> Peptidoform:
@@ -150,7 +154,7 @@ class XTandemReader(ReaderBase):
 
         return Peptidoform(proforma_seq)
 
-    def _parse_entry(self, entry) -> PSM:
+    def _parse_entry(self, entry, run: str) -> PSM:
         """Parse X!Tandem XML entry to :py:class:`~psm_utils.psm.PSM`."""
         peptide_entry = entry["protein"][0]["peptide"]
         psm = PSM(
@@ -162,6 +166,7 @@ class XTandemReader(ReaderBase):
             else peptide_entry[self.score_key],
             precursor_mz=entry["mh"] - mass.nist_mass["H"][0][0],
             retention_time=entry["rt"],
+            run=run,
             protein_list=[entry["protein"][0]["label"]],
             source="X!Tandem",
             provenance_data={
@@ -175,6 +180,18 @@ class XTandemReader(ReaderBase):
             },
         )
         return psm
+
+    def _parse_run(self, filepath):
+        """Parse X!Tandem XML run to :py:class:`~psm_utils.psm.PSM`."""
+
+        tree = ET.parse(str(filepath))
+        root = tree.getroot()
+        full_label = root.attrib["label"]
+        run_match = re.search(r"\/(?P<run>\d+_?\d+)\.(?P<filetype>mgf|mzML|mzml)", full_label)
+        if run_match:
+            run = run_match.group("run")
+
+        return run
 
 
 class XTandemException(PSMUtilsException):

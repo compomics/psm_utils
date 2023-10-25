@@ -7,13 +7,15 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ## [0.7.0] - 2023-10-25
 
-### ### Added
+### Added
+
 - `io.idxml`: Write support for idXML files, including merging an existing idXML with a `PSMList` 🎉
 - `io.xtandem`: New argument `score_key` to select which score to parse as `PSM.score`.
 - `io.xtandem`: Parse `run` name from X!Tandem PSM files
 - Docs: Add intersphinx links to other package documentation pages.
 
 ### Changed
+
 - `io.idxml`: Use pyOpenMS instead of Pyteomics for reading idXML (~5x faster⚡)
 
 ### Fixed

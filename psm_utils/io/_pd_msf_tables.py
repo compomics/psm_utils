@@ -17,6 +17,7 @@ from sqlalchemy import (
     UniqueConstraint,
     text,
 )
+
 try:
     from sqlalchemy.orm import declarative_base
 except ImportError:

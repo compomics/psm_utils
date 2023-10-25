@@ -28,7 +28,7 @@ from psm_utils.psm_list import PSMList
 FILETYPES = {
     "idxml": {
         "reader": idxml.IdXMLReader,
-        "writer": None,
+        "writer": idxml.IdXMLWriter,
         "extension": ".idXML",
         "filename_pattern": r"^.*\.idxml$",
     },
@@ -127,7 +127,7 @@ def _supports_write_psm(writer: WriterBase):
             supports_write_psm = True
         else:
             supports_write_psm = True
-        Path(temp_file.name).unlink()
+            Path(temp_file.name).unlink()
         return supports_write_psm
 
 

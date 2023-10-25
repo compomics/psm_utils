@@ -129,7 +129,7 @@ class MSAmandaReader(ReaderBase):
                 peptide[0] = peptide[0] + f'[{match.group("mod_name")}]'
             elif match.group("term") == "C-Term":
                 peptide[-1] = peptide[-1] + f'[{match.group("mod_name")}]'
-            if match.group("loc") is not None: 
+            if match.group("loc") is not None:
                 peptide[int(match.group("loc"))] = (
                     peptide[int(match.group("loc"))] + f'[{match.group("mod_name")}]'
                 )

@@ -68,9 +68,10 @@ class StreamlitPageConvert(StreamlitPage):
                 st.success("PSM file successfully converted!")
 
                 # Construct output filename with new extension
-                output_filename = Path(
-                    st.session_state["convert_input_file"].name
-                ).stem + FILETYPES[st.session_state["convert_output_filetype"]]["extension"]
+                output_filename = (
+                    Path(st.session_state["convert_input_file"].name).stem
+                    + FILETYPES[st.session_state["convert_output_filetype"]]["extension"]
+                )
 
                 # Open converted file in memory for download button
                 with open("output_filename", "rb") as file:

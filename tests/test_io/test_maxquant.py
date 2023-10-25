@@ -19,7 +19,6 @@ TEST_COL = [
 
 class TestMSMSReader:
     def test_evaluate_columns(self):
-
         columns = TEST_COL.copy()
         # Test with the right column names
         maxquant.MSMSReader._evaluate_columns(columns)
@@ -73,8 +72,6 @@ class TestMSMSReader:
 
         msms_reader = maxquant.MSMSReader("./tests/test_data/test_msms.txt")
 
-        for test_in, expected_out in zip(
-            test_cases["input"], test_cases["expected_output"]
-        ):
+        for test_in, expected_out in zip(test_cases["input"], test_cases["expected_output"]):
             output = msms_reader._parse_peptidoform(*test_in)
             assert output.proforma == expected_out

@@ -31,7 +31,4 @@ class TestPercolatorTabReader:
             (("-.ACDEFGHR.-", None), "ACDEFGHR"),
         ]
         for test_in, expected_out in test_cases:
-            assert (
-                expected_out
-                == PercolatorTabReader._parse_peptidoform(*test_in).proforma
-            )
+            assert expected_out == PercolatorTabReader._parse_peptidoform(*test_in).proforma

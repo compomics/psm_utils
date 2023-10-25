@@ -90,7 +90,7 @@ Supported file formats
  File format                                                                                                           psm_utils tag            Read support    Write support
 ===================================================================================================================== ======================== =============== ===============
  `ionbot CSV <https://ionbot.cloud/>`_                                                                                 ``ionbot``               ✅              ❌
- `OpenMS idXML <https://www.openms.de/>`_                                                                              ``idxml``                ✅              ❌
+ `OpenMS idXML <https://www.openms.de/>`_                                                                              ``idxml``                ✅              ✅
  `MaxQuant msms.txt <https://www.maxquant.org/>`_                                                                      ``msms``                 ✅              ❌
  `MS Amanda CSV <https://ms.imp.ac.at/?goto=msamanda>`_                                                                ``msamanda``             ✅              ❌
  `mzIdentML <https://psidev.info/mzidentml>`_                                                                          ``mzid``                 ✅              ✅

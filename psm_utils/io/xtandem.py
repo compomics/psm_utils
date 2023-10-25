@@ -96,11 +96,11 @@ class XTandemReader(ReaderBase):
 
     def __iter__(self):
         """Iterate over file and return PSMs one-by-one."""
-        
+
         with tandem.read(str(self.filename)) as reader:
             run = self._parse_run(self.filename)
             for entry in reader:
-                psm = self._parse_entry(entry,run)
+                psm = self._parse_entry(entry, run)
                 yield psm
 
     def _parse_peptidoform(self, peptide_entry, charge: int) -> Peptidoform:
@@ -141,7 +141,7 @@ class XTandemReader(ReaderBase):
 
         return Peptidoform(proforma_seq)
 
-    def _parse_entry(self, entry, run:str) -> PSM:
+    def _parse_entry(self, entry, run: str) -> PSM:
         """Parse X!Tandem XML entry to :py:class:`~psm_utils.psm.PSM`."""
         peptide_entry = entry["protein"][0]["peptide"]
         psm = PSM(
@@ -151,7 +151,7 @@ class XTandemReader(ReaderBase):
             score=-np.log(peptide_entry["expect"]),
             precursor_mz=entry["mh"] - mass.nist_mass["H"][0][0],
             retention_time=entry["rt"],
-            run=run
+            run=run,
             protein_list=[entry["protein"][0]["label"]],
             source="X!Tandem",
             provenance_data={

@@ -520,7 +520,7 @@ class Peptidoform:
 def _format_number_as_string(num):
     """Format number as string for ProForma mass modifications."""
     sign = "+" if np.sign(num) == 1 else "-"
-    num = str(num).rstrip("0").rstrip(".")
+    num = str(num).rstrip("0").rstrip(".").lstrip("-")
     return sign + num
 
 

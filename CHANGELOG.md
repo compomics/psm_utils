@@ -5,6 +5,18 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.1] - 2023-10-30
+
+### Added
+- Tests: Added tests for _format_number_as_string function
+- Tests: Added more test cases for `peptidoform.rename_modifications` for mass modifications
+- `io.xtandem`: To parse `run` value, fall back to PSM file name if run name cannot be parsed from `label` field
+
+### Fixed
+- `peptidoform.rename_modifications`: Fixed mapping of negative mass modifications
+- `io.xtandem`: Fixed regular expression to parse `run` value fom XML `label` field
+- `io.idxml`: Fix handling multiple types in `rescoring_features` when writing (fixes #60)
+
 ## [0.7.0] - 2023-10-25
 
 ### Added

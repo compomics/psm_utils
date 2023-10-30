@@ -422,7 +422,8 @@ class IdXMLWriter(WriterBase):
 
         for feature, value in psm.rescoring_features.items():
             if feature not in RESCORING_FEATURE_LIST:
-                peptide_hit.setMetaValue(feature, value)
+                # Convert numpy objects to floats since pyopenms does not support numpy objects to be added
+                peptide_hit.setMetaValue(feature, float(value))
 
     def _create_new_ids(self, psm_dict: dict) -> None:
         """
@@ -532,6 +533,9 @@ class IdXMLWriter(WriterBase):
         """Add meta values inplace to :py:class:`~pyopenms.PeptideHit` from a dictionary."""
         if d is not None:
             for key, value in d.items():
+                # Convert numpy objects to floats since pyopenms does not support numpy objects to be added
+                if not isinstance(value, str):
+                    value = float(value)
                 peptide_hit.setMetaValue(key, value)
 
 

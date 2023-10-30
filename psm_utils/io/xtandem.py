@@ -48,6 +48,7 @@ import re
 import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Union
+import logging
 
 import numpy as np
 from pyteomics import mass, tandem
@@ -56,6 +57,8 @@ from psm_utils.exceptions import PSMUtilsException
 from psm_utils.io._base_classes import ReaderBase
 from psm_utils.peptidoform import Peptidoform
 from psm_utils.psm import PSM
+
+logger = logging.getLogger(__name__)
 
 
 class XTandemReader(ReaderBase):
@@ -187,9 +190,14 @@ class XTandemReader(ReaderBase):
         tree = ET.parse(str(filepath))
         root = tree.getroot()
         full_label = root.attrib["label"]
-        run_match = re.search(r"\/(?P<run>\d+_?\d+)\.(?P<filetype>mgf|mzML|mzml)", full_label)
+        run_match = re.search(r"\/(?P<run>[^\s\/\\]+)\.(?P<filetype>mgf|mzML|mzml)", full_label)
         if run_match:
             run = run_match.group("run")
+        else:
+            run = Path(self.filepath).stem
+            logger.warning(
+                f"Cannot parse run from X!Tandem XML label. Setting id file name `{run}` as run."
+            )
 
         return run
 

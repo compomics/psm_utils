@@ -27,7 +27,12 @@ class TestPeptidoform:
                     assert isinstance(mod, proforma.TagBase)
 
     def test_rename_modifications(self):
-        label_mapping = {"ac": "Acetyl", "cm": "Carbamidomethyl"}
+        label_mapping = {
+            "ac": "Acetyl",
+            "cm": "Carbamidomethyl",
+            "+57.021": "Carbamidomethyl",
+            "-18.010565": "Glu->pyro-Glu",
+        }
 
         test_cases = [
             ("ACDEFGHIK", "ACDEFGHIK"),
@@ -36,6 +41,9 @@ class TestPeptidoform:
             ("[Acetyl]-AC[cm]DEFGHIK", "[Acetyl]-AC[Carbamidomethyl]DEFGHIK"),
             ("<[cm]@C>[Acetyl]-ACDEFGHIK", "<[Carbamidomethyl]@C>[Acetyl]-ACDEFGHIK"),
             ("<[Carbamidomethyl]@C>[ac]-ACDEFGHIK", "<[Carbamidomethyl]@C>[Acetyl]-ACDEFGHIK"),
+            ("[ac]-AC[cm]DEFGHIK", "[Acetyl]-AC[Carbamidomethyl]DEFGHIK"),
+            ("AC[+57.021]DEFGHIK", "AC[Carbamidomethyl]DEFGHIK"),
+            ("E[-18.010565]DEK", "E[Glu->pyro-Glu]DEK"),
         ]
 
         for test_case_in, expected_out in test_cases:

@@ -1,6 +1,6 @@
 from pyteomics import proforma
 
-from psm_utils.peptidoform import Peptidoform
+from psm_utils.peptidoform import Peptidoform, _format_number_as_string
 
 
 class TestPeptidoform:
@@ -50,3 +50,17 @@ class TestPeptidoform:
             peptidoform = Peptidoform(test_case_in)
             peptidoform.rename_modifications(label_mapping)
             assert peptidoform.proforma == expected_out
+
+
+def test_format_number_as_string():
+    test_cases = [
+        (1212.12, "+1212.12"),
+        (-1212.12, "-1212.12"),
+        (0.1, "+0.1"),
+        (-0.1, "-0.1"),
+        (1212.000, "+1212"),
+        (1212.1200, "+1212.12"),
+    ]
+
+    for test_case_in, expected_out in test_cases:
+        assert _format_number_as_string(test_case_in) == expected_out

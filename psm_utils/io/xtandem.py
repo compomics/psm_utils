@@ -44,11 +44,11 @@ Notes
 
 from __future__ import annotations
 
+import logging
 import re
 import xml.etree.ElementTree as ET
 from pathlib import Path
 from typing import Union
-import logging
 
 import numpy as np
 from pyteomics import mass, tandem
@@ -196,7 +196,8 @@ class XTandemReader(ReaderBase):
         else:
             run = Path(self.filepath).stem
             logger.warning(
-                f"Cannot parse run from X!Tandem XML label. Setting id file name `{run}` as run."
+                f"Could not parse run from X!Tandem XML label entry. Setting PSM filename `{run}` "
+                "as run."
             )
 
         return run

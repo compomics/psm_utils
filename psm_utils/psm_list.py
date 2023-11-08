@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import re
 from typing import Iterable, List, Sequence
+import logging
 
 import numpy as np
 import pandas as pd
@@ -10,6 +11,8 @@ from pyteomics import auxiliary, proforma
 from rich.pretty import pretty_repr
 
 from psm_utils.psm import PSM
+
+logger = logging.getLogger(__name__)
 
 
 class PSMList(BaseModel):
@@ -325,6 +328,20 @@ class PSMList(BaseModel):
     def to_dataframe(self) -> pd.DataFrame:
         """Convert :py:class:`PSMList` to :py:class:`pandas.DataFrame`."""
         return pd.DataFrame.from_records([psm.__dict__ for psm in self])
+
+    def _remove_invalid_amino_acids(self):
+        """Remove PSMs with invalid amino acids."""
+
+        invalid_amino_acids = ["B", "J", "O", "X", "Z"]
+        valid_peptidoforms = [
+            not re.search(r"[BJOUXZ]", peptidoform.proforma) for peptidoform in self["peptidoform"]
+        ]
+        if not all(valid_peptidoforms):
+            logger.warning(
+                f"Removing {sum(~np.array(valid_peptidoforms))} PSMs with invalid amino acids: "
+                f"{', '.join([peptidoform.proforma for peptidoform in self['peptidoform'][~np.array(valid_peptidoforms)]])}"
+            )
+        return self[valid_peptidoforms]
 
 
 def _is_iterable_of_bools(obj):

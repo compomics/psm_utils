@@ -1,6 +1,6 @@
 """Common utilities for parsing and handling PSMs, and search engine results."""
 
-__version__ = "0.7.1"
+__version__ = "0.7.2"
 
 from warnings import filterwarnings
 

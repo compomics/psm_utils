@@ -194,7 +194,7 @@ class XTandemReader(ReaderBase):
         if run_match:
             run = run_match.group("run")
         else:
-            run = Path(self.filepath).stem
+            run = Path(filepath).stem
             logger.warning(
                 f"Could not parse run from X!Tandem XML label entry. Setting PSM filename `{run}` "
                 "as run."

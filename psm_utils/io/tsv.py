@@ -49,6 +49,7 @@ from __future__ import annotations
 
 import ast
 import csv
+import logging
 from pathlib import Path
 from typing import Optional
 
@@ -58,6 +59,8 @@ from psm_utils.io._base_classes import ReaderBase, WriterBase
 from psm_utils.io.exceptions import PSMUtilsIOException
 from psm_utils.psm import PSM
 from psm_utils.psm_list import PSMList
+
+logger = logging.getLogger(__name__)
 
 
 class TSVReader(ReaderBase):
@@ -71,7 +74,8 @@ class TSVReader(ReaderBase):
                 try:
                     yield PSM(**self._parse_entry(row))
                 except ValidationError as e:
-                    raise PSMUtilsIOException(f"Could not parse PSM from row: `{row}`") from e
+                    logger.warning("Could not parse PSM from row: `{row}`")
+                    continue
 
     @staticmethod
     def _parse_entry(entry: dict) -> dict:

@@ -1,6 +1,6 @@
 from pyteomics import proforma
 
-from psm_utils.peptidoform import Peptidoform, _format_number_as_string
+from psm_utils.peptidoform import Peptidoform, format_number_as_string
 
 
 class TestPeptidoform:
@@ -63,4 +63,4 @@ def test_format_number_as_string():
     ]
 
     for test_case_in, expected_out in test_cases:
-        assert _format_number_as_string(test_case_in) == expected_out
+        assert format_number_as_string(test_case_in) == expected_out

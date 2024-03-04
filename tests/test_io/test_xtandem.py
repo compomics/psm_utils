@@ -35,7 +35,7 @@ class TestXTandemReader:
                     },
                     2,
                 ),
-                "expected_out": "C[+39.9954]WASLWTAR/2",
+                "expected_out": "C[+57.022][-17.02655]WASLWTAR/2",
             },
         ]
 

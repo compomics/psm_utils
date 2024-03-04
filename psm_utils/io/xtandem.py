@@ -55,7 +55,7 @@ from pyteomics import mass, tandem
 
 from psm_utils.exceptions import PSMUtilsException
 from psm_utils.io._base_classes import ReaderBase
-from psm_utils.peptidoform import Peptidoform
+from psm_utils.peptidoform import Peptidoform, format_number_as_string
 from psm_utils.psm import PSM
 
 logger = logging.getLogger(__name__)
@@ -119,34 +119,28 @@ class XTandemReader(ReaderBase):
                 psm = self._parse_entry(entry, run)
                 yield psm
 
-    def _parse_peptidoform(self, peptide_entry, charge: int) -> Peptidoform:
-        """Parse X!Tandem XML peptide entry to :py:class:`~psm_utils.peptidoform.Peptidoform`."""
+    @staticmethod
+    def _parse_peptidoform(peptide_entry, charge):
         if "aa" in peptide_entry:
             # Parse modifications
             seq_list = list(peptide_entry["seq"])
-            mod_dict = {}
+            unmodified_seq = seq_list.copy()
+
             for mod_entry in peptide_entry["aa"]:
                 # Locations are encoded relative to position in protein
                 mod_loc = mod_entry["at"] - peptide_entry["start"]
+                mass_shift = float(mod_entry["modified"])
 
                 # Check if site matches amino acid
-                if not mod_entry["type"] == seq_list[mod_loc]:
+                if not mod_entry["type"] == unmodified_seq[mod_loc]:
                     raise XTandemModificationException(
                         f"Found unexpected residue `{seq_list[mod_loc]}` at "
                         f"modification location for `{mod_entry}`."
                     )
 
-                # Add modifications to dict
-                if mod_loc not in mod_dict:
-                    mod_dict[mod_loc] = float(mod_entry["modified"])
-                else:
-                    # "sum" multiple modifications per site, e.g.,
-                    # cmm + ammonia-loss = pyro-cmm
-                    mod_dict[mod_loc] += float(mod_entry["modified"])
+                # Add to sequence in ProForma format
+                seq_list[mod_loc] += f"[{format_number_as_string(mass_shift)}]"
 
-            # Add modification in ProForma format
-            for mod_loc, mass_shift in mod_dict.items():
-                seq_list[mod_loc] += f"[{mass_shift:+g}]"
             proforma_seq = "".join(seq_list)
 
         else:
@@ -170,7 +164,7 @@ class XTandemReader(ReaderBase):
             precursor_mz=entry["mh"] - mass.nist_mass["H"][0][0],
             retention_time=entry["rt"],
             run=run,
-            protein_list=[entry["protein"][0]["label"]],
+            protein_list=[protein["label"] for protein in entry["protein"]],
             source="X!Tandem",
             provenance_data={
                 "xtandem_filename": str(self.filename),

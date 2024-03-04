@@ -1,14 +1,13 @@
 {
-    "esbonio.sphinx.confDir": "${workspaceFolder}/docs/source",
-    "[python]": {
-        "editor.formatOnSave": true,
-        "editor.codeActionsOnSave": {"source.organizeImports": true},
-        "editor.rulers": [88]
+  "esbonio.sphinx.confDir": "${workspaceFolder}/docs/source",
+  "[python]": {
+    "editor.formatOnSave": true,
+    "editor.codeActionsOnSave": {
+      "source.organizeImports": "explicit"
     },
-    "python.formatting.provider": "black",
-    "python.testing.pytestArgs": [
-        "tests"
-    ],
-    "python.testing.unittestEnabled": false,
-    "python.testing.pytestEnabled": true
+    "editor.rulers": [99]
+  },
+  "python.testing.pytestArgs": ["tests"],
+  "python.testing.unittestEnabled": false,
+  "python.testing.pytestEnabled": true
 }

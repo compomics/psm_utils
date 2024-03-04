@@ -164,7 +164,7 @@ class XTandemReader(ReaderBase):
             precursor_mz=entry["mh"] - mass.nist_mass["H"][0][0],
             retention_time=entry["rt"],
             run=run,
-            protein_list=[entry["protein"][0]["label"]],
+            protein_list=[protein["label"] for protein in entry["protein"]],
             source="X!Tandem",
             provenance_data={
                 "xtandem_filename": str(self.filename),

@@ -104,6 +104,14 @@ psm_utils.io.tsv
 
 
 
+psm_utils.io.timscore
+################################
+.. automodule:: psm_utils.io.timscore
+   :members:
+   :inherited-members:
+
+
+
 psm_utils.io.xtandem
 ####################
 

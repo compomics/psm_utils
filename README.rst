@@ -99,6 +99,7 @@ Supported file formats
  `Percolator tab <https://github.com/percolator/percolator/wiki/Interface>`_                                           ``percolator``           ✅              ✅
  Proteome Discoverer MSF                                                                                               ``proteome_discoverer``  ✅              ❌
  `Sage <https://github.com/lazear/sage/blob/v0.12.0/DOCS.md#interpreting-sage-output>`_                                ``sage``                 ✅              ❌
+ TIMScore Parquet                                                                                                      ``timscore``             ✅              ❌
  `TSV <https://psm-utils.readthedocs.io/en/stable/api/psm_utils.io/#module-psm_utils.io.tsv>`_                         ``tsv``                  ✅              ✅
  `X!Tandem XML <https://www.thegpm.org/tandem/>`_                                                                      ``xtandem``              ✅              ❌
 ===================================================================================================================== ======================== =============== ===============

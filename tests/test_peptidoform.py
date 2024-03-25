@@ -51,6 +51,20 @@ class TestPeptidoform:
             peptidoform.rename_modifications(label_mapping)
             assert peptidoform.proforma == expected_out
 
+    def test_add_apply_fixed_modifications(self):
+        test_cases = [
+            ("ACDEK", [("Cmm", ["C"])], "AC[Cmm]DEK"),
+            ("AC[Cmm]DEK", [("SecondMod", ["C"])], "AC[Cmm][SecondMod]DEK"),
+            ("ACDEK", [("TMT6plex", ["K", "N-term"])], "[TMT6plex]-ACDEK[TMT6plex]"),
+            ("ACDEK-[CT]", [("TMT6plex", ["K", "N-term"])], "[TMT6plex]-ACDEK[TMT6plex]-[CT]"),
+        ]
+
+        for test_case_in, fixed_modifications, expected_out in test_cases:
+            peptidoform = Peptidoform(test_case_in)
+            peptidoform.add_fixed_modifications(fixed_modifications)
+            peptidoform.apply_fixed_modifications()
+            assert peptidoform.proforma == expected_out
+
 
 def test_format_number_as_string():
     test_cases = [

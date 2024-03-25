@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.7.4] - 2024-03-18
+
+### Added
+
+- `Peptidoform`: Support adding and applying global terminal modifications. For now using a
+  workaround while waiting for official support and an implementation in Pyteomics. See
+  HUPO-PSI/ProForma#6.
+
+## [0.7.3] - 2024-03-04
+
+### Changed
+
+- `io.xtandem`: Parse double mass modifications as double modification instead of merging and
+  summing mass shifts into a single modification.
+- `io.xtandem`: Avoid float formatting issues when parsing modification mass label.
+- `io.xtandem`: Parse all proteins into `protein_list` instead of only the first one.
+- `io.tsv`: Log error instead of raising exception when a TSV row cannot be parsed.
+
 ## [0.7.2] - 2023-11-29
 
 ### Fixed

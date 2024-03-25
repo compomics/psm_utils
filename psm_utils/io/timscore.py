@@ -1,6 +1,7 @@
-"""Reader for Proteome Discoverer MSF PSM files."""
+"""Reader for TIMScore Parquet files."""
 
 import logging
+import re
 from pathlib import Path
 from typing import Union
 
@@ -9,6 +10,7 @@ import pandas as pd
 
 from psm_utils import PSM
 from psm_utils.io._base_classes import ReaderBase
+from psm_utils.peptidoform import format_number_as_string
 
 logger = logging.getLogger(__name__)
 
@@ -32,6 +34,7 @@ class TIMScoreReader(ReaderBase):
 
         """
         super().__init__(filename, *args, **kwargs)
+        self._decoy_pattern = re.compile(r"^Reverse_")
 
         self.data = pd.read_parquet(self.filename)
 
@@ -47,11 +50,11 @@ class TIMScoreReader(ReaderBase):
                     entry.stripped_peptide, entry.ptms, entry.ptm_locations, entry.precursor_charge
                 ),
                 spectrum_id=entry.ms2_id,
-                is_decoy=None,  # TODO: Parse from protein?
-                score=entry.tims_score,  # TODO: Correct score?
+                is_decoy=all(self._decoy_pattern.match(p) for p in entry.locus_name),
+                score=entry.tims_score,
                 precursor_mz=entry.precursor_mz,
                 retention_time=entry.rt,
-                ion_mobility=entry.corrected_ook0,
+                ion_mobility=entry.ook0,
                 protein_list=list(entry.locus_name),
                 rank=entry.rank,
                 source="TIMScore",
@@ -63,7 +66,7 @@ class TIMScoreReader(ReaderBase):
                 metadata={
                     "leading_aa": str(entry.leading_aa),
                     "trailing_aa": str(entry.trailing_aa),
-                    "ook0": str(entry.ook0),
+                    "corrected_ook0": str(entry.corrected_ook0),
                 },
                 rescoring_features={
                     "x_corr_score": float(entry.x_corr_score),
@@ -81,9 +84,15 @@ def _parse_peptidoform(
     stripped_peptide: str, ptms: np.ndarray, ptm_locations: np.ndarray, precursor_charge: int
 ) -> str:
     """Parse peptide sequence and modifications to ProForma."""
-    # TODO: How are terminal modifications handled?
     peptidoform = list(stripped_peptide)
+    n_term = ""
+    c_term = ""
     for ptm, ptm_location in zip(ptms, ptm_locations):
-        peptidoform[ptm_location] = f"{peptidoform[ptm_location]}[{ptm}]"
-    peptidoform.append(f"/{precursor_charge}")
-    return "".join(peptidoform)
+        ptm = format_number_as_string(ptm)
+        if ptm_location == -1:
+            n_term = f"[{ptm}]-"
+        elif ptm_location == len(peptidoform):
+            c_term = f"-[{ptm}]"
+        else:
+            peptidoform[ptm_location] = f"{peptidoform[ptm_location]}[{ptm}]"
+    return f"{n_term}{''.join(peptidoform)}{c_term}/{precursor_charge}"

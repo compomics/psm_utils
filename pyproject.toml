@@ -20,7 +20,7 @@ classifiers = [
 dynamic = ["version"]
 requires-python = ">=3.7"
 dependencies = [
-    "pyteomics >= 4",
+    "pyteomics >= 4, <4.7",
     "pyopenms",
     "lxml",
     "psims",

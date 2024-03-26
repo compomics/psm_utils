@@ -25,6 +25,9 @@ from psm_utils.io.exceptions import PSMUtilsIOException
 from psm_utils.peptidoform import Peptidoform
 from psm_utils.psm import PSM
 from psm_utils.psm_list import PSMList
+from psm_utils.io._utils import set_csv_field_size_limit
+
+set_csv_field_size_limit()
 
 
 class PercolatorTabReader(ReaderBase):

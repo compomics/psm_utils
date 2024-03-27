@@ -6,7 +6,6 @@ Reads the ``results.sage.tsv`` file as defined on the
 
 """
 
-
 from __future__ import annotations
 
 import csv
@@ -17,7 +16,9 @@ from pyteomics import mass
 
 from psm_utils.io._base_classes import ReaderBase
 from psm_utils.psm import PSM
-from psm_utils.psm_list import PSMList
+from psm_utils.io._utils import set_csv_field_size_limit
+
+set_csv_field_size_limit()
 
 
 class SageReader(ReaderBase):
@@ -88,11 +89,9 @@ class SageReader(ReaderBase):
             ),
             spectrum_id=psm_dict["scannr"],
             run=Path(psm_dict["filename"]).stem,
-            is_decoy=True
-            if psm_dict["label"] == "-1"
-            else False
-            if psm_dict["label"] == "1"
-            else None,
+            is_decoy=(
+                True if psm_dict["label"] == "-1" else False if psm_dict["label"] == "1" else None
+            ),
             qvalue=psm_dict["spectrum_q"],
             score=float(psm_dict[self.score_column]),
             precursor_mz=self._parse_precursor_mz(psm_dict["expmass"], psm_dict["charge"]),

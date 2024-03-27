@@ -5,6 +5,17 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.0] - 2024-03-27
+
+### Added
+
+- `io.timscore`: Add support for TIMScore Parquet files.
+
+### Fixed
+
+- Fixed `_csv.Error: field larger than field limit (131072)` for very large fields when reading CSV-based PSM files.
+- Pinned Pyteomics version to avoid pickling issues in multithreading (to be investigated)
+
 ## [0.7.4] - 2024-03-18
 
 ### Added

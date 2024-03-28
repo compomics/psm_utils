@@ -111,7 +111,7 @@ class IdXMLReader(ReaderBase):
             for peptide_hit in peptide_id.getHits():
                 yield self._parse_psm(self.protein_ids, peptide_id, peptide_hit)
 
-    def _parse_idxml(self) -> Tuple(oms.ProteinIdentification, oms.PeptideIdentification):
+    def _parse_idxml(self) -> Tuple[oms.ProteinIdentification, oms.PeptideIdentification]:
         """
         Parse idXML using pyopenms and perform sanity checks to make sure the file is not empty.
         """

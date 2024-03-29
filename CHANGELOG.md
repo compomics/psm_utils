@@ -5,6 +5,23 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.8.1] - 2024-03-29
+
+### Added
+
+- `io.proteoscape`: Allow ProteoScapeReader instantiation from Pandas DataFrame and access PSM by index.
+
+### Fixed
+
+- Remove accidental print statement.
+- `io.idxml`: Fixed parenthesis in type hint
+
+### Changed
+
+- `io.idxml`: Filter OPENMS_DATA_PATH warnings (see compomics/ms2rescore#129 and OpenMS/OpenMS#7418)
+- `io.proteoscape`: Rename module from TIMScore to ProteoScape.
+- `io.proteoscape`: Use correct search engine score (`x_corr_score` instead of `tims_score`)
+
 ## [0.8.0] - 2024-03-27
 
 ### Added
@@ -37,16 +54,19 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ## [0.7.2] - 2023-11-29
 
 ### Fixed
+
 - `io.xtandem`: Fixed bug when extracting run name (introduced in v0.7.0)
 
 ## [0.7.1] - 2023-10-30
 
 ### Added
-- Tests: Added tests for _format_number_as_string function
+
+- Tests: Added tests for \_format_number_as_string function
 - Tests: Added more test cases for `peptidoform.rename_modifications` for mass modifications
 - `io.xtandem`: To parse `run` value, fall back to PSM file name if run name cannot be parsed from `label` field
 
 ### Fixed
+
 - `peptidoform.rename_modifications`: Fixed mapping of negative mass modifications
 - `io.xtandem`: Fixed regular expression to parse `run` value fom XML `label` field
 - `io.idxml`: Fix handling multiple types in `rescoring_features` when writing (fixes #60)

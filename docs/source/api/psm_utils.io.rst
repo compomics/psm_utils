@@ -86,6 +86,14 @@ psm_utils.io.proteome_discoverer
 
 
 
+psm_utils.io.proteoscape
+########################
+.. automodule:: psm_utils.io.proteoscape
+   :members:
+   :inherited-members:
+
+
+
 psm_utils.io.sage
 #################
 
@@ -99,14 +107,6 @@ psm_utils.io.tsv
 ################
 
 .. automodule:: psm_utils.io.tsv
-   :members:
-   :inherited-members:
-
-
-
-psm_utils.io.timscore
-################################
-.. automodule:: psm_utils.io.timscore
    :members:
    :inherited-members:
 

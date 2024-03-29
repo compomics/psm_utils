@@ -1,6 +1,6 @@
 import numpy as np
 
-from psm_utils.io.timscore import _parse_peptidoform
+from psm_utils.io.proteoscape import _parse_peptidoform
 
 
 def test_parse_peptidoform():

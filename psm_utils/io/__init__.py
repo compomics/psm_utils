@@ -17,8 +17,8 @@ import psm_utils.io.peptide_record as peptide_record
 import psm_utils.io.pepxml as pepxml
 import psm_utils.io.percolator as percolator
 import psm_utils.io.proteome_discoverer as proteome_discoverer
+import psm_utils.io.proteoscape as proteoscape
 import psm_utils.io.sage as sage
-import psm_utils.io.timscore as timscore
 import psm_utils.io.tsv as tsv
 import psm_utils.io.xtandem as xtandem
 from psm_utils.io._base_classes import WriterBase
@@ -69,8 +69,8 @@ FILETYPES = {
         "extension": ".msf",
         "filename_pattern": r"^.*\.msf$",
     },
-    "timscore": {
-        "reader": timscore.TIMScoreReader,
+    "proteoscape": {
+        "reader": proteoscape.ProteoScapeReader,
         "writer": None,
         "extension": ".parquet",
         "filename_pattern": r"^.*\.candidates\.parquet$",

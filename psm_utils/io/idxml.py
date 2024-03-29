@@ -9,22 +9,28 @@ Notes
   is parsed as an individual :py:class:`~psm_utils.psm.PSM` object.
 
 """
-
-
 from __future__ import annotations
 
 import logging
 import re
+from warnings import filterwarnings
 from pathlib import Path
 from typing import Iterable, List, Tuple, Union
-
-import pyopenms as oms
 
 from psm_utils.exceptions import PSMUtilsException
 from psm_utils.io._base_classes import ReaderBase, WriterBase
 from psm_utils.psm import PSM
 from psm_utils.psm_list import PSMList
 from psm_utils.peptidoform import Peptidoform
+
+filterwarnings(
+    "ignore",
+    message="OPENMS_DATA_PATH environment variable already exists",
+    category=UserWarning,
+    module="pyopenms",
+)
+
+import pyopenms as oms  #noqa: E402
 
 logger = logging.getLogger(__name__)
 
@@ -105,7 +111,7 @@ class IdXMLReader(ReaderBase):
             for peptide_hit in peptide_id.getHits():
                 yield self._parse_psm(self.protein_ids, peptide_id, peptide_hit)
 
-    def _parse_idxml(self) -> Tuple(oms.ProteinIdentification, oms.PeptideIdentification):
+    def _parse_idxml(self) -> Tuple[oms.ProteinIdentification, oms.PeptideIdentification]:
         """
         Parse idXML using pyopenms and perform sanity checks to make sure the file is not empty.
         """

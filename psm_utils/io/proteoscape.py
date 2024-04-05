@@ -88,6 +88,7 @@ def _parse_entry(entry) -> PSM:
             entry.stripped_peptide, entry.ptms, entry.ptm_locations, entry.precursor_charge
         ),
         spectrum_id=entry.ms2_id,
+        run=getattr(entry, "run", None),
         is_decoy=all(DECOY_PATTERN.match(p) for p in entry.locus_name),
         score=entry.x_corr_score,
         precursor_mz=entry.precursor_mz,

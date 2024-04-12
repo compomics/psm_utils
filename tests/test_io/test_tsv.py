@@ -1,6 +1,6 @@
 """Tests for psm_utils.io.tsv."""
 
-from psm_utils.io.tsv import TSVReader, TSVWriter
+from psm_utils.io.tsv import TSVReader, TSVWriter  # noqa: F401
 
 test_cases = [
     (

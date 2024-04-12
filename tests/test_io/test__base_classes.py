@@ -1,14 +1,8 @@
 """Tests for psm_utils.io._base_classes."""
 
-import pytest
-
-from psm_utils.io._base_classes import ReaderBase
-from psm_utils.io.exceptions import (
-    InvalidModificationDefinitionError,
-    InvalidModificationError,
-    UnresolvableModificationError,
-)
+from psm_utils.io._base_classes import ReaderBase  # noqa: F401
 
 
 class TestBaseReader:
+    # TODO
     pass

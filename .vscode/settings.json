@@ -2,9 +2,11 @@
   "esbonio.sphinx.confDir": "${workspaceFolder}/docs/source",
   "[python]": {
     "editor.formatOnSave": true,
+    "editor.formatOnType": true,
     "editor.codeActionsOnSave": {
       "source.organizeImports": "explicit"
     },
+    "editor.defaultFormatter": "charliermarsh.ruff",
     "editor.rulers": [99]
   },
   "python.testing.pytestArgs": ["tests"],

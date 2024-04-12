@@ -59,8 +59,9 @@ psm_utils = "psm_utils.__main__:main"
 requires = ["setuptools"]
 build-backend = "setuptools.build_meta"
 
-[tool.setuptools]
-packages = ["psm_utils"]
+[tool.setuptools.packages.find]
+include = ["psm_utils*"]
+
 
 [tool.setuptools.dynamic]
 version = { attr = "psm_utils.__version__" }

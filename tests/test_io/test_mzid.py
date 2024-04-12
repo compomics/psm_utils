@@ -1,7 +1,6 @@
 import xml.etree.ElementTree as ET
 
 import psm_utils.io.mzid as mzid
-from psm_utils import peptidoform, psm, psm_list
 
 PEAKS_TEST_FILE = "./tests/test_data/test_peaks.mzid"
 MSGF_TEST_FILE = "./tests/test_data/test_msgf.mzid"

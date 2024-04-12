@@ -12,7 +12,7 @@ sample_psm_list = [
 
 class TestPSMList:
     def test___init__(self):
-        psm_list = PSMList(psm_list=sample_psm_list)
+        _ = PSMList(psm_list=sample_psm_list)
 
     def test___iter__(self):
         for psm in PSMList(psm_list=sample_psm_list):

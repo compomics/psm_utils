@@ -75,7 +75,7 @@ class StreamlitPageConvert(StreamlitPage):
 
                 # Open converted file in memory for download button
                 with open("output_filename", "rb") as file:
-                    is_downloaded = st.download_button(
+                    _ = st.download_button(
                         "Download",
                         data=file,
                         file_name=output_filename,

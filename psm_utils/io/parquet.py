@@ -39,6 +39,12 @@ class ParquetReader(ReaderBase):
         with pq.ParquetFile(self.path) as reader:
             for batch in reader.iter_batches():
                 for row in batch.to_pylist():
+                    # Convert map columns (rendered as lists of tuples) to dictionaries
+                    row["metadata"] = dict(row["metadata"] or {})
+                    row["provenance_data"] = dict(row["provenance_data"] or {})
+                    row["rescoring_features"] = dict(row["rescoring_features"] or {})
+
+                    # Convert to PSM object and yield
                     try:
                         yield PSM(**row)
                     except ValidationError as e:

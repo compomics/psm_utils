@@ -10,7 +10,6 @@ def set_csv_field_size_limit():
         This function should be called before reading any CSV files to ensure that the field size
         limit is properly set.
 
-
     """
     max_int = sys.maxsize
 

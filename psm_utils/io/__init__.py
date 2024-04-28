@@ -13,6 +13,7 @@ import psm_utils.io.ionbot as ionbot
 import psm_utils.io.maxquant as maxquant
 import psm_utils.io.msamanda as msamanda
 import psm_utils.io.mzid as mzid
+import psm_utils.io.parquet as parquet
 import psm_utils.io.peptide_record as peptide_record
 import psm_utils.io.pepxml as pepxml
 import psm_utils.io.percolator as percolator
@@ -75,12 +76,6 @@ FILETYPES = {
         "extension": ".parquet",
         "filename_pattern": r"^.*\.candidates\.parquet$",
     },
-    "tsv": {
-        "reader": tsv.TSVReader,
-        "writer": tsv.TSVWriter,
-        "extension": ".tsv",
-        "filename_pattern": r"^.*\.tsv$",
-    },
     "xtandem": {
         "reader": xtandem.XTandemReader,
         "writer": None,
@@ -105,6 +100,18 @@ FILETYPES = {
         "extension": "ionbot.first.csv",
         "filename_pattern": r"^ionbot.first.csv$",
     },
+    "parquet": {  # List after proteoscape to avoid extension matching conflicts
+        "reader": parquet.ParquetReader,
+        "writer": parquet.ParquetWriter,
+        "extension": ".parquet",
+        "filename_pattern": r"^.*\.parquet$",
+    },
+    "tsv": {  # List after sage to avoid extension matching conflicts
+        "reader": tsv.TSVReader,
+        "writer": tsv.TSVWriter,
+        "extension": ".tsv",
+        "filename_pattern": r"^.*\.tsv$",
+    },
 }
 READERS = {k: v["reader"] for k, v in FILETYPES.items() if v["reader"]}
 WRITERS = {k: v["writer"] for k, v in FILETYPES.items() if v["writer"]}
@@ -124,10 +131,10 @@ def _supports_write_psm(writer: WriterBase):
     with NamedTemporaryFile(delete=False) as temp_file:
         temp_file.close()
         Path(temp_file.name).unlink()
-        example_psm = PSM(peptidoform="ACDE", spectrum_id=0)
+        example_psm = PSM(peptidoform="ACDE", spectrum_id="0")
         try:
             with writer(temp_file.name, example_psm=example_psm) as writer_instance:
-                writer_instance.write_psm(None)
+                writer_instance.write_psm(example_psm)
         except NotImplementedError:
             supports_write_psm = False
         except AttributeError:  # `None` is not valid PSM

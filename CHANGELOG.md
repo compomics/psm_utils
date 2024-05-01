@@ -17,6 +17,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Upgrade Pydantic dependency to v2. The PSM `spectrum_id` field is now always coerced to a string.
 - `io.proteoscape`: Use pyarrow to iteratively read from Parquet instead of first reading an entire dataframe with Pandas.
 - `io.sage`: Update compatibility to Sage v0.14
+- Remove temporary patch for caching Proforma modification resolvers (now in Pyteomics v4.7.2).
 
 ## [0.8.3] - 2024-04-16
 

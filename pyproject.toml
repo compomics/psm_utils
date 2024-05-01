@@ -28,7 +28,7 @@ dependencies = [
     "pyarrow",
     "pydantic >= 2",
     "pyopenms",
-    "pyteomics >= 4, <4.7",
+    "pyteomics >= 4",
     "rich",
     "sqlalchemy",
 ]

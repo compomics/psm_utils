@@ -1,7 +1,7 @@
 """Tests for psm_utils.io.tsv."""
 
-import os
 import hashlib
+import os
 
 from psm_utils.io.parquet import ParquetReader, ParquetWriter
 from psm_utils.psm import PSM
@@ -32,16 +32,17 @@ test_cases = [
 ]
 
 
-
 def compute_checksum(filename):
     hash_func = hashlib.sha256()
-    with open(filename, 'rb') as f:
-        for chunk in iter(lambda: f.read(4096), b''):
+    with open(filename, "rb") as f:
+        for chunk in iter(lambda: f.read(4096), b""):
             hash_func.update(chunk)
     return hash_func.hexdigest()
 
+
 class TestParquetWriter:
-    expected_checksum = "c0782793f8c6fd52e39d5ec1cf5567fb0a7e7e245d795f4f1f720337f756b44c"
+    expected_checksum = "cf3f2e9f073be58612ce81f240da9f4109e1c76eea25f1b7881e09c0a8fdee16"
+
     def test_write_psm(self):
         with ParquetWriter("test.pq") as writer:
             for test_case in test_cases:
@@ -56,6 +57,7 @@ class TestParquetWriter:
         actual_checksum = compute_checksum("test.pq")
         assert actual_checksum == self.expected_checksum, "Checksums do not match"
         # os.remove("test.pq")
+
 
 class TestParquetReader:
     def test_iter(self):

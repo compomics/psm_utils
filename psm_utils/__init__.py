@@ -1,6 +1,6 @@
 """Common utilities for parsing and handling PSMs, and search engine results."""
 
-__version__ = "0.8.3"
+__version__ = "0.9.0"
 __all__ = ["Peptidoform", "PSM", "PSMList"]
 
 from functools import lru_cache

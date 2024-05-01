@@ -3,9 +3,9 @@
 import hashlib
 
 from psm_utils.io.idxml import IdXMLReader, IdXMLWriter
-from psm_utils.io.sage import SageReader
-from psm_utils.psm import PSM
+from psm_utils.io.sage import SageTSVReader
 from psm_utils.peptidoform import Peptidoform
+from psm_utils.psm import PSM
 
 
 class TestIdXMLReader:
@@ -103,8 +103,8 @@ class TestIdXMLWriter:
         assert sha == expected_sha
 
     def test_write_file_without_pyopenms_objects(self):
-        expected_sha = "b81addaf8ef1f5cb5007f14a914bee508c54d59f34f8857a5770d3db9aa2c15b"
-        reader = SageReader("./tests/test_data/results.sage.tsv")
+        expected_sha = "148889926276fbe391e23ed7952c3a8410fc67ffb099bbf1a72df75f8d727ccd"
+        reader = SageTSVReader("./tests/test_data/results.sage.tsv")
         psm_list = reader.read_file()
         writer = IdXMLWriter("./tests/test_data/test_out_sage.idXML")
         writer.write_file(psm_list)

@@ -94,11 +94,13 @@ Supported file formats
  `MaxQuant msms.txt <https://www.maxquant.org/>`_                                                                      ``msms``                 ✅              ❌
  `MS Amanda CSV <https://ms.imp.ac.at/?goto=msamanda>`_                                                                ``msamanda``             ✅              ❌
  `mzIdentML <https://psidev.info/mzidentml>`_                                                                          ``mzid``                 ✅              ✅
+ `Parquet <https://psm-utils.readthedocs.io/en/stable/api/psm_utils.io#module-psm_utils.io.parquet>`                   ``parquet``              ✅              ✅
  `Peptide Record <https://psm-utils.readthedocs.io/en/stable/api/psm_utils.io/#module-psm_utils.io.peptide_record>`_   ``peprec``               ✅              ✅
  `pepXML <http://tools.proteomecenter.org/wiki/index.php?title=Formats:pepXML>`_                                       ``pepxml``               ✅              ❌
  `Percolator tab <https://github.com/percolator/percolator/wiki/Interface>`_                                           ``percolator``           ✅              ✅
  Proteome Discoverer MSF                                                                                               ``proteome_discoverer``  ✅              ❌
- `Sage <https://github.com/lazear/sage/blob/v0.12.0/DOCS.md#interpreting-sage-output>`_                                ``sage``                 ✅              ❌
+ `Sage Parquet <https://github.com/lazear/sage/blob/v0.14.7/DOCS.md#interpreting-sage-output>`_                        ``sage_parquet``         ✅              ❌
+ `Sage TSV <https://github.com/lazear/sage/blob/v0.14.7/DOCS.md#interpreting-sage-output>`_                            ``sage_tsv``             ✅              ❌
  ProteoScape Parquet                                                                                                   ``proteoscape``          ✅              ❌
  `TSV <https://psm-utils.readthedocs.io/en/stable/api/psm_utils.io/#module-psm_utils.io.tsv>`_                         ``tsv``                  ✅              ✅
  `X!Tandem XML <https://www.thegpm.org/tandem/>`_                                                                      ``xtandem``              ✅              ❌

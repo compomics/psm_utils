@@ -88,11 +88,17 @@ FILETYPES = {
         "extension": ".csv",
         "filename_pattern": r"^.*(?:_|\.)msamanda.csv$",
     },
-    "sage": {
-        "reader": sage.SageReader,
+    "sage_tsv": {
+        "reader": sage.SageTSVReader,
         "writer": None,
         "extension": ".tsv",
         "filename_pattern": r"^.*(?:_|\.).sage.tsv$",
+    },
+    "sage_parquet": {
+        "reader": sage.SageParquetReader,
+        "writer": None,
+        "extension": ".parquet",
+        "filename_pattern": r"^.*(?:_|\.).sage.parquet$",
     },
     "ionbot": {
         "reader": ionbot.IonbotReader,
@@ -100,7 +106,7 @@ FILETYPES = {
         "extension": "ionbot.first.csv",
         "filename_pattern": r"^ionbot.first.csv$",
     },
-    "parquet": {  # List after proteoscape to avoid extension matching conflicts
+    "parquet": {  # List after proteoscape and sage to avoid extension matching conflicts
         "reader": parquet.ParquetReader,
         "writer": parquet.ParquetWriter,
         "extension": ".parquet",
@@ -113,6 +119,9 @@ FILETYPES = {
         "filename_pattern": r"^.*\.tsv$",
     },
 }
+
+FILETYPES["sage"] = FILETYPES["sage_tsv"]  # Alias for backwards compatibility
+
 READERS = {k: v["reader"] for k, v in FILETYPES.items() if v["reader"]}
 WRITERS = {k: v["writer"] for k, v in FILETYPES.items() if v["writer"]}
 

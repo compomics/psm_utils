@@ -30,7 +30,7 @@ jobs:
         run: python -m build --sdist --wheel .
 
       - name: Install wheel
-        run: pip install dist/psm_utils-*.whl
+        run: pip install dist/psm_utils-*.whl[dev]
 
       - name: Test wheel
         run: |

@@ -35,10 +35,6 @@ Notes
   .. code-block::
 
       [+39,99545]
-
-* Although X!Tandem XML allows multiple peptide/protein identifications per entry, only
-  the first peptide/protein per entry is parsed.
-
 """
 
 

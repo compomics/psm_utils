@@ -94,7 +94,7 @@ Supported file formats
  `MaxQuant msms.txt <https://www.maxquant.org/>`_                                                                      ``msms``                 ✅              ❌
  `MS Amanda CSV <https://ms.imp.ac.at/?goto=msamanda>`_                                                                ``msamanda``             ✅              ❌
  `mzIdentML <https://psidev.info/mzidentml>`_                                                                          ``mzid``                 ✅              ✅
- `Parquet <https://psm-utils.readthedocs.io/en/stable/api/psm_utils.io#module-psm_utils.io.parquet>`                   ``parquet``              ✅              ✅
+ `Parquet <https://psm-utils.readthedocs.io/en/stable/api/psm_utils.io#module-psm_utils.io.parquet>`_                  ``parquet``              ✅              ✅
  `Peptide Record <https://psm-utils.readthedocs.io/en/stable/api/psm_utils.io/#module-psm_utils.io.peptide_record>`_   ``peprec``               ✅              ✅
  `pepXML <http://tools.proteomecenter.org/wiki/index.php?title=Formats:pepXML>`_                                       ``pepxml``               ✅              ❌
  `Percolator tab <https://github.com/percolator/percolator/wiki/Interface>`_                                           ``percolator``           ✅              ✅

@@ -24,7 +24,7 @@ from psm_utils.psm_list import PSMList
 set_csv_field_size_limit()
 
 
-class SageReaderBase(ReaderBase, ABC):
+class _SageReaderBase(ReaderBase, ABC):
     def __init__(
         self, filename, score_column: str = "sage_discriminant_score", *args, **kwargs
     ) -> None:
@@ -104,7 +104,7 @@ class SageReaderBase(ReaderBase, ABC):
         )
 
 
-class SageTSVReader(SageReaderBase):
+class SageTSVReader(_SageReaderBase):
     def __iter__(self) -> Iterable[PSM]:
         """Iterate over file and return PSMs one-by-one."""
         with open(self.filename, "r") as open_file:
@@ -119,7 +119,7 @@ class SageTSVReader(SageReaderBase):
 SageReader = SageTSVReader  # Alias for backwards compatibility
 
 
-class SageParquetReader(SageReaderBase):
+class SageParquetReader(_SageReaderBase):
     def __iter__(self) -> Iterable[PSM]:
         """Iterate over file and return PSMs one-by-one."""
         with pq.ParquetFile(self.filename) as pq_file:

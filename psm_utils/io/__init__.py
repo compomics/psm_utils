@@ -28,6 +28,12 @@ from psm_utils.psm import PSM
 from psm_utils.psm_list import PSMList
 
 FILETYPES = {
+    "ionbot": {
+        "reader": ionbot.IonbotReader,
+        "writer": None,
+        "extension": "ionbot.first.csv",
+        "filename_pattern": r"^ionbot.first.csv$",
+    },
     "idxml": {
         "reader": idxml.IdXMLReader,
         "writer": idxml.IdXMLWriter,
@@ -99,12 +105,6 @@ FILETYPES = {
         "writer": None,
         "extension": ".parquet",
         "filename_pattern": r"^.*(?:_|\.).sage.parquet$",
-    },
-    "ionbot": {
-        "reader": ionbot.IonbotReader,
-        "writer": None,
-        "extension": "ionbot.first.csv",
-        "filename_pattern": r"^ionbot.first.csv$",
     },
     "parquet": {  # List after proteoscape and sage to avoid extension matching conflicts
         "reader": parquet.ParquetReader,

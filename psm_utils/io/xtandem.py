@@ -112,8 +112,8 @@ class XTandemReader(ReaderBase):
         with tandem.read(str(self.filename)) as reader:
             run = self._parse_run(self.filename)
             for entry in reader:
-                psm = self._parse_entry(entry, run)
-                yield psm
+                for psm in self._parse_entry(entry, run):
+                    yield psm
 
     @staticmethod
     def _parse_peptidoform(peptide_entry, charge):
@@ -147,32 +147,42 @@ class XTandemReader(ReaderBase):
 
         return Peptidoform(proforma_seq)
 
-    def _parse_entry(self, entry, run: str) -> PSM:
-        """Parse X!Tandem XML entry to :py:class:`~psm_utils.psm.PSM`."""
-        peptide_entry = entry["protein"][0]["peptide"]
-        psm = PSM(
-            peptidoform=self._parse_peptidoform(peptide_entry, entry["z"]),
-            spectrum_id=entry["support"]["fragment ion mass spectrum"]["note"],
-            is_decoy=entry["protein"][0]["label"].startswith(self.decoy_prefix),
-            score=-np.log(peptide_entry[self.score_key])
-            if self.score_key == "expect"
-            else peptide_entry[self.score_key],
-            precursor_mz=entry["mh"] - mass.nist_mass["H"][0][0],
-            retention_time=entry["rt"],
-            run=run,
-            protein_list=[protein["note"] for protein in entry["protein"]],
-            source="X!Tandem",
-            provenance_data={
-                "xtandem_filename": str(self.filename),
-                "xtandem_id": str(entry["id"]),
-            },
-            metadata={
-                "xtandem_hyperscore": str(peptide_entry["hyperscore"]),
-                "xtandem_delta": str(peptide_entry["delta"]),
-                "xtandem_nextscore": str(peptide_entry["nextscore"]),
-            },
-        )
-        return psm
+    def _parse_entry(self, entry, run: str) -> list:
+        """Parse X!Tandem XML entry to a list of :py:class:`~psm_utils.psm.PSM`."""
+        pepform_to_psms = dict()
+
+        for protein_entry in entry["protein"]:
+            peptide_entry = protein_entry["peptide"]
+            peptidoform = self._parse_peptidoform(peptide_entry, entry["z"])
+
+            if peptidoform not in pepform_to_psms.keys():
+                psm = PSM(
+                    peptidoform = self._parse_peptidoform(peptide_entry, entry["z"]),
+                    spectrum_id = entry["support"]["fragment ion mass spectrum"]["note"],
+                    is_decoy = protein_entry["label"].startswith(self.decoy_prefix),
+                    score = -np.log(peptide_entry[self.score_key])
+                    if self.score_key == "expect"
+                    else peptide_entry[self.score_key],
+                    precursor_mz = entry["mh"] - mass.nist_mass["H"][0][0],
+                    retention_time = entry["rt"],
+                    run = run,
+                    protein_list = [ protein_entry["note"] ],
+                    source = "X!Tandem",
+                    provenance_data = {
+                        "xtandem_filename": str(self.filename),
+                        "xtandem_id": str(entry["id"]),
+                    },
+                    metadata = {
+                        "xtandem_hyperscore": str(peptide_entry["hyperscore"]),
+                        "xtandem_delta": str(peptide_entry["delta"]),
+                        "xtandem_nextscore": str(peptide_entry["nextscore"]),
+                    },
+                )
+                pepform_to_psms[peptidoform] = psm
+            else:
+                pepform_to_psms[peptidoform].protein_list.append(protein_entry["note"])
+        
+        return list(pepform_to_psms.values())
 
     def _parse_run(self, filepath):
         """Parse X!Tandem XML run to :py:class:`~psm_utils.psm.PSM`."""

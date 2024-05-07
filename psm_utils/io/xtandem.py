@@ -163,7 +163,7 @@ class XTandemReader(ReaderBase):
                     score = -np.log(peptide_entry[self.score_key])
                     if self.score_key == "expect"
                     else peptide_entry[self.score_key],
-                    precursor_mz = entry["mh"] - mass.nist_mass["H"][0][0],
+                    precursor_mz = entry["mh"] / entry["z"],
                     retention_time = entry["rt"],
                     run = run,
                     protein_list = [ protein_entry["note"] ],

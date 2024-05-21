@@ -47,7 +47,7 @@ from pathlib import Path
 from typing import Union
 
 import numpy as np
-from pyteomics import mass, tandem
+from pyteomics import tandem
 
 from psm_utils.exceptions import PSMUtilsException
 from psm_utils.io._base_classes import ReaderBase

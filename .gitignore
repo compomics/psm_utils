@@ -132,3 +132,7 @@ dmypy.json
 # Pyre type checker
 .pyre/
 .vscode/settings.json
+
+# Specific to Branch
+example_files/DIANN_example.tsv
+test.ipynb

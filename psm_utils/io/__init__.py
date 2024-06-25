@@ -23,6 +23,7 @@ import psm_utils.io.sage as sage
 import psm_utils.io.tsv as tsv
 import psm_utils.io.xtandem as xtandem
 import psm_utils.io.diann as diann
+import psm_utils.io.fragpipe as fragpipe
 from psm_utils.io._base_classes import WriterBase
 from psm_utils.io.exceptions import PSMUtilsIOException
 from psm_utils.psm import PSM
@@ -107,12 +108,19 @@ FILETYPES = {
         "extension": ".parquet",
         "filename_pattern": r"^.*(?:_|\.).sage.parquet$",
     },
-    "diann": {
+    "fragpipe": {
+        "reader": fragpipe.FragpipeReader,
+        "writer": None,
+        "extension": ".tsv",
+        "filename_pattern": r"^.*psm\.tsv$",
+    },
+    "diann": { # List after fragpipe to avoid extension matching conflicts #TODO: fix tsv conflict
         "reader": diann.DIANNReader,
         "writer": None,
         "extension": ".tsv",
         "filename_pattern": r"^.*\.tsv$",
     },
+
     "parquet": {  # List after proteoscape and sage to avoid extension matching conflicts
         "reader": parquet.ParquetReader,
         "writer": parquet.ParquetWriter,

@@ -7,13 +7,9 @@ Reads the '.tsv' file as defined on the `DIA-NN documentation page <https://gith
 from __future__ import annotations
 
 import csv
-from abc import ABC, abstractmethod
-from pathlib import Path
+from abc import ABC
 from typing import Iterable, Optional
 import re
-
-import pyarrow.parquet as pq
-from pyteomics import mass
 
 from psm_utils.io._base_classes import ReaderBase
 from psm_utils.io._utils import set_csv_field_size_limit
@@ -24,7 +20,7 @@ set_csv_field_size_limit()
 
 class DIANNReader(ReaderBase, ABC):
     def __init__(
-    self, filename, score_column: str = "CScore", *args, **kwargs
+        self, filename, score_column: str = "CScore", *args, **kwargs
     ) -> None:
         """
         Reader for DIA-NN '.tsv' file.
@@ -72,7 +68,7 @@ class DIANNReader(ReaderBase, ABC):
             ion_mobility=float(psm_dict["IM"]),
             protein_list=psm_dict["Protein.Names"].split(";"),
             source="diann",
-            rank=None, # Leave out?
+            rank=1, # Leave out?
             provenance_data=({"diann_filename": str(self.filename)}),
             rescoring_features=rescoring_features,
             metadata={},
@@ -91,9 +87,11 @@ class DIANNReader(ReaderBase, ABC):
             peptide = peptide.replace("]", "]-", 1)
         return peptide
 
+    @staticmethod
     def _parse_precursor_mz():
-        return NotImplementedError("Method not implemented yet. DIA-NN does not yet output precursor m/z.")
+        return NotImplementedError("Method not implemented yet. DIA-NN does not yet output precursor m/z, but might in the future.")
 
+    @staticmethod
     def from_dataframe(cls, dataframe) -> PSMList:
         """Create a PSMList from a DIA-NN Pandas DataFrame."""
         return PSMList(

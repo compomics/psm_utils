@@ -9,12 +9,9 @@ Reads the Philosopher ``psm.tsv`` file as defined on the
 from __future__ import annotations
 
 import csv
-from abc import ABC, abstractmethod
+from abc import ABC
 from pathlib import Path
 from typing import Iterable, Optional
-
-import pyarrow.parquet as pq
-from pyteomics import mass
 
 from psm_utils.io._base_classes import ReaderBase
 from psm_utils.io._utils import set_csv_field_size_limit
@@ -65,7 +62,7 @@ class FragpipeReader(ReaderBase, ABC):
                 psm_dict["Modified Peptide"],
                 psm_dict['Peptide'],
                 psm_dict["Charge"]),
-            spectrum_id=self._parse_spectrum_id(psm_dict['Spectrum']),
+            spectrum_id=self._parse_spectrum_id(psm_dict['Spectrum']), #TODO: needs to be checked
             run=Path(psm_dict["Spectrum File"]).stem,
             is_decoy=False,
             qvalue=None, # Q-value is not outputted by Philosopher
@@ -78,6 +75,7 @@ class FragpipeReader(ReaderBase, ABC):
                                                   psm_dict["Mapped Proteins"]),
             source="fragpipe",
             rank=1,
+            provenance_data=({"fragpipe_filename": str(self.filename)}),
             rescoring_features=rescoring_features,
             metadata={}
         )
@@ -106,7 +104,7 @@ class FragpipeReader(ReaderBase, ABC):
         else:
             return [razor_protein]
 
-    @staticmethod
+    @classmethod
     def from_dataframe(cls, dataframe) -> PSMList:
         """Create a PSMList from a pandas DataFrame."""
         return PSMList(

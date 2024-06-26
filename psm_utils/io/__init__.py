@@ -24,6 +24,7 @@ import psm_utils.io.tsv as tsv
 import psm_utils.io.xtandem as xtandem
 import psm_utils.io.diann as diann
 import psm_utils.io.fragpipe as fragpipe
+import psm_utils.io.alphadia as alphadia
 from psm_utils.io._base_classes import WriterBase
 from psm_utils.io.exceptions import PSMUtilsIOException
 from psm_utils.psm import PSM
@@ -114,12 +115,19 @@ FILETYPES = {
         "extension": ".tsv",
         "filename_pattern": r"^.*psm\.tsv$",
     },
-    "diann": { # List after fragpipe to avoid extension matching conflicts #TODO: fix tsv conflict
+    "alphadia": {
+    "reader": alphadia.AlphaDIAReader,
+    "writer": None,
+    "extension": ".tsv",
+    "filename_pattern": r"^.*precursor\.tsv$",
+    },
+    "diann": { # List after fragpipe and alphadia to avoid extension matching conflicts #TODO: fix tsv conflict
         "reader": diann.DIANNReader,
         "writer": None,
         "extension": ".tsv",
         "filename_pattern": r"^.*\.tsv$",
     },
+
 
     "parquet": {  # List after proteoscape and sage to avoid extension matching conflicts
         "reader": parquet.ParquetReader,

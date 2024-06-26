@@ -91,7 +91,7 @@ class DIANNReader(ReaderBase, ABC):
     def _parse_precursor_mz():
         return NotImplementedError("Method not implemented yet. DIA-NN does not yet output precursor m/z, but might in the future.")
 
-    @staticmethod
+    @classmethod
     def from_dataframe(cls, dataframe) -> PSMList:
         """Create a PSMList from a DIA-NN Pandas DataFrame."""
         return PSMList(

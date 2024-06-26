@@ -18,10 +18,9 @@ from psm_utils.psm_list import PSMList
 
 set_csv_field_size_limit()
 
+
 class DIANNReader(ReaderBase, ABC):
-    def __init__(
-        self, filename, score_column: str = "CScore", *args, **kwargs
-    ) -> None:
+    def __init__(self, filename, score_column: str = "CScore", *args, **kwargs) -> None:
         """
         Reader for DIA-NN '.tsv' file.
 
@@ -56,9 +55,9 @@ class DIANNReader(ReaderBase, ABC):
 
         return PSM(
             peptidoform=self._parse_peptidoform(
-                psm_dict["Modified.Sequence"],
-                psm_dict["Precursor.Charge"]),
-            spectrum_id='NA', # DIA-NN does not output spectrum ID
+                psm_dict["Modified.Sequence"], psm_dict["Precursor.Charge"]
+            ),
+            spectrum_id="NA",  # DIA-NN does not output spectrum ID
             run=psm_dict["Run"],
             is_decoy=False,
             qvalue=psm_dict["Q.Value"],
@@ -66,9 +65,9 @@ class DIANNReader(ReaderBase, ABC):
             score=float(psm_dict[self.score_column]),
             retention_time=float(psm_dict["RT"]),
             ion_mobility=float(psm_dict["IM"]),
-            protein_list=psm_dict["Protein.Names"].split(";"),
+            protein_list=psm_dict["Protein.Ids"].split(";"),
             source="diann",
-            rank=1, # Leave out?
+            rank=1,  # Leave out?
             provenance_data=({"diann_filename": str(self.filename)}),
             rescoring_features=rescoring_features,
             metadata={},
@@ -89,7 +88,9 @@ class DIANNReader(ReaderBase, ABC):
 
     @staticmethod
     def _parse_precursor_mz():
-        return NotImplementedError("Method not implemented yet. DIA-NN does not yet output precursor m/z, but might in the future.")
+        return NotImplementedError(
+            "Method not implemented yet. DIA-NN does not yet output precursor m/z, but might in the future."
+        )
 
     @classmethod
     def from_dataframe(cls, dataframe) -> PSMList:
@@ -112,5 +113,5 @@ RESCORING_FEATURES = [
     "Ms1.Profile.Corr",
     "Ms1.Area",
     "IM",
-    "iIM"
+    "iIM",
 ]

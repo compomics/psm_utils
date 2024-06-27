@@ -20,9 +20,15 @@ from psm_utils.psm_list import PSMList
 
 set_csv_field_size_limit()
 
+
 class FragpipeReader(ReaderBase, ABC):
     def __init__(
-        self, filename, score_column: str = "Hyperscore", mz_column: str = "Observed M/Z", *args, **kwargs
+        self,
+        filename,
+        score_column: str = "Hyperscore",
+        mz_column: str = "Observed M/Z",
+        *args,
+        **kwargs,
     ) -> None:
         """
         Reader for MSFragger ``psm.tsv`` file.
@@ -34,6 +40,9 @@ class FragpipeReader(ReaderBase, ABC):
         score_column: str, optional
             Name of the column that holds the primary PSM score. Default is
             ``Hyperscore``.
+        mz_column: str, optional
+            Name of the column that holds the precursor m/z. Default is
+            ``Observed M/Z``.
 
         """
         super().__init__(filename, *args, **kwargs)
@@ -59,25 +68,31 @@ class FragpipeReader(ReaderBase, ABC):
 
         return PSM(
             peptidoform=self._parse_peptidoform(
-                psm_dict["Modified Peptide"],
-                psm_dict['Peptide'],
-                psm_dict["Charge"]),
-            spectrum_id=self._parse_spectrum_id(psm_dict['Spectrum']), #TODO: needs to be checked
-            run=Path(psm_dict["Spectrum File"]).stem,
+                psm_dict["Modified Peptide"], psm_dict["Peptide"], psm_dict["Charge"]
+            ),
+            spectrum_id=self._parse_spectrum_id(psm_dict["Spectrum"]),  # TODO: needs to be checked
+            run=self._parse_run(psm_dict["Spectrum File"]),
             is_decoy=False,
-            qvalue=None, # Q-value is not outputted by Philosopher
-            pep= 1 - float(psm_dict["Probability"]), # PeptideProphet Probability, not explicitely stated if this is the inverse of PEP
+            qvalue=None,  # Q-value is not outputted by Philosopher
+            pep=1
+            - float(
+                psm_dict["Probability"]
+            ),  # PeptideProphet Probability, not explicitely stated if this is the inverse of PEP
+            # But I'm assuming it is
             score=psm_dict[self.score_column],
-            precursor_mz=psm_dict[self.mz_column], # Allows use of both calibrated and uncalibrated Observed M/Z?+
+            precursor_mz=psm_dict[
+                self.mz_column
+            ],  # Allows use of both calibrated and uncalibrated Observed M/Z?
             retention_time=float(psm_dict["Retention"]),
             ion_mobility=float(psm_dict["Ion Mobility"]) if "Ion Mobility" in psm_dict else None,
-            protein_list=self._parse_protein_list(psm_dict["Protein"],
-                                                  psm_dict["Mapped Proteins"]),
+            protein_list=self._parse_protein_list(
+                psm_dict["Protein"], psm_dict["Mapped Proteins"]
+            ),
             source="fragpipe",
             rank=1,
             provenance_data=({"fragpipe_filename": str(self.filename)}),
             rescoring_features=rescoring_features,
-            metadata={}
+            metadata={},
         )
 
     @staticmethod
@@ -86,10 +101,10 @@ class FragpipeReader(ReaderBase, ABC):
             peptide = mod_peptide
         if charge:
             peptide += f"/{int(float(charge))}"
-        if peptide.startswith('n'):
+        if peptide.startswith("n"):
             peptide = peptide[1:]
             # A hyphen needs to be added after the N-terminal modification, thus after the ]
-            peptide = peptide.replace(']', ']-', 1)
+            peptide = peptide.replace("]", "]-", 1)
         return peptide
 
     @staticmethod
@@ -103,6 +118,16 @@ class FragpipeReader(ReaderBase, ABC):
             return [razor_protein] + mapped_proteins_list
         else:
             return [razor_protein]
+
+    # Dependent on the fragpipe workflow used the run name can be different, but in most cases
+    # something like 'interact-<run_name>.pep.xml' is used
+    @staticmethod
+    def _parse_run(spectrum_file: str) -> str:
+        if (spectrum_file.endswith(".pep.xml")) and (spectrum_file.startswith("interact-")):
+            spectrum_file = spectrum_file.replace("interact-", "")
+            return Path(Path(spectrum_file).stem).stem
+        else:
+            return Path(spectrum_file).stem
 
     @classmethod
     def from_dataframe(cls, dataframe) -> PSMList:
@@ -126,6 +151,4 @@ RESCORING_FEATURES = [
     "Delta Mass",
     "Hyperscore",
     "Number of Missed Cleavages",
-    "Intensity"
 ]
-

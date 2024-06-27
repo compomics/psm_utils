@@ -71,7 +71,7 @@ class AlphaDIAReader(ReaderBase, ABC):
             retention_time=psm_dict["rt_observed"],
             ion_mobility=psm_dict["mobility_observed"],
             protein_list=psm_dict["proteins"].split(";"),
-            rank=psm_dict["rank"],
+            rank=int(psm_dict["rank"]) + 1,  # AlphaDIA ranks are 0-based
             source="alphadia",
             provenance_data=({"alphadia_filename": str(self.filename)}),
             metadata={},

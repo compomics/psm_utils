@@ -114,4 +114,6 @@ RESCORING_FEATURES = [
     "Ms1.Area",
     "IM",
     "iIM",
+    "Predicted.IM",
+    "Predicted.iIM",
 ]

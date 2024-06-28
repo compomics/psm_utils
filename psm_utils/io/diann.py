@@ -20,7 +20,9 @@ set_csv_field_size_limit()
 
 
 class DIANNReader(ReaderBase, ABC):
-    def __init__(self, filename, score_column: str = "CScore", *args, **kwargs) -> None:
+    def __init__(
+        self, filename, score_column: str = "CScore", qval_column="Q.Value", *args, **kwargs
+    ) -> None:
         """
         Reader for DIA-NN '.tsv' file.
 
@@ -36,6 +38,7 @@ class DIANNReader(ReaderBase, ABC):
         super().__init__(filename, *args, **kwargs)
         self.filename = filename
         self.score_column = score_column
+        self.qval_column = qval_column
 
     def __iter__(self) -> Iterable[PSM]:
         """Iterate over file and return PSMs one-by-one."""
@@ -60,7 +63,9 @@ class DIANNReader(ReaderBase, ABC):
             spectrum_id="NA",  # DIA-NN does not output spectrum ID
             run=psm_dict["Run"],
             is_decoy=False,
-            qvalue=psm_dict["Q.Value"],
+            qvalue=psm_dict[
+                self.qval_column
+            ],  # DIA-NN puts out q-value on both run and library level
             pep=float(psm_dict["PEP"]),
             score=float(psm_dict[self.score_column]),
             retention_time=float(psm_dict["RT"]),

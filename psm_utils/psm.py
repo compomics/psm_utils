@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Union
 
-from pydantic import BaseModel
+from pydantic import ConfigDict, BaseModel
 
 from psm_utils.peptidoform import Peptidoform
 
@@ -11,7 +11,7 @@ class PSM(BaseModel):
     """Data class representing a peptide-spectrum match (PSM)."""
 
     peptidoform: Union[Peptidoform, str]
-    spectrum_id: Union[int, str]
+    spectrum_id: Union[str]
     run: Optional[str] = None
     collection: Optional[str] = None
     spectrum: Optional[Any] = None
@@ -28,9 +28,7 @@ class PSM(BaseModel):
     provenance_data: Optional[Dict[str, str]] = dict()
     metadata: Optional[Dict[str, str]] = dict()
     rescoring_features: Optional[Dict[str, float]] = dict()
-
-    class Config:
-        arbitrary_types_allowed = True  # Allows non-pydantic class Peptidoform
+    model_config = ConfigDict(arbitrary_types_allowed=True, coerce_numbers_to_str=True)
 
     def __init__(self, **data):
         """

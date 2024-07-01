@@ -16,6 +16,9 @@ from psm_utils.io.exceptions import PSMUtilsIOException
 from psm_utils.peptidoform import Peptidoform
 from psm_utils.psm import PSM
 from psm_utils.psm_list import PSMList
+from psm_utils.io._utils import set_csv_field_size_limit
+
+set_csv_field_size_limit()
 
 REQUIRED_COLUMNS = [
     "database_peptide",
@@ -89,11 +92,11 @@ class IonbotReader(ReaderBase):
             ),
             spectrum_id=psm_dict["spectrum_title"],
             run=psm_dict["spectrum_file"],
-            is_decoy=True
-            if psm_dict["database"] == "D"
-            else False
-            if psm_dict["database"] == "T"
-            else None,
+            is_decoy=(
+                True
+                if psm_dict["database"] == "D"
+                else False if psm_dict["database"] == "T" else None
+            ),
             score=float(psm_dict["psm_score"]),
             precursor_mz=float(psm_dict["m/z"]),
             retention_time=float(psm_dict["observed_retention_time"]),

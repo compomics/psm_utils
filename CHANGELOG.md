@@ -5,6 +5,99 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.9.0] - 2024-05-01
+
+### Added
+
+- `io`: Read and write support for writing PSMs to Apache Parquet for efficient storage of PSM lists.
+- `io.sage`: Support for Sage results in Parquet format (new `SageParquetReader`, renamed `SageReader` to `SageTSVReader`).
+
+### Changed
+
+- Upgrade Pydantic dependency to v2. The PSM `spectrum_id` field is now always coerced to a string.
+- `io.proteoscape`: Use pyarrow to iteratively read from Parquet instead of first reading an entire dataframe with Pandas.
+- `io.sage`: Update compatibility to Sage v0.14
+- Remove temporary patch for caching Proforma modification resolvers (now in Pyteomics v4.7.2).
+
+## [0.8.3] - 2024-04-16
+
+### Added
+
+- Speed up mass calculation for large datasets by caching Proforma modification resolvers.
+  Temporary patch until implemented in Pyteomics (see levitsky/pyteomics#147).
+
+## [0.8.2] - 2024-04-05
+
+### Added
+
+- `io.proteoscape`: Parse filename into PSM `run` field.
+
+## [0.8.1] - 2024-03-29
+
+### Added
+
+- `io.proteoscape`: Allow ProteoScapeReader instantiation from Pandas DataFrame and access PSM by index.
+
+### Fixed
+
+- Remove accidental print statement.
+- `io.idxml`: Fixed parenthesis in type hint
+
+### Changed
+
+- `io.idxml`: Filter OPENMS_DATA_PATH warnings (see compomics/ms2rescore#129 and OpenMS/OpenMS#7418)
+- `io.proteoscape`: Rename module from TIMScore to ProteoScape.
+- `io.proteoscape`: Use correct search engine score (`x_corr_score` instead of `tims_score`)
+
+## [0.8.0] - 2024-03-27
+
+### Added
+
+- `io.timscore`: Add support for TIMScore Parquet files.
+
+### Fixed
+
+- Fixed `_csv.Error: field larger than field limit (131072)` for very large fields when reading CSV-based PSM files.
+- Pinned Pyteomics version to avoid pickling issues in multithreading (to be investigated)
+
+## [0.7.4] - 2024-03-18
+
+### Added
+
+- `Peptidoform`: Support adding and applying global terminal modifications. For now using a
+  workaround while waiting for official support and an implementation in Pyteomics. See
+  HUPO-PSI/ProForma#6.
+
+## [0.7.3] - 2024-03-04
+
+### Changed
+
+- `io.xtandem`: Parse double mass modifications as double modification instead of merging and
+  summing mass shifts into a single modification.
+- `io.xtandem`: Avoid float formatting issues when parsing modification mass label.
+- `io.xtandem`: Parse all proteins into `protein_list` instead of only the first one.
+- `io.tsv`: Log error instead of raising exception when a TSV row cannot be parsed.
+
+## [0.7.2] - 2023-11-29
+
+### Fixed
+
+- `io.xtandem`: Fixed bug when extracting run name (introduced in v0.7.0)
+
+## [0.7.1] - 2023-10-30
+
+### Added
+
+- Tests: Added tests for \_format_number_as_string function
+- Tests: Added more test cases for `peptidoform.rename_modifications` for mass modifications
+- `io.xtandem`: To parse `run` value, fall back to PSM file name if run name cannot be parsed from `label` field
+
+### Fixed
+
+- `peptidoform.rename_modifications`: Fixed mapping of negative mass modifications
+- `io.xtandem`: Fixed regular expression to parse `run` value fom XML `label` field
+- `io.idxml`: Fix handling multiple types in `rescoring_features` when writing (fixes #60)
+
 ## [0.7.0] - 2023-10-25
 
 ### Added

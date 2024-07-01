@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+from collections import defaultdict
 from typing import Iterable, List, Tuple, Union
 
 import numpy as np
@@ -14,7 +15,7 @@ class Peptidoform:
     Peptide sequence, modifications and charge state represented in ProForma notation.
     """
 
-    def __init__(self, proforma_sequence: [str, proforma.ProForma]) -> None:
+    def __init__(self, proforma_sequence: Union[str, proforma.ProForma]) -> None:
         """
         Peptide sequence, modifications and charge state represented in ProForma notation.
 
@@ -407,7 +408,7 @@ class Peptidoform:
             for mod in mods:
                 try:
                     if isinstance(mod, proforma.MassModification):
-                        mod_value = _format_number_as_string(mod.value)
+                        mod_value = format_number_as_string(mod.value)
                     else:
                         mod_value = mod.value
                     if mod_value in mapping:
@@ -454,7 +455,7 @@ class Peptidoform:
 
         See also
         --------
-        psm_utils.peptidoform.Peptidoform.add_fixed_modifications
+        psm_utils.peptidoform.Peptidoform.apply_fixed_modifications
 
         Examples
         --------
@@ -462,6 +463,14 @@ class Peptidoform:
         >>> peptidoform.add_fixed_modifications([("Carbamidomethyl", ["C"])])
         >>> peptidoform.proforma
         '<[Carbamidomethyl]@C>ATPEILTCNSIGCLK'
+
+        Notes
+        -----
+        While globally defined terminal modifications are not explicitly supported in ProForma v2,
+        this function supports adding terminal modifications using the ``N-term`` and ``C-term``
+        targets in place of an amino acid target. These global modifications are supported in the
+        :py:meth:`psm_utils.peptidoform.Peptidoform.apply_fixed_modifications` method through a
+        workaround. See https://github.com/HUPO-PSI/ProForma/issues/6 for discussions on the issue.
 
         """
         if isinstance(modification_rules, dict):
@@ -497,13 +506,10 @@ class Peptidoform:
         """
         if self.properties["fixed_modifications"]:
             # Setup target_aa -> modification_list dictionary
-            rule_dict = {}
+            rule_dict = defaultdict(list)
             for rule in self.properties["fixed_modifications"]:
                 for target_aa in rule.targets:
-                    try:
-                        rule_dict[target_aa].append(rule.modification_tag)
-                    except KeyError:
-                        rule_dict[target_aa] = [rule.modification_tag]
+                    rule_dict[target_aa].append(rule.modification_tag)
 
             # Apply modifications to sequence
             for i, (aa, site_mods) in enumerate(self.parsed_sequence):
@@ -513,15 +519,25 @@ class Peptidoform:
                     else:
                         self.parsed_sequence[i] = (aa, rule_dict[aa])
 
+            # Apply terminal modifications
+            for term, term_name in [("n_term", "N-term"), ("c_term", "C-term")]:
+                if term_name in rule_dict:
+                    if self.properties[term]:
+                        self.properties[term].extend(rule_dict[term_name])
+                    else:
+                        self.properties[term] = rule_dict[term_name]
+
             # Remove fixed modifications
             self.properties["fixed_modifications"] = []
 
 
-def _format_number_as_string(num):
+def format_number_as_string(num):
     """Format number as string for ProForma mass modifications."""
-    sign = "+" if np.sign(num) == 1 else "-"
-    num = str(num).rstrip("0").rstrip(".")
-    return sign + num
+    # Using this method over `:+g` string formatting to avoid rounding and scientific notation
+    num = float(num)
+    plus = "+" if np.sign(num) == 1 else ""  # Add plus sign if positive
+    num = str(num).rstrip("0").rstrip(".")  # Remove trailing zeros and decimal point
+    return plus + num
 
 
 class PeptidoformException(PSMUtilsException):

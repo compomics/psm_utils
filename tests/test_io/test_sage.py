@@ -1,6 +1,8 @@
 """Tests for psm_utils.io.sage."""
 
-from psm_utils.io.sage import SageReader
+import pytest
+
+from psm_utils.io.sage import SageParquetReader, SageTSVReader
 from psm_utils.psm import PSM
 
 test_psm = PSM(
@@ -27,29 +29,52 @@ test_psm = PSM(
         "missed_cleavages": 0.0,
         "isotope_error": 0.0,
         "precursor_ppm": 0.8239083,
-        "fragment_ppm": 0.5347518,
-        "hyperscore": 71.78844460255384,
-        "delta_next": 71.78844460255384,
+        "fragment_ppm": 0.503857,
+        "hyperscore": 72.26591573806016,
+        "delta_next": 72.26591573806016,
         "delta_best": 0.0,
-        "delta_rt_model": 0.0,
-        "aligned_rt": 0.0,
+        "delta_rt_model": 0.993444,
+        "aligned_rt": 0.993444,
         "predicted_rt": 0.0,
         "matched_peaks": 22.0,
         "longest_b": 9.0,
         "longest_y": 12.0,
         "longest_y_pct": 0.6315789,
-        "matched_intensity_pct": 50.785,
+        "matched_intensity_pct": 64.770966,
         "scored_candidates": 1.0,
         "poisson": -1.9562811911083433,
-        "ms1_intensity": 306146180.0,
-        "ms2_intensity": 56930696.0,
+        "ms2_intensity": 72609170.0,
     },
 )
 
 
-class TestSageReader:
+class TestSageTSVReader:
     def test_iter(self):
-        with SageReader("./tests/test_data/results.sage.tsv") as reader:
+        with SageTSVReader("./tests/test_data/results.sage.tsv") as reader:
             for psm in reader:
                 psm.provenance_data = {}
                 assert psm == test_psm
+
+
+class TestSageParquetReader:
+    def test_iter(self):
+        with SageParquetReader("./tests/test_data/results.sage.parquet") as reader:
+            # Parquet results in float precision differences, so pytest.approx is used, which does
+            # not support objects with nested dicts.
+            for psm in reader:
+                psm_dict = dict(psm)
+                test_psm_dict = dict(test_psm)
+
+                # Nested dicts
+                assert psm_dict.pop("rescoring_features", {}) == pytest.approx(
+                    test_psm_dict.pop("rescoring_features", {})
+                )
+                assert psm_dict.pop("metadata", {}) == test_psm_dict.pop("metadata", {})
+                psm_dict.pop("provenance_data", {})
+
+                # Remaining keys
+                for k, v in psm_dict.items():
+                    if isinstance(v, float):
+                        assert v == pytest.approx(test_psm_dict[k])
+                    else:
+                        assert v == test_psm_dict[k]

@@ -13,6 +13,9 @@ import numpy as np
 from psm_utils.exceptions import PSMUtilsException
 from psm_utils.io._base_classes import ReaderBase
 from psm_utils.psm import PSM, Peptidoform
+from psm_utils.io._utils import set_csv_field_size_limit
+
+set_csv_field_size_limit()
 
 logger = logging.getLogger(__name__)
 

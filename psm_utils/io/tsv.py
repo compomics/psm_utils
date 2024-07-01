@@ -45,10 +45,12 @@ are flattened to separate columns, each with their column names prefixed with
 
 
 """
+
 from __future__ import annotations
 
 import ast
 import csv
+import logging
 from pathlib import Path
 from typing import Optional
 
@@ -58,6 +60,11 @@ from psm_utils.io._base_classes import ReaderBase, WriterBase
 from psm_utils.io.exceptions import PSMUtilsIOException
 from psm_utils.psm import PSM
 from psm_utils.psm_list import PSMList
+from psm_utils.io._utils import set_csv_field_size_limit
+
+set_csv_field_size_limit()
+
+logger = logging.getLogger(__name__)
 
 
 class TSVReader(ReaderBase):
@@ -70,8 +77,9 @@ class TSVReader(ReaderBase):
             for row in reader:
                 try:
                     yield PSM(**self._parse_entry(row))
-                except ValidationError as e:
-                    raise PSMUtilsIOException(f"Could not parse PSM from row: `{row}`") from e
+                except ValidationError:
+                    logger.warning("Could not parse PSM from row: `{row}`")
+                    continue
 
     @staticmethod
     def _parse_entry(entry: dict) -> dict:

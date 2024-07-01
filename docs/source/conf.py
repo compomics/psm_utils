@@ -52,7 +52,7 @@ intersphinx_mapping = {
 
 
 def setup(app):
-    config = {
+    config = {  # noqa: F841
         # "auto_toc_tree_section": "Contents",
         "enable_eval_rst": True,
     }

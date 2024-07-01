@@ -20,29 +20,30 @@ classifiers = [
 dynamic = ["version"]
 requires-python = ">=3.7"
 dependencies = [
-    "pyteomics >= 4",
-    "pyopenms",
-    "lxml",
-    "psims",
-    "pandas",
-    "numpy",
     "click",
+    "lxml",
+    "numpy",
+    "pandas",
+    "psims",
+    "pyarrow",
+    "pydantic >= 2",
+    "pyopenms",
+    "pyteomics >= 4",
     "rich",
-    "pydantic",
     "sqlalchemy",
 ]
 
 [project.optional-dependencies]
-dev = ["black", "isort>5", "pytest", "pytest-cov"]
+dev = ["ruff", "isort>5", "pytest", "pytest-cov"]
 docs = [
-    "sphinx",
     "numpydoc>=1,<2",
     "recommonmark",
-    "sphinx-mdinclude",
-    "toml",
     "semver>=2",
     "sphinx_rtd_theme",
     "sphinx-autobuild",
+    "sphinx-mdinclude",
+    "sphinx",
+    "toml",
 ]
 online = ["streamlit", "plotly"]
 
@@ -56,11 +57,14 @@ CompOmics = "https://www.compomics.com"
 psm_utils = "psm_utils.__main__:main"
 
 [build-system]
-requires = ["flit_core >=3.2,<4"]
-build-backend = "flit_core.buildapi"
+requires = ["setuptools"]
+build-backend = "setuptools.build_meta"
 
-[tool.flit.module]
-name = "psm_utils"
+[tool.setuptools.packages.find]
+include = ["psm_utils*"]
+
+[tool.setuptools.dynamic]
+version = { attr = "psm_utils.__version__" }
 
 [tool.isort]
 profile = "black"

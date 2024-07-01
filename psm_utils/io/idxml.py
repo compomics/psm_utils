@@ -9,22 +9,28 @@ Notes
   is parsed as an individual :py:class:`~psm_utils.psm.PSM` object.
 
 """
-
-
 from __future__ import annotations
 
 import logging
 import re
+from warnings import filterwarnings
 from pathlib import Path
 from typing import Iterable, List, Tuple, Union
-
-import pyopenms as oms
 
 from psm_utils.exceptions import PSMUtilsException
 from psm_utils.io._base_classes import ReaderBase, WriterBase
 from psm_utils.psm import PSM
 from psm_utils.psm_list import PSMList
 from psm_utils.peptidoform import Peptidoform
+
+filterwarnings(
+    "ignore",
+    message="OPENMS_DATA_PATH environment variable already exists",
+    category=UserWarning,
+    module="pyopenms",
+)
+
+import pyopenms as oms  #noqa: E402
 
 logger = logging.getLogger(__name__)
 
@@ -105,7 +111,7 @@ class IdXMLReader(ReaderBase):
             for peptide_hit in peptide_id.getHits():
                 yield self._parse_psm(self.protein_ids, peptide_id, peptide_hit)
 
-    def _parse_idxml(self) -> Tuple(oms.ProteinIdentification, oms.PeptideIdentification):
+    def _parse_idxml(self) -> Tuple[oms.ProteinIdentification, oms.PeptideIdentification]:
         """
         Parse idXML using pyopenms and perform sanity checks to make sure the file is not empty.
         """
@@ -422,7 +428,8 @@ class IdXMLWriter(WriterBase):
 
         for feature, value in psm.rescoring_features.items():
             if feature not in RESCORING_FEATURE_LIST:
-                peptide_hit.setMetaValue(feature, value)
+                # Convert numpy objects to floats since pyopenms does not support numpy objects to be added
+                peptide_hit.setMetaValue(feature, float(value))
 
     def _create_new_ids(self, psm_dict: dict) -> None:
         """
@@ -532,6 +539,9 @@ class IdXMLWriter(WriterBase):
         """Add meta values inplace to :py:class:`~pyopenms.PeptideHit` from a dictionary."""
         if d is not None:
             for key, value in d.items():
+                # Convert numpy objects to floats since pyopenms does not support numpy objects to be added
+                if not isinstance(value, str):
+                    value = float(value)
                 peptide_hit.setMetaValue(key, value)
 
 

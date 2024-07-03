@@ -78,7 +78,7 @@ class TSVReader(ReaderBase):
                 try:
                     yield PSM(**self._parse_entry(row))
                 except ValidationError:
-                    logger.warning("Could not parse PSM from row: `{row}`")
+                    logger.warning(f"Could not parse PSM from row: `{row}`")
                     continue
 
     @staticmethod

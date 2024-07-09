@@ -37,7 +37,6 @@ Notes
       [+39,99545]
 """
 
-
 from __future__ import annotations
 
 import logging
@@ -155,24 +154,26 @@ class XTandemReader(ReaderBase):
             peptide_entry = protein_entry["peptide"]
             peptidoform = self._parse_peptidoform(peptide_entry, entry["z"])
 
-            if peptidoform not in pepform_to_psms.keys():
+            if peptidoform not in pepform_to_psms:
                 psm = PSM(
-                    peptidoform = self._parse_peptidoform(peptide_entry, entry["z"]),
-                    spectrum_id = entry["support"]["fragment ion mass spectrum"]["note"],
-                    is_decoy = protein_entry["label"].startswith(self.decoy_prefix),
-                    score = -np.log(peptide_entry[self.score_key])
-                    if self.score_key == "expect"
-                    else peptide_entry[self.score_key],
-                    precursor_mz = entry["mh"] / entry["z"],
-                    retention_time = entry["rt"],
-                    run = run,
-                    protein_list = [ protein_entry["note"] ],
-                    source = "X!Tandem",
-                    provenance_data = {
+                    peptidoform=self._parse_peptidoform(peptide_entry, entry["z"]),
+                    spectrum_id=entry["support"]["fragment ion mass spectrum"]["note"],
+                    is_decoy=protein_entry["label"].startswith(self.decoy_prefix),
+                    score=(
+                        -np.log(peptide_entry[self.score_key])
+                        if self.score_key == "expect"
+                        else peptide_entry[self.score_key]
+                    ),
+                    precursor_mz=entry["mh"] / entry["z"],
+                    retention_time=entry["rt"],
+                    run=run,
+                    protein_list=[protein_entry["note"]],
+                    source="X!Tandem",
+                    provenance_data={
                         "xtandem_filename": str(self.filename),
                         "xtandem_id": str(entry["id"]),
                     },
-                    metadata = {
+                    metadata={
                         "xtandem_hyperscore": str(peptide_entry["hyperscore"]),
                         "xtandem_delta": str(peptide_entry["delta"]),
                         "xtandem_nextscore": str(peptide_entry["nextscore"]),
@@ -181,7 +182,7 @@ class XTandemReader(ReaderBase):
                 pepform_to_psms[peptidoform] = psm
             else:
                 pepform_to_psms[peptidoform].protein_list.append(protein_entry["note"])
-        
+
         return list(pepform_to_psms.values())
 
     def _parse_run(self, filepath):

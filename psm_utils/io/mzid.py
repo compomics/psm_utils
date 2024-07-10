@@ -31,43 +31,43 @@ logger = logging.getLogger(__name__)
 # Not all child terms are used, as not all statistics are direct scores.
 # Items are sorted by priority (if more scores are present, the first found one is used)
 STANDARD_SEARCHENGINE_SCORES = [
-    "PeptideShaker PSM score",
-    "Amanda:AmandaScore",
-    "Andromeda:score",
-    "Byonic:Score",
-    "Comet:Xcorr",
-    "DeBunker:score",
-    "IdentityE Score",
-    "KSDP score",
-    "MS-GF:SpecEValue",
-    "MS-GF:EValue",
-    "MS-GF:RawScore",
-    "MS-GF:DeNovoScore",
-    "MSFit:Mowse score",
-    "MSPathFinder:RawScore",
-    "MSPepSearch:score",
-    "Mascot:score",
-    "MetaMorpheus:score",
-    "OMSSA:evalue",
-    "OpenPepXL:score",
-    "PEAKS:peptideScore",
-    "Phenyx:Pepzscore",
-    "ProLuCID:xcorr",
-    "ProSight:specral C-score",
-    "Profound:z value",
-    "ProteinProspector:score",
-    "ProteinScape:SequestMetaScore",
-    "ProteomeDiscoverer:Delta Score",
-    "Proteome Discoverer Delta Score",
-    "SEQUEST:xcorr",
-    "SIM-XL score ",
-    "SQID:score ",
-    "Sonar:Score",
-    "SpectrumMill:Score",
-    "TopMG:spectral E-Value",
-    "X!Tandem:hyperscore",
-    "ZCore:probScore:",
-    "Percolator:score",
+    "peptideshaker psm score",
+    "amanda:amandascore",
+    "andromeda:score",
+    "byonic:score",
+    "comet:xcorr",
+    "debunker:score",
+    "identitye score",
+    "ksdp score",
+    "ms-gf:specevalue",
+    "ms-gf:evalue",
+    "ms-gf:rawscore",
+    "ms-gf:denovoscore",
+    "msfit:mowse score",
+    "mspathfinder:rawscore",
+    "mspepsearch:score",
+    "mascot:score",
+    "metamorpheus:score",
+    "omssa:evalue",
+    "openpepxl:score",
+    "peaks:peptidescore",
+    "phenyx:pepzscore",
+    "prolucid:xcorr",
+    "prosight:specral c-score",
+    "profound:z value",
+    "proteinprospector:score",
+    "proteinscape:sequestmetascore",
+    "proteomediscoverer:delta score",
+    "proteome discoverer delta score",
+    "sequest:xcorr",
+    "sim-xl score ",
+    "sqid:score ",
+    "sonar:score",
+    "spectrummill:score",
+    "topmg:spectral e-value",
+    "x!tandem:hyperscore",
+    "zcore:probscore:",
+    "percolator:score",
     "xi:score",
     "search engine specific score",
 ]
@@ -342,9 +342,10 @@ class MzidReader(ReaderBase):
     @staticmethod
     def _infer_score_name(keys) -> str:
         """Infer the score from the list of known PSM scores."""
+        lower_keys = {key.lower(): key for key in keys}
         for score in STANDARD_SEARCHENGINE_SCORES:
-            if score in keys:
-                return score
+            if score in lower_keys:
+                return lower_keys[score]
 
     @staticmethod
     def _infer_qvalue_name(keys) -> Union[str, None]:

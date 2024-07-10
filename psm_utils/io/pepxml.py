@@ -48,6 +48,8 @@ class PepXMLReader(ReaderBase):
         """Iterate over file and return PSMs one-by-one."""
         with pepxml.read(str(self.filename)) as reader:
             for spectrum_query in reader:
+                if "search_hit" not in spectrum_query:
+                    continue
                 for search_hit in spectrum_query["search_hit"]:
                     yield self._parse_psm(spectrum_query, search_hit)
 

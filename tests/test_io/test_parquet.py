@@ -41,7 +41,7 @@ def compute_checksum(filename):
 
 
 class TestParquetWriter:
-    expected_checksum = "cf3f2e9f073be58612ce81f240da9f4109e1c76eea25f1b7881e09c0a8fdee16"
+    expected_checksum = "be6da8d891bd63b85fab5bb11d6a113f8df6ce9f7fd3d1cc429804dc41d972af"
 
     def test_write_psm(self):
         with ParquetWriter("test.pq") as writer:

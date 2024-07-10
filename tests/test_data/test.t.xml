@@ -1,0 +1,208 @@
+<?xml version="1.0"?>
+<?xml-stylesheet type="text/xsl" href="tandem-style.xsl"?>
+<bioml xmlns:GAML="http://www.bioml.com/gaml/" label="models from '/home/compomics/Documents/spectrum_files/pyrococcus/Velos005137.mgf'">
+<group id="10487" mh="1903.970922" z="3" rt="3990.64720000002" expect="7.9e+01" label="tr|Q8U2N0|Q8U2N0_PYRFU Uncharacterized protein OS=Pyrococcus furiosus (strain ATCC..." type="model" sumI="5.86" maxI="97703.7" fI="977.037" act="0" >
+<protein expect="0.0" id="10487.1" uid="781" label="tr|Q8U2N0|Q8U2N0_PYRFU Uncharacterized protein OS=Pyrococcus furiosus (strain ATCC..." sumI="5.86" >
+<note label="description">tr|Q8U2N0|Q8U2N0_PYRFU Uncharacterized protein OS=Pyrococcus furiosus (strain ATCC 43587 / DSM 3638 / JCM 8422 / Vc1) OX=186497 GN=PF0803 PE=4 SV=1</note>
+<file type="peptide" URL="/home/compomics/extra_disk/rescore-pyro-tandem/db/pyro_crap_td.fasta"/>
+<peptide start="1" end="414">
+	MKREDLLWTL IGLSLLYSYL SNNLSGVLFG VVLFSYIVQA RRGFNPDFDV
+	KVDIPERFEE GITGEVVVGV VNRGSEGFLE VEVSGEDVEG DKRRVFLRKG
+	ESVVKVKVKP LAKGEMELKF KIRFEDRAGL YYEEEERSFR IQVLPSVDSI
+	REAMEEERRV RLKEAYKKGR IGVESLEIYG LREYLPGDDV RRIDWKASAR
+	IGKIIVKEFL RESEGDVYIV LDASREMRKR VRKSKIDYAS TLALYLATLI
+	VREGRRVGLI IFWDEDFKVV KPGRELEKIR EAIRFRPVRG LMSFKGEISL
+	RVRGFLKLFP RKRRSIADAL LSLRESSHLI LISDLMSNTP LLYRAIAMAK
+	KKHRIVILSP NPVLFYSGEL DEETLRFLYR KYKEREKVIR RFNSLVPTLD
+	LGPSDYREVL EVLG
+<domain id="10487.1.1" start="42" end="57" expect="7.9e+01" mh="1903.9661" delta="0.0048" hyperscore="8.8" nextscore="8.0" y_score="7.3" y_ions="3" b_score="4.6" b_ions="1" pre="VQAR" post="FEEG" seq="RGFNPDFDVKVDIPER" missed_cleavages="2">
+</domain>
+</peptide>
+</protein>
+<protein expect="0.0" id="10487.2" uid="3776" label="DECOY_tr|Q8TZM9_REVERSED|Q8TZM9_PYRFU Aldose reductase OS=Pyrococcus furiosus (strain..." sumI="5.86" >
+<note label="description">DECOY_tr|Q8TZM9_REVERSED|Q8TZM9_PYRFU Aldose reductase OS=Pyrococcus furiosus (strain ATCC 43587 / DSM 3638 / JCM 8422 / Vc1) OX=186497 GN=PF1960 PE=4 SV=1</note>
+<file type="peptide" URL="/home/compomics/extra_disk/rescore-pyro-tandem/db/pyro_crap_td.fasta"/>
+<peptide start="1" end="278">
+	VCRRAMERDE ESLRWGMAGF NEKLHEKNSA KPIAVVNEEW ILYNLAVQAA
+	TKGYKEGIKA LCENRALTGK ELPTYAMLAI GERKMYDLLG TTEPWRDKVS
+	YKVQNAVIEY KRMVEQSRQL LELNFNSVGI YRIVGEDVLD ELAHLTEEIK
+	KFDDVPWHLL YLDIYTGLRK ASARAAKKAE EYGFHTPWVK SVIFIDEREF
+	EKIAEGVIEE AHGAGYFEAT DILNMGLELG YRIAEISEKD RSYDPTERGG
+	IGWTGMGIAT VKDDGIRKLD NFANVRKM
+<domain id="10487.2.1" start="249" end="267" expect="7.9e+01" mh="1903.9695" delta="0.0015" hyperscore="8.8" nextscore="8.0" y_score="7.3" y_ions="3" b_score="4.6" b_ions="1" pre="PTER" post="KLDN" seq="GGIGWTGMGIATVKDDGIR" missed_cleavages="1">
+</domain>
+</peptide>
+</protein>
+<group label="supporting data" type="support">
+<GAML:trace label="10487.hyper" type="hyperscore expectation function">
+<GAML:attribute type="a0">4.38931</GAML:attribute>
+<GAML:attribute type="a1">-0.283181</GAML:attribute>
+<GAML:Xdata label="10487.hyper" units="score">
+<GAML:values byteorder="INTEL" format="ASCII" numvalues="16">
+0 1 2 3 4 5 6 7 8 9 10 11 12 13 14 15 
+</GAML:values>
+</GAML:Xdata>
+<GAML:Ydata label="10487.hyper" units="counts">
+<GAML:values byteorder="INTEL" format="ASCII" numvalues="16">
+549 549 549 485 450 375 301 209 149 88 43 15 6 2 1 0 
+</GAML:values>
+</GAML:Ydata>
+</GAML:trace>
+<GAML:trace label="10487.convolute" type="convolution survival function">
+<GAML:Xdata label="10487.convolute" units="score">
+<GAML:values byteorder="INTEL" format="ASCII" numvalues="13">
+0 1 2 3 4 5 6 7 8 9 10 11 12 
+</GAML:values>
+</GAML:Xdata>
+<GAML:Ydata label="10487.convolute" units="counts">
+<GAML:values byteorder="INTEL" format="ASCII" numvalues="13">
+541 541 541 477 440 365 285 191 116 61 24 1 0 
+</GAML:values>
+</GAML:Ydata>
+</GAML:trace>
+<GAML:trace label="10487.b" type="b ion histogram">
+<GAML:Xdata label="10487.b" units="number of ions">
+<GAML:values byteorder="INTEL" format="ASCII" numvalues="7">
+0 1 2 3 4 5 6 
+</GAML:values>
+</GAML:Xdata>
+<GAML:Ydata label="10487.b" units="counts">
+<GAML:values byteorder="INTEL" format="ASCII" numvalues="7">
+258 247 39 4 0 1 0 
+</GAML:values>
+</GAML:Ydata>
+</GAML:trace>
+<GAML:trace label="10487.y" type="y ion histogram">
+<GAML:Xdata label="10487.y" units="number of ions">
+<GAML:values byteorder="INTEL" format="ASCII" numvalues="6">
+0 1 2 3 4 5 
+</GAML:values>
+</GAML:Xdata>
+<GAML:Ydata label="10487.y" units="counts">
+<GAML:values byteorder="INTEL" format="ASCII" numvalues="6">
+176 277 81 14 1 0 
+</GAML:values>
+</GAML:Ydata>
+</GAML:trace>
+
+</group>
+<group type="support" label="fragment ion mass spectrum">
+<note label="Description">635.328491210938_3990.64720000002 RTINSECONDS=3990.64720000002 </note>
+<GAML:trace id="10487" label="10487.spectrum" type="tandem mass spectrum">
+<GAML:attribute type="M+H">1903.97</GAML:attribute>
+<GAML:attribute type="charge">3</GAML:attribute>
+<GAML:Xdata label="10487.spectrum" units="MASSTOCHARGERATIO">
+<GAML:values byteorder="INTEL" format="ASCII" numvalues="50">
+169.133 174.055 175.087 183.149 191.082 197.129 198.132 211.144 235.108 246.182 260.107 263.103 285.088 295.189 298.176 310.213 330.708 342.185 349.151 360.155 369.214 386.24 399.207 407.265 425.186 442.248 459.224 465.223 470.244 482.74
+520.35 559.288 572.309 589.375 607.382 626.401 636.326 645.358 657.839 666.844 678.421 688.331 695.446 723.386 756.392 774.401 821.447 1122.54 1332.68 1334.68 
+</GAML:values>
+</GAML:Xdata>
+<GAML:Ydata label="10487.spectrum" units="UNKNOWN">
+<GAML:values byteorder="INTEL" format="ASCII" numvalues="50">
+13 10 3 13 13 51 5 18 100 9 5 26 4 6 4 40 11 11 3 8 4 6 6 6 18 5 14 8 21 5
+11 7 14 10 12 8 33 46 5 30 9 4 5 11 3 37 16 10 26 7 
+</GAML:values>
+</GAML:Ydata>
+</GAML:trace>
+</group></group>
+<group label="input parameters" type="parameters">
+	<note type="input" label="list path, default parameters">/home/compomics/Programs/tandem-linux-17-02-01-4/bin/default_input_protein.xml</note>
+	<note type="input" label="list path, taxonomy information">/home/compomics/extra_disk/rescore-pyro-tandem/data/taxonomy_pyro.xml</note>
+	<note type="input" label="output, histogram column width">30</note>
+	<note type="input" label="output, histograms">yes</note>
+	<note type="input" label="output, log path"></note>
+	<note type="input" label="output, maximum valid expectation value">0.1</note>
+	<note type="input" label="output, message">testing 1 2 3</note>
+	<note type="input" label="output, one sequence copy">no</note>
+	<note type="input" label="output, parameters">yes</note>
+	<note type="input" label="output, path">/home/compomics/extra_disk/rescore-pyro-tandem/tandem/pyro-pyro.xml</note>
+	<note type="input" label="output, path hashing">yes</note>
+	<note type="input" label="output, performance">yes</note>
+	<note type="input" label="output, proteins">yes</note>
+	<note type="input" label="output, results">all</note>
+	<note type="input" label="output, sequence path"></note>
+	<note type="input" label="output, sequences">yes</note>
+	<note type="input" label="output, sort results by">protein</note>
+	<note type="input" label="output, spectra">yes</note>
+	<note type="input" label="output, xsl path">tandem-style.xsl</note>
+	<note type="input" label="protein, C-terminal residue modification mass">0.0</note>
+	<note type="input" label="protein, N-terminal residue modification mass">0.0</note>
+	<note type="input" label="protein, cleavage C-terminal mass change">+17.002735</note>
+	<note type="input" label="protein, cleavage N-terminal mass change">+1.007825</note>
+	<note type="input" label="protein, cleavage site">[RK]|{P}</note>
+	<note type="input" label="protein, homolog management">no</note>
+	<note type="input" label="protein, modified residue mass file"></note>
+	<note type="input" label="protein, taxon">pyro</note>
+	<note type="input" label="refine">yes</note>
+	<note type="input" label="refine, maximum valid expectation value">0.1</note>
+	<note type="input" label="refine, modification mass"></note>
+	<note type="input" label="refine, point mutations">no</note>
+	<note type="input" label="refine, potential C-terminus modifications"></note>
+	<note type="input" label="refine, potential N-terminus modifications"></note>
+	<note type="input" label="refine, potential modification mass"></note>
+	<note type="input" label="refine, potential modification motif"></note>
+	<note type="input" label="refine, sequence path"></note>
+	<note type="input" label="refine, spectrum synthesis">yes</note>
+	<note type="input" label="refine, tic percent">20</note>
+	<note type="input" label="refine, unanticipated cleavage">yes</note>
+	<note type="input" label="refine, use potential modifications for full refinement">no</note>
+	<note type="input" label="residue, modification mass">57.022@C</note>
+	<note type="input" label="residue, potential modification mass">15.994@M</note>
+	<note type="input" label="residue, potential modification motif"></note>
+	<note type="input" label="scoring, a ions">no</note>
+	<note type="input" label="scoring, b ions">yes</note>
+	<note type="input" label="scoring, c ions">no</note>
+	<note type="input" label="scoring, cyclic permutation">no</note>
+	<note type="input" label="scoring, include reverse">no</note>
+	<note type="input" label="scoring, maximum missed cleavage sites">2</note>
+	<note type="input" label="scoring, minimum ion count">4</note>
+	<note type="input" label="scoring, x ions">no</note>
+	<note type="input" label="scoring, y ions">yes</note>
+	<note type="input" label="scoring, z ions">no</note>
+	<note type="input" label="spectrum, dynamic range">100.0</note>
+	<note type="input" label="spectrum, fragment mass type">monoisotopic</note>
+	<note type="input" label="spectrum, fragment monoisotopic mass error">0.02</note>
+	<note type="input" label="spectrum, fragment monoisotopic mass error units">Daltons</note>
+	<note type="input" label="spectrum, maximum parent charge">4</note>
+	<note type="input" label="spectrum, minimum fragment mz">150.0</note>
+	<note type="input" label="spectrum, minimum parent m+h">500.0</note>
+	<note type="input" label="spectrum, minimum peaks">15</note>
+	<note type="input" label="spectrum, parent monoisotopic mass error minus">5</note>
+	<note type="input" label="spectrum, parent monoisotopic mass error plus">5</note>
+	<note type="input" label="spectrum, parent monoisotopic mass error units">ppm</note>
+	<note type="input" label="spectrum, parent monoisotopic mass isotope error">yes</note>
+	<note type="input" label="spectrum, path">/home/compomics/Documents/spectrum_files/pyrococcus/Velos005137.mgf</note>
+	<note type="input" label="spectrum, sequence batch size">1000</note>
+	<note type="input" label="spectrum, threads">16</note>
+	<note type="input" label="spectrum, total peaks">50</note>
+</group>
+<group label="unused input parameters"  type="parameters">
+	<note type="input" label="protein, use minimal annotations">yes</note>
+	<note type="input" label="refine, maximum missed cleavage sites">3</note>
+	<note type="input" label="scoring, pluggable scoring">no</note>
+	<note type="input" label="spectrum, use noise suppression">yes</note>
+</group>
+<group label="performance parameters" type="parameters">
+	<note label="list path, sequence source #1">/home/compomics/extra_disk/rescore-pyro-tandem/db/pyro_crap_td.fasta</note>
+	<note label="list path, sequence source description #1">no description</note>
+	<note label="modelling, duplicate peptide ids">0</note>
+	<note label="modelling, duplicate proteins">0</note>
+	<note label="modelling, total peptides used">10876794</note>
+	<note label="modelling, total proteins used">4322</note>
+	<note label="modelling, total spectra used">15365</note>
+	<note label="process, start time">2019:07:15:21:28:29</note>
+	<note label="process, version">X! Tandem Alanine (2017.2.1.4)</note>
+	<note label="quality values">212 424 483 534 601 636 644 675 571 611 571 466 473 431 363 355 339 282 289 233</note>
+	<note label="refining, # input models">844</note>
+	<note label="refining, # input spectra">5666</note>
+	<note label="refining, # partial cleavage">52</note>
+	<note label="refining, # point mutations">0</note>
+	<note label="refining, # potential C-terminii">0</note>
+	<note label="refining, # potential N-terminii">0</note>
+	<note label="refining, # unanticipated cleavage">1266</note>
+	<note label="timing, initial modelling total (sec)">29.24</note>
+	<note label="timing, initial modelling/spectrum (sec)">0.0019</note>
+	<note label="timing, load sequence models (sec)">0.22</note>
+	<note label="timing, refinement/spectrum (sec)">0.0018</note>
+</group>
+</bioml>

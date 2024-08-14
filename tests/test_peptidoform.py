@@ -1,3 +1,4 @@
+import pytest
 from pyteomics import proforma
 
 from psm_utils.peptidoform import Peptidoform, format_number_as_string
@@ -33,6 +34,9 @@ class TestPeptidoform:
         for test_case_in_1, test_case_in_2, expected_out in test_cases:
             assert (Peptidoform(test_case_in_1) == test_case_in_2) == expected_out
             assert (Peptidoform(test_case_in_1) == Peptidoform(test_case_in_2)) == expected_out
+
+    with pytest.raises(TypeError):
+        Peptidoform("ACDEFGHIK") == 1
 
     def test__getitem__(self):
         test_cases = [

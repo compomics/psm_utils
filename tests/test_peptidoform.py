@@ -18,6 +18,35 @@ class TestPeptidoform:
             peptidoform = Peptidoform(test_case_in)
             assert len(peptidoform) == expected_out
 
+    def test__eq__(self):
+        test_cases = [
+            ("ACDEFGHIK", "ACDEFGHIK", True),
+            ("ACDEFGHIK", "ACDEFGHI", False),
+            ("ACDEFGHIK/2", "ACDEFGHIK/2", True),
+            ("ACDEFGHIK/2", "ACDEFGHIK/3", False),
+            ("[ac]-AC[cm]DEFGHIK", "[ac]-AC[cm]DEFGHIK", True),
+            ("[ac]-AC[cm]DEFGHIK", "[ac]-AC[cm]DEFGH", False),
+            ("[ac]-AC[cm]DEFGHIK", "[ac]-AC[cm]DEFGH", False),
+            ("[ac]-AC[cm]DEFGHIK", "[ac]-AC[cm]DEFGH", False),
+        ]
+
+        for test_case_in_1, test_case_in_2, expected_out in test_cases:
+            assert (Peptidoform(test_case_in_1) == test_case_in_2) == expected_out
+            assert (Peptidoform(test_case_in_1) == Peptidoform(test_case_in_2)) == expected_out
+
+    def test__getitem__(self):
+        test_cases = [
+            ("ACDEFGHIK", 0, ("A", None)),
+            ("ACDEFGHIK", 8, ("K", None)),
+            ("[ac]-AC[cm]DEFGHIK", 0, ("A", None)),
+            ("[ac]-AC[cm]DEFGHIK", 1, ("C", [proforma.GenericModification("cm")])),
+            ("[ac]-AC[cm]DEFGHIK", 8, ("K", None)),
+        ]
+
+        for test_case_in, index, expected_out in test_cases:
+            peptidoform = Peptidoform(test_case_in)
+            assert peptidoform[index] == expected_out
+
     def test__iter__(self):
         for aa, mods in Peptidoform("ACDEM[U:35]K"):
             assert isinstance(aa, str)

@@ -2,8 +2,9 @@
 
 import pytest
 
-from psm_utils.io.exceptions import PSMUtilsIOException  # noqa: F401
-from psm_utils.io.tsv import TSVReader, TSVWriter  # noqa: F401
+from psm_utils.io.exceptions import PSMUtilsIOException
+from psm_utils.io.tsv import TSVReader
+from psm_utils.peptidoform import Peptidoform
 
 test_cases = [
     (
@@ -37,7 +38,7 @@ class TestTSVReader:
     def test_iter(self):
         reader = TSVReader("tests/test_data/test.tsv")
         for psm in reader:
-            assert psm.peptidoform == "ACDEK/2"
+            assert psm.peptidoform == Peptidoform("ACDEK/2")
             assert psm.spectrum_id == "peptide1"
             assert psm.provenance_data == {}
             assert psm.metadata == {}

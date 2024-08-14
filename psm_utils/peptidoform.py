@@ -66,17 +66,22 @@ class Peptidoform:
     def __hash__(self) -> int:
         return hash(self.proforma)
 
-    def __eq__(self, __o: Peptidoform) -> bool:
-        try:
+    def __eq__(self, __o: Union[Peptidoform, str]) -> bool:
+        if isinstance(__o, str):
+            return self.proforma == __o
+        elif isinstance(__o, Peptidoform):
             return self.proforma == __o.proforma
-        except AttributeError:
-            raise NotImplementedError("Object is not a Peptidoform")
+        else:
+            raise TypeError(f"Cannot compare {type(__o)} with Peptidoform.")
 
     def __iter__(self) -> Iterable[Tuple[str, Union[None, List[proforma.TagBase]]]]:
         return self.parsed_sequence.__iter__()
 
     def __len__(self) -> int:
         return self.parsed_sequence.__len__()
+
+    def __getitem__(self, key: int) -> Tuple[str, Union[None, List[proforma.TagBase]]]:
+        return self.parsed_sequence.__getitem__(key)
 
     @property
     def proforma(self) -> str:

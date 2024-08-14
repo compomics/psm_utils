@@ -57,10 +57,10 @@ from typing import Optional
 from pydantic import ValidationError
 
 from psm_utils.io._base_classes import ReaderBase, WriterBase
+from psm_utils.io._utils import set_csv_field_size_limit
 from psm_utils.io.exceptions import PSMUtilsIOException
 from psm_utils.psm import PSM
 from psm_utils.psm_list import PSMList
-from psm_utils.io._utils import set_csv_field_size_limit
 
 set_csv_field_size_limit()
 
@@ -74,12 +74,21 @@ class TSVReader(ReaderBase):
         """Iterate over file and return PSMs one-by-one."""
         with open(self.filename, "rt") as open_file:
             reader = csv.DictReader(open_file, delimiter="\t")
+            failed_rows = 0
             for row in reader:
                 try:
                     yield PSM(**self._parse_entry(row))
-                except ValidationError:
+                except ValidationError as e:
+                    failed_rows += 1
                     logger.warning(f"Could not parse PSM from row: `{row}`")
-                    continue
+                    if failed_rows >= 3:
+                        raise PSMUtilsIOException(
+                            "Could not parse PSM from three consecutive rows. Verify that the "
+                            "file is formatted correctly as a psm_utils TSV file or that the "
+                            "correct file type reader is used."
+                        ) from e
+                else:
+                    failed_rows = 0
 
     @staticmethod
     def _parse_entry(entry: dict) -> dict:

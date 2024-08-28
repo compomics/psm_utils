@@ -16,17 +16,19 @@ Notes
 from __future__ import annotations
 
 import csv
+import logging
 import re
 from pathlib import Path
-from typing import Iterable, Optional
+from typing import Iterable, List, Optional, Tuple, Union
 
 from psm_utils.io._base_classes import ReaderBase, WriterBase
+from psm_utils.io._utils import set_csv_field_size_limit
 from psm_utils.io.exceptions import PSMUtilsIOException
 from psm_utils.peptidoform import Peptidoform
 from psm_utils.psm import PSM
 from psm_utils.psm_list import PSMList
-from psm_utils.io._utils import set_csv_field_size_limit
 
+LOGGER = logging.getLogger(__name__)
 set_csv_field_size_limit()
 
 
@@ -96,7 +98,7 @@ class PercolatorTabReader(ReaderBase):
         # Validate column names from parameters
         for col in [self.score_column, self.rt_column, self.mz_column]:
             if col and col.lower() not in self.fieldnames:
-                raise ValueError(
+                raise PercolatorIOException(
                     f"Column `{col}` not found in header of Percolator Tab file "
                     f"`{self.filename}`."
                 )
@@ -256,7 +258,7 @@ class PercolatorTabWriter(WriterBase):
         self._open_file = None
         self._writer = None
         self._protein_separator = "|||"
-        self._last_scan_number = None
+        self._current_scannr = 0
 
     def __enter__(self) -> PercolatorTabWriter:
         """Either open existing file in append mode or new file in write mode."""
@@ -266,28 +268,10 @@ class PercolatorTabWriter(WriterBase):
             self.filename, mode, newline="", protein_separator=self._protein_separator
         )
         if file_existed:
-            with open(self.filename, "rt") as open_file:
-                # Read header
-                for line in open_file:
-                    fieldnames = line.strip().split("\t")
-                    break
-                else:
-                    raise ValueError(f"File {self.filename} is not a valid Percolator Tab file.")
-                # Determine last scan number
-                open_file.seek(0)
-                last_line = None
-                for line in open_file:
-                    if line.strip():
-                        last_line = line
-            if last_line:
-                last_line = {k: v for k, v in zip(fieldnames, last_line.strip().split("\t"))}
-            try:
-                self._last_scan_number = int(last_line["ScanNr"])
-            except ValueError:
-                self._last_scan_number = None
+            fieldnames, self._current_scannr = self._parse_existing_file(self.filename)
         else:
             fieldnames = self._columns
-            self._last_scan_number = -1
+            self._current_scannr = -1
         self._writer = csv.DictWriter(
             self._open_file,
             fieldnames=fieldnames,
@@ -302,15 +286,13 @@ class PercolatorTabWriter(WriterBase):
         self._open_file.close()
         self._open_file = None
         self._writer = None
-        self._last_scan_number = None
+        self._current_scannr = None
 
     def write_psm(self, psm: PSM):
         """Write a single PSM to the PSM file."""
         entry = self._psm_to_entry(psm)
-        if self._last_scan_number is not None:
-            entry["ScanNr"] = self._last_scan_number + 1
-        else:
-            entry["ScanNr"] = None
+        self._current_scannr += 1
+        entry["ScanNr"] = self._current_scannr
         try:
             self._writer.writerow(entry)
         except AttributeError as e:
@@ -319,7 +301,7 @@ class PercolatorTabWriter(WriterBase):
                 "is opened in context (i.e., using the `with` statement)."
             ) from e
         else:
-            self._last_scan_number = entry["ScanNr"]
+            self._current_scannr = entry["ScanNr"]
 
     def write_file(self, psm_list: PSMList):
         """Write an entire PSMList to the PSM file."""
@@ -330,10 +312,8 @@ class PercolatorTabWriter(WriterBase):
                 f, fieldnames=self._columns, delimiter="\t", extrasaction="ignore"
             )
             writer.writeheader()
-            for i, psm in enumerate(psm_list):
-                entry = self._psm_to_entry(psm)
-                entry["ScanNr"] = i
-                writer.writerow(entry)
+            for psm in psm_list:
+                writer.writerow(self._psm_to_entry(psm))
 
     def _psm_to_entry(self, psm: PSM):
         """Parse PSM to Percolator Tab entry."""
@@ -365,6 +345,50 @@ class PercolatorTabWriter(WriterBase):
                 else None,
             }
         return entry
+
+    @staticmethod
+    def _parse_existing_file(
+        filename: Union[str, Path], style: str
+    ) -> Tuple[List[str], Optional[int]]:
+        """Parse existing Percolator Tab file to determine fieldnames and last ScanNr."""
+        # Get fieldnames
+        with open(filename, "rt") as open_file:
+            for line in open_file:
+                fieldnames = line.strip().split("\t")
+                break
+            else:
+                raise PercolatorIOException(
+                    f"Existing file {filename} is not a valid Percolator Tab file."
+                )
+        if not _fieldnames_are_valid(fieldnames, style):
+            raise PercolatorIOException(
+                f"Existing file {filename} is not a valid Percolator Tab file of style {style}."
+            )
+
+        # Get last ScanNr
+        last_scannr = None
+        with open(filename, "rt") as open_file:
+            # Read last line
+            open_file.seek(0)
+            last_line = None
+            for line in open_file:
+                if line.strip():
+                    last_line = line
+        if last_line:
+            # Parse last line
+            last_line_items = {k: v for k, v in zip(fieldnames, last_line.strip().split("\t"))}
+            try:
+                last_scannr = int(last_line_items["ScanNr"])
+            except (KeyError, ValueError):
+                pass
+
+        if last_scannr is None:
+            last_scannr = -1
+            LOGGER.warning(
+                f"Could not determine last ScanNr from file {filename}. Starting ScanNr from 0."
+            )
+
+        return fieldnames, last_scannr
 
 
 class _PercolatorTabIO:
@@ -405,6 +429,17 @@ class _PercolatorTabIO:
         self._open_file.write(__s)
 
 
+def _fieldnames_are_valid(fieldnames: List[str], style: str) -> bool:
+    """Check if fieldnames are valid for Percolator Tab style."""
+    if style == "pin":
+        required_columns = ["SpecId", "Label", "ScanNr"]
+    elif style == "pout":
+        required_columns = ["PSMId", "score", "q-value", "posterior_error_prob"]
+    else:
+        raise ValueError("Invalid Percolator Tab style. Should be one of {`pin`, `pout`}.")
+    return all(col in fieldnames for col in required_columns)
+
+
 def join_pout_files(
     target_filename: str | Path,
     decoy_filename: str | Path,
@@ -429,3 +464,9 @@ def join_pout_files(
         for psm in decoy_reader:
             psm.is_decoy = True
             writer.write_psm(psm)
+
+
+class PercolatorIOException(PSMUtilsIOException):
+    """Exception for Percolator Tab file I/O errors."""
+
+    pass

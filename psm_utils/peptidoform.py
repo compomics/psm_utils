@@ -110,6 +110,23 @@ class Peptidoform:
         return "".join(pos[0] for pos in self.parsed_sequence)
 
     @property
+    def modified_sequence(self) -> str:
+        """
+        Peptide sequence with modifications in ProForma format, but without charge state.
+
+        Includes all modifications, including labile, unlocalized, and terminal modifications.
+
+        Examples
+        --------
+        >>> Peptidoform("AC[U:4]DEK/2").modified_sequence
+        'AC[U:4]DEK'
+
+        """
+        properties_without_charge = self.properties.copy()
+        properties_without_charge.pop("charge_state", None)
+        return proforma.to_proforma(self.parsed_sequence, **properties_without_charge)
+
+    @property
     def precursor_charge(self) -> int | None:
         """
         Returns the charge state as integer or :py:const:`None` if no charge assigned.

@@ -59,6 +59,44 @@ class TestPeptidoform:
                 for mod in mods:
                     assert isinstance(mod, proforma.TagBase)
 
+    def test_sequence(self):
+        test_cases = [
+            ("ACDEFGHIK", "ACDEFGHIK"),
+            ("[ac]-AC[cm]DEFGHIK", "ACDEFGHIK"),
+            ("[ac]-AC[Carbamidomethyl]DEFGHIK", "ACDEFGHIK"),
+            ("[Acetyl]-AC[cm]DEFGK", "ACDEFGK"),
+            ("<[cm]@C>[Acetyl]-ACDK", "ACDK"),
+            ("<[Carbamidomethyl]@C>[ac]-ACDEFGHIK", "ACDEFGHIK"),
+        ]
+
+        for test_case_in, expected_out in test_cases:
+            peptidoform = Peptidoform(test_case_in)
+            assert peptidoform.sequence == expected_out
+
+    def test_modified_sequence(self):
+        test_cases = [
+            ("ACDEFGHIK", "ACDEFGHIK"),
+            ("ACDEFGHIK/3", "ACDEFGHIK"),
+            ("[ac]-AC[cm]DEFGHIK", "[ac]-AC[cm]DEFGHIK"),
+            ("[ac]-AC[cm]DEFGHIK/3", "[ac]-AC[cm]DEFGHIK"),
+            ("<[cm]@C>[Acetyl]-ACDK/3", "<[cm]@C>[Acetyl]-ACDK"),
+        ]
+
+        for test_case_in, expected_out in test_cases:
+            peptidoform = Peptidoform(test_case_in)
+            assert peptidoform.modified_sequence == expected_out
+
+    def test_precursor_charge(self):
+        test_cases = [
+            ("ACDEFGHIK", None),
+            ("ACDEFGHIK/2", 2),
+            ("ACDEFGHIK/3", 3),
+        ]
+
+        for test_case_in, expected_out in test_cases:
+            peptidoform = Peptidoform(test_case_in)
+            assert peptidoform.precursor_charge == expected_out
+
     def test_rename_modifications(self):
         label_mapping = {
             "ac": "Acetyl",

@@ -199,7 +199,7 @@ class PercolatorTabWriter(WriterBase):
     def __init__(
         self,
         filename: str | Path,
-        style: str = "pin",
+        style: Optional[str] = None,
         feature_names: Optional[list[str]] = None,
         add_basic_features: bool = False,
         *args,
@@ -212,12 +212,13 @@ class PercolatorTabWriter(WriterBase):
         ----------
         filename: str, pathlib.Path
             Path to PSM file.
-        style: str
+        style: str, optional
             Percolator Tab style. One of {``pin``, ``pout``}. If ``pin``, the columns
             ``SpecId``, ``Label``, ``ScanNr``, ``ChargeN``, ``PSMScore``, ``Peptide``, and
             ``Proteins`` are written alongside the requested feature names
             (see ``feature_names``). If ``pout``, the columns ``PSMId``, ``Label``, ``score``,
             ``q-value``, ``posterior_error_prob``, ``peptide``, and ``proteinIds`` are written.
+            By default, the style is inferred from the file name extension.
         feature_names: list[str], optional
             List of feature names to extract from PSMs and write to file. List values
             should correspond to keys in the
@@ -234,7 +235,19 @@ class PercolatorTabWriter(WriterBase):
         self.feature_names = list(feature_names) if feature_names else []
         self.add_basic_features = add_basic_features
 
-        if style == "pin":
+        if not style:
+            suffix = self.filename.suffix.lower()
+            if suffix == ".pin":
+                self.style = "pin"
+            elif suffix == ".pout":
+                self.style = "pout"
+            else:
+                raise PercolatorIOException(
+                    f"Could not infer Percolator Tab style from file extension `{suffix}`. "
+                    "Please provide the `style` parameter."
+                )
+
+        if self.style == "pin":
             basic_features = ["PSMScore", "ChargeN"] if add_basic_features else []
             self._columns = (
                 ["SpecId", "Label", "ScanNr"]
@@ -242,7 +255,7 @@ class PercolatorTabWriter(WriterBase):
                 + self.feature_names
                 + ["Peptide", "Proteins"]
             )
-        elif style == "pout":
+        elif self.style == "pout":
             self._columns = [
                 "PSMId",
                 "Label",
@@ -254,7 +267,7 @@ class PercolatorTabWriter(WriterBase):
             ]
         else:
             raise ValueError("Invalid Percolator Tab style. Should be one of {`pin`, `pout`}.")
-        self.style = style
+
         self._open_file = None
         self._writer = None
         self._protein_separator = "|||"

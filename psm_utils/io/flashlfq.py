@@ -7,11 +7,11 @@ for more information on the format.
 Notes
 -----
 - The FlashLFQ format does not contain the actual spectrum identifier. When reading a FlashLFQ
-file, the spectrum identifier is set to the row number in the file.
+  file, the spectrum identifier is set to the row number in the file.
 - The FlashLFQ format does not contain the precursor m/z, but the theoretical monoisotopic mass.
-This value is not read into the PSM object, but can be calculated from the peptidoform.
+  This value is not read into the PSM object, but can be calculated from the peptidoform.
 - To read from a FlashLFQ file, the ``Full Sequence`` column is expected to contain a ProForma v2
-compatible peptidoform notation.
+  compatible peptidoform notation.
 
 """
 

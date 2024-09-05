@@ -5,11 +5,12 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## Unreleased
+## [1.1.0] - 2024-09-05
 
 ### Added
 
 - `Peptidoform`: Add `modified_sequence` property to return the modified sequence in ProForma format, but without charge state.
+- `io`: Add support for reading and writing FlashLFQ generic TSV files.
 
 
 ## [1.0.1] - 2024-08-28

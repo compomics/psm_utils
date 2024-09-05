@@ -8,6 +8,7 @@ from tempfile import NamedTemporaryFile
 
 from rich.progress import track
 
+import psm_utils.io.flashlfq as flashlfq
 import psm_utils.io.idxml as idxml
 import psm_utils.io.ionbot as ionbot
 import psm_utils.io.maxquant as maxquant
@@ -28,6 +29,12 @@ from psm_utils.psm import PSM
 from psm_utils.psm_list import PSMList
 
 FILETYPES = {
+    "flashlfq": {
+        "reader": flashlfq.FlashLFQReader,
+        "writer": flashlfq.FlashLFQWriter,
+        "extension": ".tsv",
+        "filename_pattern": r"^.*\.flashlfq\.tsv$",
+    },
     "ionbot": {
         "reader": ionbot.IonbotReader,
         "writer": None,

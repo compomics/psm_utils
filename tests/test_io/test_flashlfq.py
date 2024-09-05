@@ -67,7 +67,7 @@ sample3.raw\tPEPTIDE\t1000.0\t15.0
     with patch("builtins.open", mock_open(read_data=invalid_data)):
         reader = FlashLFQReader("dummy_file.tsv")
         with pytest.raises(PSMUtilsIOException):
-            psms = list(reader)
+            psms = list(reader)  # noqa: F841
 
 
 def test_flashlfqwriter_write_psm(valid_psm):
@@ -103,7 +103,7 @@ def test_flashlfqwriter_existing_file():
 
 
 def test_flashlfqwriter_context_manager():
-    with patch("builtins.open", mock_open()) as mocked_file:
+    with patch("builtins.open", mock_open()):
         with FlashLFQWriter("dummy_file.tsv") as writer:
             assert writer._open_file is not None
         assert writer._open_file is None  # Ensure file is closed after context exit

@@ -194,7 +194,13 @@ class FlashLFQWriter(WriterBase):
             target_mask = np.ones(len(psm_list), dtype=bool)
 
         # Filter out PSMs above FDR threshold
-        fdr_mask = psm_list["qvalue"] <= self.fdr_threshold
+        if any(psm.qvalue is None for psm in psm_list):
+            LOGGER.warning(
+                "Not all PSMs have a q-value. Skipping FDR filtering for FlashLFQ file."
+            )
+            fdr_mask = np.ones(len(psm_list), dtype=bool)
+        else:
+            fdr_mask = psm_list["qvalue"] <= self.fdr_threshold
         filtered_by_fdr = (~fdr_mask & target_mask).sum()
         LOGGER.debug(f"Skipping {filtered_by_fdr} PSMs above FDR threshold for FlashLFQ file.")
 

@@ -1,6 +1,6 @@
 """Common utilities for parsing and handling PSMs, and search engine results."""
 
-__version__ = "1.0.1"
+__version__ = "1.1.0"
 __all__ = ["Peptidoform", "PSM", "PSMList"]
 
 from warnings import filterwarnings

@@ -7,6 +7,14 @@ psm_utils.io
 
 
 
+psm_utils.io.flashlfq
+##################
+
+.. automodule:: psm_utils.io.flashlfq
+   :members:
+   :inherited-members:
+
+
 psm_utils.io.idxml
 ##################
 

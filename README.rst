@@ -89,6 +89,7 @@ Supported file formats
 ===================================================================================================================== ======================== =============== ===============
  File format                                                                                                           psm_utils tag            Read support    Write support
 ===================================================================================================================== ======================== =============== ===============
+ `FlashLFQ generic TSV <https://github.com/smith-chem-wisc/FlashLFQ/wiki/Identification-Input-Formats>`_               ``flashlfq``             ✅              ✅
  `ionbot CSV <https://ionbot.cloud/>`_                                                                                 ``ionbot``               ✅              ❌
  `OpenMS idXML <https://www.openms.de/>`_                                                                              ``idxml``                ✅              ✅
  `MaxQuant msms.txt <https://www.maxquant.org/>`_                                                                      ``msms``                 ✅              ❌

@@ -62,20 +62,20 @@ class FlashLFQReader(ReaderBase):
             spectrum_id=spectrum_id,
             run=entry.get("File Name"),
             retention_time=entry.get("Scan Retention Time"),
-            protein_list=self._parse_protein_list(entry.get("Protein Accessions")),
+            protein_list=self._parse_protein_list(entry.get("Protein Accession")),
         )
 
     @staticmethod
-    def _parse_protein_list(protein_accessions: Optional[str]) -> list[str]:
+    def _parse_protein_list(protein_accession: Optional[str]) -> list[str]:
         """Parse protein list string to list of protein accessions."""
-        if not protein_accessions:
+        if not protein_accession:
             return []
-        elif ";" in protein_accessions:  # Docs define separator as semicolon
-            return protein_accessions.split(";")
-        elif "|" in protein_accessions:  # Example file uses pipe
-            return protein_accessions.split("|")
+        elif ";" in protein_accession:  # Docs define separator as semicolon
+            return protein_accession.split(";")
+        elif "|" in protein_accession:  # Example file uses pipe
+            return protein_accession.split("|")
         else:
-            return [protein_accessions]  # Single protein
+            return [protein_accession]  # Single protein
 
 
 class FlashLFQWriter(WriterBase):
@@ -128,7 +128,7 @@ class FlashLFQWriter(WriterBase):
                 "Peptide Monoisotopic Mass",
                 "Scan Retention Time",
                 "Precursor Charge",
-                "Protein Accessions",
+                "Protein Accession",
             ]
             mode = "wt"
 
@@ -221,8 +221,8 @@ class FlashLFQWriter(WriterBase):
             "File Name": psm.run,
             "Base Sequence": psm.peptidoform.sequence,
             "Full Sequence": psm.peptidoform.modified_sequence,
-            "Peptide Monoisotopic Mass": psm.peptidoform.theoretical_mass,
+            "Peptide Monoisotopic Mass": f"{psm.peptidoform.theoretical_mass:.6f}",
             "Scan Retention Time": psm.retention_time,
             "Precursor Charge": psm.peptidoform.precursor_charge,
-            "Protein Accessions": ";".join(psm.protein_list),
+            "Protein Accession": ";".join(psm.protein_list),
         }

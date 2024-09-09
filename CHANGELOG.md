@@ -9,7 +9,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 
-- `io.flashlfq`: Fix column name `Peptide Monoisotopic Mass` in FlashLFQ writing.
+- `io.flashlfq`: Fix column names `Peptide Monoisotopic Mass` and `Protein Accession`.
 
 ## [1.1.0] - 2024-09-05
 

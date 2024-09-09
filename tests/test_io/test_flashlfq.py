@@ -8,7 +8,7 @@ from psm_utils.psm import PSM
 from psm_utils.psm_list import PSMList
 
 # Sample data for testing
-sample_tsv_data = """File Name\tBase Sequence\tFull Sequence\tPeptide Monoisotopic Mass\tScan Retention Time\tPrecursor Charge\tProtein Accessions
+sample_tsv_data = """File Name\tBase Sequence\tFull Sequence\tPeptide Monoisotopic Mass\tScan Retention Time\tPrecursor Charge\tProtein Accession
 sample1.raw\tPEPTIDE\tPEPTIDE\t1000.0\t5.0\t2\tP12345;P67890
 sample2.raw\tPEPTIDE\tPEPTIDE\t1000.0\t10.0\t2\tP23456|P78901
 """
@@ -32,7 +32,7 @@ def invalid_psm_entry():
         "Precursor Charge": "2",
         "File Name": "sample1.raw",
         "Scan Retention Time": "5.0",
-        "Protein Accessions": None,
+        "Protein Accession": None,
     }
 
 
@@ -43,7 +43,7 @@ def test_flashlfqreader_parse_entry(valid_psm):
         "Precursor Charge": "2",
         "File Name": "sample1.raw",
         "Scan Retention Time": "5.0",
-        "Protein Accessions": "P12345;P67890",
+        "Protein Accession": "P12345;P67890",
     }
     psm = reader._parse_entry(entry, spectrum_id="0")
     assert psm == valid_psm
@@ -59,7 +59,7 @@ def test_flashlfqreader_iterate_over_file():
 
 
 def test_flashlfqreader_invalid_entry_handling():
-    invalid_data = """File Name\tBase Sequence\tPeptide Monoisotopic Mass\tScan Retention Time\tPrecursor Charge\tProtein Accessions
+    invalid_data = """File Name\tBase Sequence\tPeptide Monoisotopic Mass\tScan Retention Time\tPrecursor Charge\tProtein Accession
 sample1.raw\tPEPTIDE\t1000.0\t5.0
 sample2.raw\tPEPTIDE\t1000.0\t10.0
 sample3.raw\tPEPTIDE\t1000.0\t15.0
@@ -98,7 +98,7 @@ def test_flashlfqwriter_existing_file():
                 "Peptide Monoisotopic Mass",
                 "Scan Retention Time",
                 "Precursor Charge",
-                "Protein Accessions",
+                "Protein Accession",
             ]
 
 

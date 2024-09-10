@@ -224,5 +224,5 @@ class FlashLFQWriter(WriterBase):
             "Peptide Monoisotopic Mass": f"{psm.peptidoform.theoretical_mass:.6f}",
             "Scan Retention Time": psm.retention_time,
             "Precursor Charge": psm.peptidoform.precursor_charge,
-            "Protein Accession": ";".join(psm.protein_list),
+            "Protein Accession": ";".join(psm.protein_list) if psm.protein_list else None,
         }

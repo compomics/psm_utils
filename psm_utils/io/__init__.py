@@ -105,13 +105,13 @@ FILETYPES = {
         "reader": sage.SageTSVReader,
         "writer": None,
         "extension": ".tsv",
-        "filename_pattern": r"^.*(?:_|\.).sage.tsv$",
+        "filename_pattern": r"^.*(?:_|\.)sage.tsv$",
     },
     "sage_parquet": {
         "reader": sage.SageParquetReader,
         "writer": None,
         "extension": ".parquet",
-        "filename_pattern": r"^.*(?:_|\.).sage.parquet$",
+        "filename_pattern": r"^.*(?:_|\.)sage.parquet$",
     },
     "parquet": {  # List after proteoscape and sage to avoid extension matching conflicts
         "reader": parquet.ParquetReader,

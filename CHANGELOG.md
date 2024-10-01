@@ -10,6 +10,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Fixed
 
 - `io.flashlfq`: Fix column names `Peptide Monoisotopic Mass` and `Protein Accession`.
+- `io.idxml`: Fix parsing if spectra file name not present [#92](https://github.com/compomics/psm_utils/issues/92)
 
 ## [1.1.0] - 2024-09-05
 

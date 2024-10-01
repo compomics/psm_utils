@@ -219,8 +219,10 @@ class IdXMLReader(ReaderBase):
                 .getMetaValue("spectra_data")[peptide_id.getMetaValue("id_merge_index")]
                 .decode()
             ).stem
-        else:
+        elif protein_ids[0].metaValueExists("spectra_data"):
             run = Path(protein_ids[0].getMetaValue("spectra_data")[0].decode()).stem
+        else:
+            run = None
 
         # Convert back to None value (see writer)
         if run == "None":

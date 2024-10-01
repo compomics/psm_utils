@@ -27,14 +27,14 @@ dependencies = [
     "psims",
     "pyarrow",
     "pydantic >= 2",
-    "pyopenms",
     "pyteomics >= 4",
     "rich",
     "sqlalchemy",
 ]
 
 [project.optional-dependencies]
-dev = ["ruff", "isort>5", "pytest", "pytest-cov"]
+idxml = ["pyopenms"]
+dev = ["ruff", "isort>5", "pytest", "pytest-cov", "pyopenms"]
 docs = [
     "numpydoc>=1,<2",
     "recommonmark",
@@ -45,7 +45,7 @@ docs = [
     "sphinx",
     "toml",
 ]
-online = ["streamlit", "plotly"]
+online = ["streamlit", "plotly", "pyopenms"]
 
 [project.urls]
 GitHub = "https://github.com/compomics/psm_utils"

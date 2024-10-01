@@ -1,6 +1,9 @@
 """
 Interface with OpenMS idXML PSM files.
 
+Requires the optional dependency ``pyopenms``. To read or write idXML files, install the psm_utils
+with the ``idxml`` extra: ``pip install psm_utils[idxml]``.
+
 
 Notes
 -----
@@ -23,16 +26,14 @@ from psm_utils.psm import PSM
 from psm_utils.psm_list import PSMList
 from psm_utils.peptidoform import Peptidoform
 
+logger = logging.getLogger(__name__)
+
 filterwarnings(
     "ignore",
     message="OPENMS_DATA_PATH environment variable already exists",
     category=UserWarning,
     module="pyopenms",
 )
-
-import pyopenms as oms  #noqa: E402
-
-logger = logging.getLogger(__name__)
 
 # Patterns to match open and closed round/square brackets
 MOD_PATTERN = re.compile(r"\(((?:[^)(]+|\((?:[^)(]+|\([^)(]*\))*\))*)\)")
@@ -97,7 +98,17 @@ class IdXMLReader(ReaderBase):
         >>> from psm_utils.io import IdXMLReader
         >>> reader = IdXMLReader("example.idXML")
         >>> psm_list = [psm for psm in reader]
+
         """
+        try:
+            import pyopenms as oms
+            self.oms = oms
+        except ImportError as e:
+            raise ImportError(
+                "Optional dependency 'pyopenms' is not installed. Please install it to read or "
+                "write idXML files."
+            ) from e
+
         super().__init__(filename, *args, **kwargs)
         self.protein_ids, self.peptide_ids = self._parse_idxml()
         self.user_params_metadata = self._get_userparams_metadata(self.peptide_ids[0].getHits()[0])
@@ -111,12 +122,12 @@ class IdXMLReader(ReaderBase):
             for peptide_hit in peptide_id.getHits():
                 yield self._parse_psm(self.protein_ids, peptide_id, peptide_hit)
 
-    def _parse_idxml(self) -> Tuple[oms.ProteinIdentification, oms.PeptideIdentification]:
+    def _parse_idxml(self) -> Tuple["oms.ProteinIdentification", "oms.PeptideIdentification"]:
         """
         Parse idXML using pyopenms and perform sanity checks to make sure the file is not empty.
         """
         protein_ids, peptide_ids = [], []
-        oms.IdXMLFile().load(str(self.filename), protein_ids, peptide_ids)
+        self.oms.IdXMLFile().load(str(self.filename), protein_ids, peptide_ids)
 
         if len(protein_ids) == 0:
             raise IdXMLReaderEmptyListException(
@@ -156,9 +167,9 @@ class IdXMLReader(ReaderBase):
 
     def _parse_psm(
         self,
-        protein_ids: oms.ProteinIdentification,
-        peptide_id: oms.PeptideIdentification,
-        peptide_hit: oms.PeptideHit,
+        protein_ids: "oms.ProteinIdentification",
+        peptide_id: "oms.PeptideIdentification",
+        peptide_hit: "oms.PeptideHit",
     ) -> PSM:
         """
         Parse idXML :py:class:`~pyopenms.PeptideHit` to :py:class:`~psm_utils.psm.PSM`.
@@ -205,7 +216,7 @@ class IdXMLReader(ReaderBase):
 
     @staticmethod
     def _get_run(
-        protein_ids: oms.ProteinIdentification, peptide_id: oms.PeptideIdentification
+        protein_ids: "oms.ProteinIdentification", peptide_id: "oms.PeptideIdentification"
     ) -> str:
         """
         Get run name from idXML using pyopenms.
@@ -228,7 +239,7 @@ class IdXMLReader(ReaderBase):
 
         return run
 
-    def _get_userparams_metadata(self, peptide_hit: oms.PeptideHit) -> List[str]:
+    def _get_userparams_metadata(self, peptide_hit: "oms.PeptideHit") -> List[str]:
         """Get list of string type UserParams attached to each PeptideHit."""
         # Fill the key list with all the keys from the PeptideHit
         # Empty list is required for the Cython wrapper to work correctly
@@ -241,7 +252,7 @@ class IdXMLReader(ReaderBase):
         ]
         return keys
 
-    def _get_rescoring_features(self, peptide_hit: oms.PeptideHit) -> List[str]:
+    def _get_rescoring_features(self, peptide_hit: "oms.PeptideHit") -> List[str]:
         """Get list of rescoring features in UserParams attached to each PeptideHit."""
         keys = []
         peptide_hit.getKeys(keys)
@@ -265,7 +276,7 @@ class IdXMLReader(ReaderBase):
             return False
 
     @staticmethod
-    def _is_decoy(peptide_hit: oms.PeptideHit) -> bool:
+    def _is_decoy(peptide_hit: "oms.PeptideHit") -> bool:
         """Check if PSM is target or decoy."""
         if peptide_hit.metaValueExists("target_decoy"):
             return peptide_hit.getMetaValue("target_decoy") == "decoy"
@@ -323,6 +334,15 @@ class IdXMLWriter(WriterBase):
         >>> writer.write_file(psm_list)
 
         """
+        try:
+            import pyopenms as oms
+            self.oms = oms
+        except ImportError as e:
+            raise ImportError(
+                "Optional dependency 'pyopenms' is not installed. Please install it to read or "
+                "write idXML files."
+            ) from e
+
         super().__init__(filename, *args, **kwargs)
         self.protein_ids = protein_ids
         self.peptide_ids = peptide_ids
@@ -412,7 +432,7 @@ class IdXMLWriter(WriterBase):
 
         oms.IdXMLFile().store(str(self.filename), self.protein_ids, self.peptide_ids)
 
-    def _update_peptide_hit(self, peptide_hit: oms.PeptideHit, psm: PSM) -> None:
+    def _update_peptide_hit(self, peptide_hit: "oms.PeptideHit", psm: PSM) -> None:
         """
         Inplace update of :py:class:`~pyopenms.PeptideHit` with novel predicted features
         information from :py:class:`~psm_utils.psm.PSM`.
@@ -437,7 +457,7 @@ class IdXMLWriter(WriterBase):
         the PSMList.
         """
         for collection, runs in psm_dict.items():
-            self.protein_ids = oms.ProteinIdentification()
+            self.protein_ids = self.oms.ProteinIdentification()
             self.peptide_ids = []
 
             # Set msrun filename with spectra_data meta value
@@ -452,7 +472,7 @@ class IdXMLWriter(WriterBase):
                     )
 
                     # Fill PeptideIdentification object with PeptideHits
-                    peptide_id = oms.PeptideIdentification()
+                    peptide_id = self.oms.PeptideIdentification()
                     peptide_id.setMetaValue("spectrum_reference", spectrum_id)
                     peptide_id.setMetaValue("id_merge_index", msrun_reference.index(str(run).encode()))
                     if psms[0].score is not None:
@@ -465,9 +485,9 @@ class IdXMLWriter(WriterBase):
                     # Fill PeptideHits object
                     peptide_hits = []
                     for psm in psms:
-                        peptide_hit = oms.PeptideHit()
+                        peptide_hit = self.oms.PeptideHit()
                         peptide_hit.setSequence(
-                            oms.AASequence.fromString(
+                            self.oms.AASequence.fromString(
                                 self._convert_proforma_to_unimod(psm.peptidoform)
                             )
                         )
@@ -490,7 +510,7 @@ class IdXMLWriter(WriterBase):
 
                         if psm.protein_list is not None:
                             for protein in psm.protein_list:
-                                peptide_evidence = oms.PeptideEvidence()
+                                peptide_evidence = self.oms.PeptideEvidence()
                                 peptide_evidence.setProteinAccession(protein)
                                 peptide_hit.addPeptideEvidence(peptide_evidence)
 
@@ -505,13 +525,13 @@ class IdXMLWriter(WriterBase):
             )
             protein_hits = []
             for accession in protein_list:
-                protein_hit = oms.ProteinHit()
+                protein_hit = self.oms.ProteinHit()
                 protein_hit.setAccession(accession)
                 protein_hits.append(protein_hit)
             self.protein_ids.setHits(protein_hits)
 
             # Write an idXML file for each collection
-            oms.IdXMLFile().store(
+            self.oms.IdXMLFile().store(
                 "/".join(filter(None, [collection, str(self.filename)])),
                 [self.protein_ids],
                 self.peptide_ids,
@@ -535,7 +555,7 @@ class IdXMLWriter(WriterBase):
 
         return sequence
 
-    def _add_meta_values_from_dict(self, peptide_hit: oms.PeptideHit, d: dict) -> None:
+    def _add_meta_values_from_dict(self, peptide_hit: "oms.PeptideHit", d: dict) -> None:
         """Add meta values inplace to :py:class:`~pyopenms.PeptideHit` from a dictionary."""
         if d is not None:
             for key, value in d.items():

@@ -18,6 +18,9 @@ def test__infer_filetype():
         ("name.t.xml", "xtandem"),
         ("name.msamanda.csv", "msamanda"),
         ("name_msamanda.csv", "msamanda"),
+        ("name.pepxml", "pepxml"),
+        ("name.pepXML", "pepxml"),
+        ("name.pep.xml", "pepxml"),
     ]
     for test_in, expected_out in test_cases:
         assert _infer_filetype(test_in) == expected_out

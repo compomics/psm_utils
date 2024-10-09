@@ -69,7 +69,7 @@ FILETYPES = {
         "reader": pepxml.PepXMLReader,
         "writer": None,
         "extension": ".pepxml",
-        "filename_pattern": r"^.*\.pepxml$",
+        "filename_pattern": r"^.*\.pep\.?xml$",
     },
     "percolator": {
         "reader": percolator.PercolatorTabReader,

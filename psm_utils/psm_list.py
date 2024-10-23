@@ -97,6 +97,7 @@ class PSMList(BaseModel):
             # Return new PSMList from slice
             return PSMList(psm_list=self.psm_list[item])
         elif isinstance(item, str):
+            # Return PSM property as array across full PSMList
             return np.fromiter([psm[item] for psm in self.psm_list], dtype=object, count=len(self))
         elif _is_iterable_of_bools(item):
             # Return new PSMList with items that were True

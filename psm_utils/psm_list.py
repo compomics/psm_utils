@@ -97,13 +97,7 @@ class PSMList(BaseModel):
             # Return new PSMList from slice
             return PSMList(psm_list=self.psm_list[item])
         elif isinstance(item, str):
-            # Return PSM property as array across full PSMList
-            try:
-                # Let NumPy coerce dtype (e.g., multidimensional arrays)
-                return np.array([psm[item] for psm in self.psm_list])
-            except ValueError:
-                # If dtype is not consistent, force dtype to be object
-                return np.array([psm[item] for psm in self.psm_list], dtype=object)
+            return np.fromiter([psm[item] for psm in self.psm_list], dtype=object, count=len(self))
         elif _is_iterable_of_bools(item):
             # Return new PSMList with items that were True
             return PSMList(psm_list=[self.psm_list[i] for i in np.flatnonzero(item)])

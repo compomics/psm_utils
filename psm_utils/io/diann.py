@@ -60,7 +60,7 @@ class DIANNReader(ReaderBase, ABC):
             peptidoform=self._parse_peptidoform(
                 psm_dict["Modified.Sequence"], psm_dict["Precursor.Charge"]
             ),
-            spectrum_id=psm_dict["MS2.Scan"], 
+            spectrum_id=psm_dict["MS2.Scan"],
             run=psm_dict["Run"],
             is_decoy=False,
             qvalue=psm_dict[

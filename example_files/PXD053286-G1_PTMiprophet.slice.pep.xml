@@ -1,0 +1,90 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<msms_pipeline_analysis date="2022-05-17T22:37:25"
+    xmlns="http://regis-web.systemsbiology.net/pepXML"
+    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+    xsi:schemaLocation="http://regis-web.systemsbiology.net/pepXML /tools/bin/TPP/tpp/schema/pepXML_v122.xsd"
+    summary_xml="/mnt/nfs/DataPool/Projects/Lumos/2022/22_2_Apr_Jun/20220510_VC/Pipe_Mferi_M/G1_iprophet.pep.xml">
+    <analysis_summary analysis="ptmprophet" time="2022-05-17T23:41:43">
+        <ptmprophet_summary version="TPP v5.1.0 Syzygy, Build 202012091755-8315 (Linux-x86_64)"
+            options="M:15.994915,n:42.010565 MZTOL=0.4 G1_iprophet.pep.xml G1_PTMiprophet.pep.xml">
+            <inputfile name="G1_iprophet.pep.xml" />
+            <inputfile name="20220511_M1_Mferi_0535_VC_i01_comet.pep.xml"
+                directory="/mnt/nfs/DataPool/Projects/Lumos/2022/22_2_Apr_Jun/20220510_VC/Data" />
+            <inputfile name="20220511_M1_Mferi_0535_VC_i02_comet.pep.xml"
+                directory="/mnt/nfs/DataPool/Projects/Lumos/2022/22_2_Apr_Jun/20220510_VC/Data" />
+        </ptmprophet_summary>
+    </analysis_summary>
+    <msms_run_summary
+        base_name="/mnt/nfs/DataPool/Projects/Lumos/2022/22_2_Apr_Jun/20220510_VC/Data/20220511_M1_Mferi_0535_VC_i01"
+        msManufacturer="UNKNOWN" msModel="UNKNOWN" raw_data_type="raw" raw_data=".mzXML">
+        <sample_enzyme name="trypsin">
+            <specificity cut="KR" no_cut="P" sense="C" />
+        </sample_enzyme>
+        <search_summary
+            base_name="/mnt/nfs/DataPool/Projects/Lumos/2022/22_2_Apr_Jun/20220510_VC/Data/20220511_M1_Mferi_0535_VC_i01"
+            search_engine="Comet" search_engine_version="2019.01 rev. 5"
+            precursor_mass_type="monoisotopic" fragment_mass_type="monoisotopic" search_id="1">
+            <search_database
+                local_path="/mnt/nfs/DataPool/FastaDataBases/Mferi_G5847_GCF_000327395.faa_REV.fasta"
+                type="AA" />
+            <enzymatic_search_constraint enzyme="Trypsin" max_num_internal_cleavages="3"
+                min_number_termini="2" />
+            <aminoacid_modification aminoacid="M" massdiff="15.994900" mass="147.035385"
+                variable="Y" symbol="*" />
+            <terminal_modification terminus="N" massdiff="42.010565" mass="43.018390" variable="Y"
+                protein_terminus="Y" symbol="#" />
+            <aminoacid_modification aminoacid="C" massdiff="57.021464" mass="160.030649"
+                variable="N" />
+        </search_summary>
+        <spectrum_query spectrum="20220511_M1_Mferi_0535_VC_i01.05387.05387.2" start_scan="5387"
+            end_scan="5387" precursor_neutral_mass="1006.560276" assumed_charge="2" index="143"
+            retention_time_sec="1413.1" experiment_label="Mferi_M1">
+            <search_result>
+                <search_hit hit_rank="1" peptide="SNLFLMLK" peptide_prev_aa="M" peptide_next_aa="Q"
+                    protein="WP_008364460.1" num_tot_proteins="1" num_matched_ions="11"
+                    tot_num_ions="14" calc_neutral_pep_mass="1006.552139" massdiff="0.008137"
+                    num_tol_term="2" num_missed_cleavages="0" num_matched_peptides="55"
+                    protein_descr="ABC transporter permease [Mycoplasma feriruminatoris]">
+                    <modification_info modified_peptide="n[43]SNLFLMLK" mod_nterm_mass="43.01839"></modification_info>
+                    <search_score name="xcorr" value="1.214" />
+                    <search_score name="deltacn" value="1.000" />
+                    <search_score name="deltacnstar" value="0.000" />
+                    <search_score name="spscore" value="453.5" />
+                    <search_score name="sprank" value="1" />
+                    <search_score name="expect" value="1.17E+00" />
+                    <analysis_result analysis="peptideprophet">
+                        <peptideprophet_result probability="0.5131"
+                            all_ntt_prob="(0.0000,0.0000,0.5131)">
+                            <search_score_summary>
+                                <parameter name="fval" value="-0.3767" />
+                                <parameter name="ntt" value="2" />
+                                <parameter name="nmc" value="0" />
+                                <parameter name="massd" value="8.084" />
+                                <parameter name="isomassd" value="0" />
+                            </search_score_summary>
+                        </peptideprophet_result>
+                    </analysis_result>
+                    <analysis_result analysis="interprophet">
+                        <interprophet_result probability="0.00133535"
+                            all_ntt_prob="(0,0,0.00133535)">
+                            <search_score_summary>
+                                <parameter name="nss" value="0.1289" />
+                                <parameter name="nrs" value="-0.7221" />
+                                <parameter name="nse" value="-0.5741" />
+                                <parameter name="nsi" value="0" />
+                                <parameter name="nsm" value="0.9838" />
+                                <parameter name="nsp" value="20" />
+                            </search_score_summary>
+                        </interprophet_result>
+                    </analysis_result>
+                    <analysis_result analysis="ptmprophet">
+                        <ptmprophet_result prior="1" ptm="PTMProphet_n42.0106"
+                            ptm_peptide="n(1.000)SNLFLMLK">
+                            <mod_terminal_probability terminus="n" probability="1.000" />
+                        </ptmprophet_result>
+                    </analysis_result>
+                </search_hit>
+            </search_result>
+        </spectrum_query>
+    </msms_run_summary>
+</msms_pipeline_analysis>

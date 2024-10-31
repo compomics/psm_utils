@@ -5,7 +5,7 @@ from psm_utils.psm import PSM
 
 test_psm = PSM(
     peptidoform="AAAAEINVKDPKEDLETSVVDEGR/4",
-    spectrum_id="NA",
+    spectrum_id="116903",
     run="LFQ_Orbitrap_AIF_Yeast_03",
     collection=None,
     spectrum=None,

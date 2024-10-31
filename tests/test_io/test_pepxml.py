@@ -1,5 +1,6 @@
-from psm_utils.peptidoform import Peptidoform
 from psm_utils.io.pepxml import PepXMLReader
+from psm_utils.peptidoform import Peptidoform
+
 
 class TestPepXMLReader:
     def test_parse_peptidoform(self):
@@ -21,7 +22,7 @@ class TestPepXMLReader:
                     ],
                     "charge": 2,
                 },
-                "out": Peptidoform("[+43.017841151532004]-STE[+181.014009]EQNGGGQK/2"),
+                "out": Peptidoform("[+43.017841]-ST[+79.966331]EEQNGGGQK/2"),
             },
             {
                 "in": {

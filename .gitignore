@@ -133,8 +133,9 @@ dmypy.json
 .pyre/
 .vscode/settings.json
 
-# Specific to Branch
+# Specific to Branch, temp
 example_files/DIANN_example.tsv
 example_files/MSFragger_example_psm.tsv
 example_files/AlphaDIA_example.tsv
 test.ipynb
+example_files/evidence.txt

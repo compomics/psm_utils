@@ -8,7 +8,10 @@ from tempfile import NamedTemporaryFile
 
 from rich.progress import track
 
+import psm_utils.io.alphadia as alphadia
+import psm_utils.io.diann as diann
 import psm_utils.io.flashlfq as flashlfq
+import psm_utils.io.fragpipe as fragpipe
 import psm_utils.io.idxml as idxml
 import psm_utils.io.ionbot as ionbot
 import psm_utils.io.maxquant as maxquant
@@ -113,13 +116,31 @@ FILETYPES = {
         "extension": ".parquet",
         "filename_pattern": r"^.*(?:_|\.)sage.parquet$",
     },
-    "parquet": {  # List after proteoscape and sage to avoid extension matching conflicts
+    "fragpipe": {
+        "reader": fragpipe.FragPipeReader,
+        "writer": None,
+        "extension": ".tsv",
+        "filename_pattern": r"^.*(?:_|\.)?psm\.tsv$",
+    },
+    "alphadia": {
+        "reader": alphadia.AlphaDIAReader,
+        "writer": None,
+        "extension": ".tsv",
+        "filename_pattern": r"^.*(?:_|\.)?precursors\.tsv$",
+    },
+    "diann": {
+        "reader": diann.DIANNTSVReader,
+        "writer": None,
+        "extension": ".tsv",
+        "filename_pattern": r"^.*(?:_|\.)?diann\.tsv$",
+    },
+    "parquet": {  # List after more specific Parquet patterns to avoid matching conflicts
         "reader": parquet.ParquetReader,
         "writer": parquet.ParquetWriter,
         "extension": ".parquet",
         "filename_pattern": r"^.*\.parquet$",
     },
-    "tsv": {  # List after sage to avoid extension matching conflicts
+    "tsv": {  # List after more specific TSV patterns to avoid matching conflicts
         "reader": tsv.TSVReader,
         "writer": tsv.TSVWriter,
         "extension": ".tsv",

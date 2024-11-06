@@ -1,3 +1,4 @@
+import pytest
 from pyteomics import proforma
 
 from psm_utils.peptidoform import Peptidoform, format_number_as_string
@@ -18,6 +19,38 @@ class TestPeptidoform:
             peptidoform = Peptidoform(test_case_in)
             assert len(peptidoform) == expected_out
 
+    def test__eq__(self):
+        test_cases = [
+            ("ACDEFGHIK", "ACDEFGHIK", True),
+            ("ACDEFGHIK", "ACDEFGHI", False),
+            ("ACDEFGHIK/2", "ACDEFGHIK/2", True),
+            ("ACDEFGHIK/2", "ACDEFGHIK/3", False),
+            ("[ac]-AC[cm]DEFGHIK", "[ac]-AC[cm]DEFGHIK", True),
+            ("[ac]-AC[cm]DEFGHIK", "[ac]-AC[cm]DEFGH", False),
+            ("[ac]-AC[cm]DEFGHIK", "[ac]-AC[cm]DEFGH", False),
+            ("[ac]-AC[cm]DEFGHIK", "[ac]-AC[cm]DEFGH", False),
+        ]
+
+        for test_case_in_1, test_case_in_2, expected_out in test_cases:
+            assert (Peptidoform(test_case_in_1) == test_case_in_2) == expected_out
+            assert (Peptidoform(test_case_in_1) == Peptidoform(test_case_in_2)) == expected_out
+
+    with pytest.raises(TypeError):
+        Peptidoform("ACDEFGHIK") == 1
+
+    def test__getitem__(self):
+        test_cases = [
+            ("ACDEFGHIK", 0, ("A", None)),
+            ("ACDEFGHIK", 8, ("K", None)),
+            ("[ac]-AC[cm]DEFGHIK", 0, ("A", None)),
+            ("[ac]-AC[cm]DEFGHIK", 1, ("C", [proforma.GenericModification("cm")])),
+            ("[ac]-AC[cm]DEFGHIK", 8, ("K", None)),
+        ]
+
+        for test_case_in, index, expected_out in test_cases:
+            peptidoform = Peptidoform(test_case_in)
+            assert peptidoform[index] == expected_out
+
     def test__iter__(self):
         for aa, mods in Peptidoform("ACDEM[U:35]K"):
             assert isinstance(aa, str)
@@ -25,6 +58,44 @@ class TestPeptidoform:
                 assert isinstance(mods, list)
                 for mod in mods:
                     assert isinstance(mod, proforma.TagBase)
+
+    def test_sequence(self):
+        test_cases = [
+            ("ACDEFGHIK", "ACDEFGHIK"),
+            ("[ac]-AC[cm]DEFGHIK", "ACDEFGHIK"),
+            ("[ac]-AC[Carbamidomethyl]DEFGHIK", "ACDEFGHIK"),
+            ("[Acetyl]-AC[cm]DEFGK", "ACDEFGK"),
+            ("<[cm]@C>[Acetyl]-ACDK", "ACDK"),
+            ("<[Carbamidomethyl]@C>[ac]-ACDEFGHIK", "ACDEFGHIK"),
+        ]
+
+        for test_case_in, expected_out in test_cases:
+            peptidoform = Peptidoform(test_case_in)
+            assert peptidoform.sequence == expected_out
+
+    def test_modified_sequence(self):
+        test_cases = [
+            ("ACDEFGHIK", "ACDEFGHIK"),
+            ("ACDEFGHIK/3", "ACDEFGHIK"),
+            ("[ac]-AC[cm]DEFGHIK", "[ac]-AC[cm]DEFGHIK"),
+            ("[ac]-AC[cm]DEFGHIK/3", "[ac]-AC[cm]DEFGHIK"),
+            ("<[cm]@C>[Acetyl]-ACDK/3", "<[cm]@C>[Acetyl]-ACDK"),
+        ]
+
+        for test_case_in, expected_out in test_cases:
+            peptidoform = Peptidoform(test_case_in)
+            assert peptidoform.modified_sequence == expected_out
+
+    def test_precursor_charge(self):
+        test_cases = [
+            ("ACDEFGHIK", None),
+            ("ACDEFGHIK/2", 2),
+            ("ACDEFGHIK/3", 3),
+        ]
+
+        for test_case_in, expected_out in test_cases:
+            peptidoform = Peptidoform(test_case_in)
+            assert peptidoform.precursor_charge == expected_out
 
     def test_rename_modifications(self):
         label_mapping = {

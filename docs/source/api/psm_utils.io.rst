@@ -23,6 +23,14 @@ psm_utils.io.diann
    :inherited-members:
 
 
+psm_utils.io.flashlfq
+#####################
+
+.. automodule:: psm_utils.io.flashlfq
+   :members:
+   :inherited-members:
+
+
 psm_utils.io.fragpipe
 ##################
 
@@ -76,7 +84,7 @@ psm_utils.io.mzid
 
 
 psm_utils.io.parquet
-#################
+####################
 
 .. automodule:: psm_utils.io.parquet
    :members:

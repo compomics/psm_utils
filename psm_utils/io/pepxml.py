@@ -7,7 +7,7 @@ from collections import defaultdict
 from pathlib import Path
 from typing import List, Optional, Union
 
-from pyteomics import pepxml, proforma
+from pyteomics import mass, pepxml, proforma
 
 from psm_utils.io._base_classes import ReaderBase
 from psm_utils.peptidoform import Peptidoform
@@ -48,6 +48,8 @@ class PepXMLReader(ReaderBase):
         """Iterate over file and return PSMs one-by-one."""
         with pepxml.read(str(self.filename)) as reader:
             for spectrum_query in reader:
+                if "search_hit" not in spectrum_query:
+                    continue
                 for search_hit in spectrum_query["search_hit"]:
                     yield self._parse_psm(spectrum_query, search_hit)
 
@@ -79,13 +81,20 @@ class PepXMLReader(ReaderBase):
         n_term = []
         c_term = []
         for mod in modifications:
-            mod_tag = proforma.process_tag_tokens(f"{mod['mass']:+}")
+            # Round mass modification to 6 decimal places, precision from UniMod
             if mod["position"] == 0:
+                mod_tag = proforma.process_tag_tokens(f"{mod['mass']:+.6f}")
                 n_term.append(mod_tag)
             elif mod["position"] == len(peptide) + 1:
+                mod_tag = proforma.process_tag_tokens(f"{mod['mass']:+.6f}")
                 c_term.append(mod_tag)
             else:
-                modifications_dict[mod["position"]].append(mod_tag)
+                # Convert 1-based to 0-based position
+                position = mod["position"] - 1
+                # Sequence modifications are written as residue mass + modification mass
+                mod_mass = mod["mass"] - mass.std_aa_mass[peptide[position]]
+                mod_tag = proforma.process_tag_tokens(f"{mod_mass:+.6f}")
+                modifications_dict[position].append(mod_tag)
 
         sequence = [(aa, modifications_dict[i] or None) for i, aa in enumerate(peptide)]
         properties = {

@@ -22,7 +22,7 @@ requires-python = ">=3.7"
 dependencies = [
     "click",
     "lxml",
-    "numpy",
+    "numpy < 2",  # NOTE: openms currenly doesn't support numpy 2.0, but doesn't have a version requirement
     "pandas",
     "psims",
     "pyarrow",

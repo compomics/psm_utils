@@ -91,6 +91,7 @@ Supported file formats
 ===================================================================================================================== ======================== =============== ===============
  `AlphaDIA precursors TSV <https://alphadia.readthedocs.io/en/latest/quickstart.html#output-files>`_                   ``alphadia``             ✅              ❌
  `DIA-NN TSV <https://github.com/vdemichev/DiaNN#output>`_                                                             ``diann``                ✅              ❌
+ `FlashLFQ generic TSV <https://github.com/smith-chem-wisc/FlashLFQ/wiki/Identification-Input-Formats>`_               ``flashlfq``             ✅              ✅
  `FragPipe PSM TSV <https://fragpipe.nesvilab.org/docs/tutorial_fragpipe_outputs.html#psmtsv/>`_                       ``fragpipe``             ✅              ❌
  `ionbot CSV <https://ionbot.cloud/>`_                                                                                 ``ionbot``               ✅              ❌
  `OpenMS idXML <https://www.openms.de/>`_                                                                              ``idxml``                ✅              ✅

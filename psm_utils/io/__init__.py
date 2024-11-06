@@ -10,6 +10,7 @@ from rich.progress import track
 
 import psm_utils.io.alphadia as alphadia
 import psm_utils.io.diann as diann
+import psm_utils.io.flashlfq as flashlfq
 import psm_utils.io.fragpipe as fragpipe
 import psm_utils.io.idxml as idxml
 import psm_utils.io.ionbot as ionbot
@@ -31,6 +32,12 @@ from psm_utils.psm import PSM
 from psm_utils.psm_list import PSMList
 
 FILETYPES = {
+    "flashlfq": {
+        "reader": flashlfq.FlashLFQReader,
+        "writer": flashlfq.FlashLFQWriter,
+        "extension": ".tsv",
+        "filename_pattern": r"^.*\.flashlfq\.tsv$",
+    },
     "ionbot": {
         "reader": ionbot.IonbotReader,
         "writer": None,
@@ -65,7 +72,7 @@ FILETYPES = {
         "reader": pepxml.PepXMLReader,
         "writer": None,
         "extension": ".pepxml",
-        "filename_pattern": r"^.*\.pepxml$",
+        "filename_pattern": r"^.*\.pep\.?xml$",
     },
     "percolator": {
         "reader": percolator.PercolatorTabReader,
@@ -101,13 +108,13 @@ FILETYPES = {
         "reader": sage.SageTSVReader,
         "writer": None,
         "extension": ".tsv",
-        "filename_pattern": r"^.*(?:_|\.).sage.tsv$",
+        "filename_pattern": r"^.*(?:_|\.)sage.tsv$",
     },
     "sage_parquet": {
         "reader": sage.SageParquetReader,
         "writer": None,
         "extension": ".parquet",
-        "filename_pattern": r"^.*(?:_|\.).sage.parquet$",
+        "filename_pattern": r"^.*(?:_|\.)sage.parquet$",
     },
     "fragpipe": {
         "reader": fragpipe.FragPipeReader,

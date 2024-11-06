@@ -5,6 +5,48 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.1] - 2024-10-01
+
+### Fixed
+
+- `io`: Fix Sage filename pattern for automatic file type inference
+- `io.flashlfq`: Fix writing PSMs without protein accession
+- `io.flashlfq`: Fix column names `Peptide Monoisotopic Mass` and `Protein Accession`.
+- `io.idxml`: Fix parsing if spectra file name not present [#92](https://github.com/compomics/psm_utils/issues/92)
+
+## [1.1.0] - 2024-09-05
+
+### Added
+
+- `Peptidoform`: Add `modified_sequence` property to return the modified sequence in ProForma format, but without charge state.
+- `io`: Add support for reading and writing FlashLFQ generic TSV files.
+
+
+## [1.0.1] - 2024-08-28
+
+### Fixed
+
+- `io.percolator`: Fix and improve ScanNr inferring and writing
+- `io.percolator`: Infer style from file extension if not provided (enables dynamic style determination in, for instance, `convert` function).
+
+## [1.0.0] - 2024-08-14
+
+### Added
+
+- Peptidoform: Allow comparison between a peptidoform and a peptidoform string; allow direct indexing with square brackets, which indexes or slices parsed_sequence (in #89)
+
+### Fixed
+
+- TSV: Avoid flooding logs when reading a different file format by raising exception when three consecutive rows could not be parsed (in #88)
+
+## [0.9.1] - 2024-07-17
+
+### Fixed
+
+- `io.xtandem`: Fix parsing PSMs and complete protein names in XTandem (by @julianu in #83)
+- `io.tsv`: Fix warning formatting when parsing TSV (by @paretje in #85)
+- `io`: Fix support for mzIdentML and pepXML files from Comet (by @paretje in #87)
+
 ## [0.9.0] - 2024-05-01
 
 ### Added

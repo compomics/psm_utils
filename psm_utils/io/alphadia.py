@@ -1,10 +1,4 @@
-"""
-Reader for PSM files from the AlphaDIA search engine.
-
-Reads the AlphaDIA ``precursor.tsv`` file as defined on the
-`TODO: NOT YET A LINK`_.
-
-"""
+"""Reader for PSM files from the AlphaDIA search engine."""
 
 from __future__ import annotations
 
@@ -19,9 +13,18 @@ from psm_utils.psm_list import PSMList
 
 set_csv_field_size_limit()
 
+# TODO: check
+RESCORING_FEATURES = [
+    "rt_observed",
+    "mobility_observed",
+    "mz_observed",
+    "charge",
+    "delta_rt",
+]
+
 
 class AlphaDIAReader(ReaderBase, ABC):
-    def __init__(self, filename, score_column: str = "score", *args, **kwargs):
+    def __init__(self, filename, *args, **kwargs):
         """
         Reader for AlphaDIA ``precursor.tsv`` file.
 
@@ -29,14 +32,10 @@ class AlphaDIAReader(ReaderBase, ABC):
         ----------
         filename : str or Path
             Path to PSM file.
-        score_column: str, optional
-            Name of the column that holds the primary PSM score. Default is
-            ``score``.
 
         """
         super().__init__(filename, *args, **kwargs)
         self.filename = filename
-        self.score_column = score_column
 
     def __iter__(self) -> Iterable[PSM]:
         """Iterate over file and return PSMs one-by-one."""
@@ -62,17 +61,15 @@ class AlphaDIAReader(ReaderBase, ABC):
             run=psm_dict["run"],
             spectrum=psm_dict["frame_start"],  # TODO: needs to be checked
             is_decoy=bool(int(psm_dict["decoy"])),
-            score=psm_dict[self.score_column],
+            score=psm_dict["score"],
             qvalue=psm_dict["qval"],
-            pep=psm_dict[
-                "proba"
-            ],  # TODO: needs to be checked, assumption because if it is 1-proba than it's really bad
+            pep=psm_dict["proba"],
             precursor_mz=psm_dict["mz_observed"],
             retention_time=psm_dict["rt_observed"],
             ion_mobility=psm_dict["mobility_observed"],
             protein_list=psm_dict["proteins"].split(";"),
             rank=int(psm_dict["rank"]) + 1,  # AlphaDIA ranks are 0-based
-            source="alphadia",
+            source="AlphaDIA",
             provenance_data=({"alphadia_filename": str(self.filename)}),
             metadata={},
             rescoring_features=rescoring_features,
@@ -80,20 +77,28 @@ class AlphaDIAReader(ReaderBase, ABC):
 
     @staticmethod
     def _parse_peptidoform(sequence: str, mods: str, mod_sites, charge: Optional[str]) -> str:
+        """Parse a peptidoform from a AlphaDIA PSM file."""
+        # Parse modifications
         if mods:
-            mods = mods.split(";")
-            mod_sites = mod_sites.split(";")
-            for mod, site in reversed(sorted(zip(mods, mod_sites), key=lambda x: int(x[1]))):
-                if int(site) == 0:
-                    sequence = (
-                        sequence[: int(site)] + f"[{mod.split('@')[0]}]-" + sequence[int(site) :]
-                    )
+            sequence_list = [""] + list(sequence) + [""]  # N-term, sequence, C-term
+            for mod, site in zip(mods.split(";"), mod_sites.split(";")):
+                site = int(site)
+                name = mod.split("@")[0]
+                # N-terminal modification
+                if site == 0:
+                    sequence_list[0] = f"[{name}]-"
+                # C-terminal modification
+                elif site == -1:
+                    sequence_list[-1] = f"-[{name}]"
+                # Sequence modification
                 else:
-                    sequence = (
-                        sequence[: int(site)] + f"[{mod.split('@')[0]}]" + sequence[int(site) :]
-                    )
+                    sequence_list[site] = f"{sequence_list[site]}[{name}]"
+            sequence = "".join(sequence_list)
+
+        # Add charge
         if charge:
             sequence += f"/{int(float(charge))}"
+
         return sequence
 
     @classmethod
@@ -105,14 +110,3 @@ class AlphaDIAReader(ReaderBase, ABC):
                 for entry in dataframe.to_dict(orient="records")
             ]
         )
-
-
-# TODO: check
-RESCORING_FEATURES = [
-    "rt_observed",
-    "mobility_observed",
-    "mz_observed",
-    "score",
-    "charge",
-    "delta_rt",
-]

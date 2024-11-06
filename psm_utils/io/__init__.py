@@ -8,6 +8,9 @@ from tempfile import NamedTemporaryFile
 
 from rich.progress import track
 
+import psm_utils.io.alphadia as alphadia
+import psm_utils.io.diann as diann
+import psm_utils.io.fragpipe as fragpipe
 import psm_utils.io.idxml as idxml
 import psm_utils.io.ionbot as ionbot
 import psm_utils.io.maxquant as maxquant
@@ -22,9 +25,6 @@ import psm_utils.io.proteoscape as proteoscape
 import psm_utils.io.sage as sage
 import psm_utils.io.tsv as tsv
 import psm_utils.io.xtandem as xtandem
-import psm_utils.io.diann as diann
-import psm_utils.io.fragpipe as fragpipe
-import psm_utils.io.alphadia as alphadia
 from psm_utils.io._base_classes import WriterBase
 from psm_utils.io.exceptions import PSMUtilsIOException
 from psm_utils.psm import PSM
@@ -110,32 +110,30 @@ FILETYPES = {
         "filename_pattern": r"^.*(?:_|\.).sage.parquet$",
     },
     "fragpipe": {
-        "reader": fragpipe.FragpipeReader,
+        "reader": fragpipe.FragPipeReader,
         "writer": None,
         "extension": ".tsv",
-        "filename_pattern": r"^.*psm\.tsv$",
+        "filename_pattern": r"^.*(?:_|\.)?psm\.tsv$",
     },
     "alphadia": {
-    "reader": alphadia.AlphaDIAReader,
-    "writer": None,
-    "extension": ".tsv",
-    "filename_pattern": r"^.*precursor\.tsv$",
-    },
-    "diann": { # List after fragpipe and alphadia to avoid extension matching conflicts #TODO: fix tsv conflict
-        "reader": diann.DIANNReader,
+        "reader": alphadia.AlphaDIAReader,
         "writer": None,
         "extension": ".tsv",
-        "filename_pattern": r"^.*\.tsv$",
+        "filename_pattern": r"^.*(?:_|\.)?precursors\.tsv$",
     },
-
-
-    "parquet": {  # List after proteoscape and sage to avoid extension matching conflicts
+    "diann": {
+        "reader": diann.DIANNTSVReader,
+        "writer": None,
+        "extension": ".tsv",
+        "filename_pattern": r"^.*(?:_|\.)?diann\.tsv$",
+    },
+    "parquet": {  # List after more specific Parquet patterns to avoid matching conflicts
         "reader": parquet.ParquetReader,
         "writer": parquet.ParquetWriter,
         "extension": ".parquet",
         "filename_pattern": r"^.*\.parquet$",
     },
-    "tsv": {  # List after sage to avoid extension matching conflicts
+    "tsv": {  # List after more specific TSV patterns to avoid matching conflicts
         "reader": tsv.TSVReader,
         "writer": tsv.TSVWriter,
         "extension": ".tsv",

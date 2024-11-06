@@ -1,15 +1,24 @@
 """
 Reader for PSM files from DIA-NN
 
-Reads the '.tsv' file as defined on the `DIA-NN documentation page <https://github.com/vdemichev/DiaNN>`_.
+Reads the '.tsv' file as defined on the
+`DIA-NN documentation page <https://github.com/vdemichev/DiaNN/tree/1.8.1?tab=readme-ov-file#main-output-reference>`_.
+
+Notes
+-----
+
+- DIA-NN calculates q-values at both the run and library level. The run-level q-value is used as
+  the PSM q-value.
+- DIA-NN currently does not return precursor m/z values.
+- DIA-NN currently does not support C-terminal modifications in its searches.
+
 """
 
 from __future__ import annotations
 
 import csv
-from abc import ABC
-from typing import Iterable, Optional
 import re
+from typing import Iterable, Optional
 
 from psm_utils.io._base_classes import ReaderBase
 from psm_utils.io._utils import set_csv_field_size_limit
@@ -18,11 +27,22 @@ from psm_utils.psm_list import PSMList
 
 set_csv_field_size_limit()
 
+RESCORING_FEATURES = [
+    "RT",
+    "Predicted.RT",
+    "iRT",
+    "Predicted.iRT",
+    "Ms1.Profile.Corr",
+    "Ms1.Area",
+    "IM",
+    "iIM",
+    "Predicted.IM",
+    "Predicted.iIM",
+]
 
-class DIANNReader(ReaderBase, ABC):
-    def __init__(
-        self, filename, score_column: str = "CScore", qval_column="Q.Value", *args, **kwargs
-    ) -> None:
+
+class DIANNTSVReader(ReaderBase):
+    def __init__(self, filename, *args, **kwargs) -> None:
         """
         Reader for DIA-NN '.tsv' file.
 
@@ -30,15 +50,10 @@ class DIANNReader(ReaderBase, ABC):
         ----------
         filename : str or Path
             Path to PSM file.
-        score_column: str, optional
-            Name of the column that holds the primary PSM score. Default is
-            ``CScore``.
 
         """
         super().__init__(filename, *args, **kwargs)
         self.filename = filename
-        self.score_column = score_column
-        self.qval_column = qval_column
 
     def __iter__(self) -> Iterable[PSM]:
         """Iterate over file and return PSMs one-by-one."""
@@ -63,16 +78,15 @@ class DIANNReader(ReaderBase, ABC):
             spectrum_id=psm_dict["MS2.Scan"],
             run=psm_dict["Run"],
             is_decoy=False,
-            qvalue=psm_dict[
-                self.qval_column
-            ],  # DIA-NN puts out q-value on both run and library level
+            qvalue=psm_dict["Q.Value"],
             pep=float(psm_dict["PEP"]),
-            score=float(psm_dict[self.score_column]),
+            score=float(psm_dict["CScore"]),
+            precursor_mz=None,  # Not returned by DIA-NN :(
             retention_time=float(psm_dict["RT"]),
             ion_mobility=float(psm_dict["IM"]),
             protein_list=psm_dict["Protein.Ids"].split(";"),
             source="diann",
-            rank=1,  # Leave out?
+            rank=None,
             provenance_data=({"diann_filename": str(self.filename)}),
             rescoring_features=rescoring_features,
             metadata={},
@@ -80,22 +94,25 @@ class DIANNReader(ReaderBase, ABC):
 
     @staticmethod
     def _parse_peptidoform(peptide: str, charge: Optional[str]) -> str:
+        # Add charge
         if charge:
             peptide += f"/{int(float(charge))}"
+
+        # Replace parentheses with square brackets and capitalize UniMod prefix
         pattern = r"\(UniMod:(\d+)\)"
         replacement = r"[UNIMOD:\1]"
         peptide = re.sub(pattern, replacement, peptide)
-        # If [UNIMOD:n] occurs before the first amino acid, a hyphen is added before the first amino acid
+
+        # Add hyphen for N-terminal modifications
+        # If [UNIMOD:n] occurs before the first amino acid, a hyphen is added before the first
+        # amino acid
         if peptide[0] == "[":
             # Hyphen after the closing bracket
             peptide = peptide.replace("]", "]-", 1)
-        return peptide
 
-    @staticmethod
-    def _parse_precursor_mz():
-        return NotImplementedError(
-            "Method not implemented yet. DIA-NN does not yet output precursor m/z, but might in the future."
-        )
+        # C-terminal modifications are currently not supported in DIA-NN
+
+        return peptide
 
     @classmethod
     def from_dataframe(cls, dataframe) -> PSMList:
@@ -106,19 +123,3 @@ class DIANNReader(ReaderBase, ABC):
                 for entry in dataframe.to_dict(orient="records")
             ]
         )
-
-
-# TODO: Check
-RESCORING_FEATURES = [
-    "CScore",
-    "RT",
-    "Predicted.RT",
-    "iRT",
-    "Predicted.iRT",
-    "Ms1.Profile.Corr",
-    "Ms1.Area",
-    "IM",
-    "iIM",
-    "Predicted.IM",
-    "Predicted.iIM",
-]

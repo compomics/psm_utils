@@ -1,6 +1,6 @@
 """Tests for psm_utils.io.fragpipe."""
 
-from psm_utils.io.fragpipe import FragpipeReader
+from psm_utils.io.fragpipe import FragPipeReader
 from psm_utils.psm import PSM
 
 test_psm = PSM(
@@ -13,12 +13,12 @@ test_psm = PSM(
     score=57.2940,
     qvalue=None,
     pep=1 - 1.0000,
-    precursor_mz=1001.9342,
+    precursor_mz=1001.9336,
     retention_time=2432.1640,
     ion_mobility=None,
     protein_list=["sp|P40159|YNU8_YEAST"],
-    rank=1,
-    source="fragpipe",
+    rank=None,
+    source="FragPipe",
     metadata={},
     rescoring_features={
         "Peptide Length": 20,
@@ -36,7 +36,31 @@ test_psm = PSM(
 
 class TestFragpipeReader:
     def test_iter(self):
-        with FragpipeReader("./tests/test_data/test_fragpipe.tsv") as reader:
+        with FragPipeReader("./tests/test_data/test_fragpipe.tsv") as reader:
             for psm in reader:
                 psm.provenance_data = {}
                 assert psm == test_psm
+
+    def test__parse_peptidoform(self):
+        test_cases = [
+            (("LHM[147]TNQNMEKc[17]", "LHMTNQNMEK", "3"), "LHM[147]TNQNMEK-[17]/3"),
+            (("n[43]ANIAVQR", "ANIAVQR", "2"), "[43]-ANIAVQR/2"),
+            ((None, "IPAVTYPK", "2"), "IPAVTYPK/2"),
+            (("", "IPAVTYPK", "2"), "IPAVTYPK/2"),
+            (("", "IPAVTYPK", 2), "IPAVTYPK/2"),
+        ]
+
+        reader = FragPipeReader("./tests/test_data/test_fragpipe.tsv")
+        for (peptide, modified_peptide, charge), expected in test_cases:
+            assert reader._parse_peptidoform(peptide, modified_peptide, charge) == expected
+
+    def test__parse_spectrum_id(self):
+        test_cases = [
+            ("LFQ_Orbitrap_AIF_Human_01.101124.101124.0", "101124"),
+            ("LFQ.Orbitrap.AIF.Human.01.101124.101124.0", "101124"),
+            ("101124", "101124"),
+        ]
+
+        reader = FragPipeReader("./tests/test_data/test_fragpipe.tsv")
+        for spectrum, expected in test_cases:
+            assert reader._parse_spectrum_id(spectrum) == expected

@@ -1,6 +1,6 @@
 """Tests for psm_utils.io.diann."""
 
-from psm_utils.io.diann import DIANNReader
+from psm_utils.io.diann import DIANNTSVReader
 from psm_utils.psm import PSM
 
 test_psm = PSM(
@@ -17,7 +17,7 @@ test_psm = PSM(
     retention_time=75.2574,
     ion_mobility=0,
     protein_list=["P38156"],
-    rank=1,
+    rank=None,
     source="diann",
     metadata={},
     rescoring_features={
@@ -36,9 +36,20 @@ test_psm = PSM(
 )
 
 
-class TestDIANNReader:
+class TestDIANNTSVReader:
     def test_iter(self):
-        with DIANNReader("./tests/test_data/test_diann.tsv") as reader:
+        with DIANNTSVReader("./tests/test_data/test_diann.tsv") as reader:
             for psm in reader:
                 psm.provenance_data = {}
                 assert psm == test_psm
+
+    def test__parse_peptidoform(self):
+        test_cases = [
+            (("ACDE", "4"), "ACDE/4"),
+            (("AC(UniMod:1)DE", "4"), "AC[UNIMOD:1]DE/4"),
+            (("(UniMod:4)ACDE", "4"), "[UNIMOD:4]-ACDE/4"),
+        ]
+
+        reader = DIANNTSVReader("./tests/test_data/test_diann.tsv")
+        for (peptide, charge), expected in test_cases:
+            assert reader._parse_peptidoform(peptide, charge) == expected

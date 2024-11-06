@@ -28,7 +28,6 @@ test_psm = PSM(
         "Calculated Peptide Mass": 2001.8524,
         "Calculated M/Z": 1001.9335,
         "Delta Mass": 0.0002,
-        "Hyperscore": 57.2940,
         "Number of Missed Cleavages": 0,
     },
 )

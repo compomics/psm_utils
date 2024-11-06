@@ -21,7 +21,6 @@ test_psm = PSM(
     source="diann",
     metadata={},
     rescoring_features={
-        "CScore": 0.995107,
         "RT": 75.2574,
         "Predicted.RT": 75.2713,
         "iRT": 33.9222,

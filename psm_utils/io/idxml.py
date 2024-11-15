@@ -30,7 +30,12 @@ filterwarnings(
     module="pyopenms",
 )
 
-import pyopenms as oms  #noqa: E402
+try:
+    import pyopenms as oms  #noqa: E402
+except ImportError:
+    _has_openms = False
+else:
+    _has_openms = True
 
 logger = logging.getLogger(__name__)
 
@@ -99,6 +104,8 @@ class IdXMLReader(ReaderBase):
         >>> psm_list = [psm for psm in reader]
         """
         super().__init__(filename, *args, **kwargs)
+        if not _has_openms:
+            raise ImportError("pyOpenMS is required to read idXML files")
         self.protein_ids, self.peptide_ids = self._parse_idxml()
         self.user_params_metadata = self._get_userparams_metadata(self.peptide_ids[0].getHits()[0])
         self.rescoring_features = self._get_rescoring_features(self.peptide_ids[0].getHits()[0])
@@ -326,6 +333,8 @@ class IdXMLWriter(WriterBase):
 
         """
         super().__init__(filename, *args, **kwargs)
+        if not _has_openms:
+            raise ImportError("pyOpenMS is required to write idXML files")
         self.protein_ids = protein_ids
         self.peptide_ids = peptide_ids
         self._writer = None

@@ -86,15 +86,15 @@ Goals and non-goals
 Supported file formats
 **********************
 
-===================================================================================================================== ======================== =============== ===============
- File format                                                                                                           psm_utils tag            Read support    Write support
-===================================================================================================================== ======================== =============== ===============
+===================================================================================================================== ======================== =============== =============== ==========
+ File format                                                                                                           psm_utils tag            Read support    Write support   Comments
+===================================================================================================================== ======================== =============== =============== ==========
  `AlphaDIA precursors TSV <https://alphadia.readthedocs.io/en/latest/quickstart.html#output-files>`_                   ``alphadia``             ✅              ❌
  `DIA-NN TSV <https://github.com/vdemichev/DiaNN#output>`_                                                             ``diann``                ✅              ❌
  `FlashLFQ generic TSV <https://github.com/smith-chem-wisc/FlashLFQ/wiki/Identification-Input-Formats>`_               ``flashlfq``             ✅              ✅
  `FragPipe PSM TSV <https://fragpipe.nesvilab.org/docs/tutorial_fragpipe_outputs.html#psmtsv/>`_                       ``fragpipe``             ✅              ❌
  `ionbot CSV <https://ionbot.cloud/>`_                                                                                 ``ionbot``               ✅              ❌
- `OpenMS idXML <https://www.openms.de/>`_                                                                              ``idxml``                ✅              ✅
+ `OpenMS idXML <https://www.openms.de/>`_                                                                              ``idxml``                ✅              ✅                Requires the optional ``openms`` dependency (``pip install psm-utils[idxml]``)
  `MaxQuant msms.txt <https://www.maxquant.org/>`_                                                                      ``msms``                 ✅              ❌
  `MS Amanda CSV <https://ms.imp.ac.at/?goto=msamanda>`_                                                                ``msamanda``             ✅              ❌
  `mzIdentML <https://psidev.info/mzidentml>`_                                                                          ``mzid``                 ✅              ✅
@@ -108,7 +108,7 @@ Supported file formats
  `ProteoScape Parquet <#>`_                                                                                            ``proteoscape``          ✅              ❌
  `TSV <https://psm-utils.readthedocs.io/en/stable/api/psm_utils.io/#module-psm_utils.io.tsv>`_                         ``tsv``                  ✅              ✅
  `X!Tandem XML <https://www.thegpm.org/tandem/>`_                                                                      ``xtandem``              ✅              ❌
-===================================================================================================================== ======================== =============== ===============
+===================================================================================================================== ======================== =============== =============== ==========
 
 Legend: ✅ Supported, ❌ Unsupported
 

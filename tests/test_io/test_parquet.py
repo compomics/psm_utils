@@ -1,6 +1,5 @@
 """Tests for psm_utils.io.tsv."""
 
-import hashlib
 import os
 
 from psm_utils.io.parquet import ParquetReader, ParquetWriter
@@ -32,40 +31,32 @@ test_cases = [
 ]
 
 
-def compute_checksum(filename):
-    hash_func = hashlib.sha256()
-    with open(filename, "rb") as f:
-        for chunk in iter(lambda: f.read(4096), b""):
-            hash_func.update(chunk)
-    return hash_func.hexdigest()
-
-
 class TestParquetWriter:
-    expected_checksum = "1e5ee7afc5d4131bce8f1d0908136b8c559303abb7bbd7d052afa111d5e64f0c"
-
     def test_write_psm(self):
         with ParquetWriter("test.pq") as writer:
             for test_case in test_cases:
                 writer.write_psm(PSM(**test_case))
-        actual_checksum = compute_checksum("test.pq")
-        assert actual_checksum == self.expected_checksum, "Checksums do not match"
+
+        with ParquetReader("test.pq") as reader:
+            for i, psm in enumerate(reader):
+                assert psm == PSM(**test_cases[i])
+
         os.remove("test.pq")
 
     def test_write_file(self):
         with ParquetWriter("test.pq") as writer:
             writer.write_file(PSMList(psm_list=[PSM(**t) for t in test_cases]))
-        actual_checksum = compute_checksum("test.pq")
-        assert actual_checksum == self.expected_checksum, "Checksums do not match"
-        # os.remove("test.pq")
+
+        with ParquetReader("test.pq") as reader:
+            for i, psm in enumerate(reader):
+                assert psm == PSM(**test_cases[i])
+
+        os.remove("test.pq")
 
 
 class TestParquetReader:
     def test_iter(self):
-        # Write test cases to file
-        ParquetWriter("test.pq").write_file(PSMList(psm_list=[PSM(**t) for t in test_cases]))
-
         # Read test cases from file
-        for i, psm in enumerate(ParquetReader("test.pq")):
-            assert psm == PSM(**test_cases[i])
-
-        os.remove("test.pq")
+        with ParquetReader("tests/test_data/test.pq") as reader:
+            for i, psm in enumerate(reader):
+                assert psm == PSM(**test_cases[i])

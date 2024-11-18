@@ -27,7 +27,7 @@ jobs:
         run: ruff check --output-format=github .
 
       - name: Install package and its dependencies
-        run: pip install --editable .[dev]
+        run: pip install --editable .[dev,idxml]
 
       - name: Test with pytest and codecov
         run: |

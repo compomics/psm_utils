@@ -38,6 +38,9 @@ class TestPSMList:
 
         # PSM property as array
         np.testing.assert_equal(psm_list["spectrum_id"], np.array(["1", "2", "3"]))
+        np.testing.assert_equal(psm_list["score"], np.array([140.2, 132.9, 55.7]))
+        np.testing.assert_equal(psm_list["rank"], np.array([None, None, None]))
+        np.testing.assert_equal(psm_list["qvalue"], np.array([np.nan, np.nan, np.nan]))
 
         # Multiple PSM properties as 2D array
         np.testing.assert_equal(

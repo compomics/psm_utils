@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from typing import Any, Dict, List, Optional, Union
 
-from pydantic import ConfigDict, BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from psm_utils.peptidoform import Peptidoform
 
@@ -135,3 +135,25 @@ class PSM(BaseModel):
         if as_url:
             usi = "http://proteomecentral.proteomexchange.org/usi/?usi=" + usi
         return usi
+
+
+NUMPY_DTYPES = {
+    "peptidoform": Peptidoform,
+    "spectrum_id": object,
+    "run": object,
+    "collection": object,
+    "spectrum": object,
+    "is_decoy": bool,
+    "score": float,
+    "qvalue": float,
+    "pep": float,
+    "precursor_mz": float,
+    "retention_time": float,
+    "ion_mobility": float,
+    "protein_list": object,
+    "rank": int,
+    "source": object,
+    "provenance_data": object,
+    "metadata": object,
+    "rescoring_features": object,
+}

@@ -5,11 +5,31 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.1.1] - 2024-09-06
+## [1.2.0] - 2024-11-19
+
+### Added
+
+- ✨ `io.alphadia`: Read support for AlphaDIA `precursors.tsv` (#103 by @rodvrees)
+- ✨ `io.fragpipe`: Read support for FragPipe `psm.tsv` (#103 by @rodvrees)
+- ✨ `io.diann`: Read support for DIA-NN TSV (#103 by @rodvrees)
+
+### Changed
+
+- 💥 `psm_list`: When returning a PSM property across the full PSMList (e.g. `psm_list["peptidoform"]`), `np.fromiter` is now used instead of `np.array`. This fixes an issue where if all peptidoforms have the same length, a 3D array of parsed sequences (amino acids and modifications) was be returned instead of an array of `Peptidoform` object. However, this does mean that all resulting arrays will have the `object` dtype instead of the previously coerced dtypes. This might lead to issues downstream. (#102)
+- ➖ `io.idxml`: Make pyOpenMS an optional dependency, working around https://github.com/OpenMS/OpenMS/issues/7600 for now. For `idxml` support, install psm_utils with the `idxml` extra dependencies. (#107 by @paretje)
 
 ### Fixed
 
+- 🐛 `io.pepxml`: Fix modification location and mass parsing. Position had an off-by-one error and the reported mass was the sum of the residue and modification instead of the modification alone. (fixes #100, #104)
+
+## [1.1.1] - 2024-10-01
+
+### Fixed
+
+- `io`: Fix Sage filename pattern for automatic file type inference
+- `io.flashlfq`: Fix writing PSMs without protein accession
 - `io.flashlfq`: Fix column names `Peptide Monoisotopic Mass` and `Protein Accession`.
+- `io.idxml`: Fix parsing if spectra file name not present [#92](https://github.com/compomics/psm_utils/issues/92)
 
 ## [1.1.0] - 2024-09-05
 
@@ -17,7 +37,6 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 - `Peptidoform`: Add `modified_sequence` property to return the modified sequence in ProForma format, but without charge state.
 - `io`: Add support for reading and writing FlashLFQ generic TSV files.
-
 
 ## [1.0.1] - 2024-08-28
 

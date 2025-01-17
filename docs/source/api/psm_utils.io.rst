@@ -7,10 +7,34 @@ psm_utils.io
 
 
 
-psm_utils.io.flashlfq
+psm_utils.io.alphapept
 ##################
 
+.. automodule:: psm_utils.io.alphapept
+   :members:
+   :inherited-members:
+
+
+psm_utils.io.diann
+##################
+
+.. automodule:: psm_utils.io.diann
+   :members:
+   :inherited-members:
+
+
+psm_utils.io.flashlfq
+#####################
+
 .. automodule:: psm_utils.io.flashlfq
+   :members:
+   :inherited-members:
+
+
+psm_utils.io.fragpipe
+##################
+
+.. automodule:: psm_utils.io.fragpipe
    :members:
    :inherited-members:
 
@@ -60,7 +84,7 @@ psm_utils.io.mzid
 
 
 psm_utils.io.parquet
-#################
+####################
 
 .. automodule:: psm_utils.io.parquet
    :members:

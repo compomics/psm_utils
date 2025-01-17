@@ -22,12 +22,11 @@ requires-python = ">=3.7"
 dependencies = [
     "click",
     "lxml",
-    "numpy < 2",  # NOTE: openms currenly doesn't support numpy 2.0, but doesn't have a version requirement
+    "numpy",
     "pandas",
     "psims",
     "pyarrow",
     "pydantic >= 2",
-    "pyopenms",
     "pyteomics >= 4",
     "rich",
     "sqlalchemy",
@@ -46,6 +45,7 @@ docs = [
     "toml",
 ]
 online = ["streamlit", "plotly"]
+idxml = ["pyopenms"]
 
 [project.urls]
 GitHub = "https://github.com/compomics/psm_utils"

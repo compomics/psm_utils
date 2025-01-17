@@ -1,7 +1,7 @@
 import numpy as np
 import pytest
 
-from psm_utils import Peptidoform, PSM, PSMList
+from psm_utils import PSM, Peptidoform, PSMList
 
 sample_psm_list = [
     PSM(peptidoform="ACDK", spectrum_id=1, score=140.2),
@@ -42,7 +42,7 @@ class TestPSMList:
         # Multiple PSM properties as 2D array
         np.testing.assert_equal(
             psm_list[["spectrum_id", "score"]],
-            np.array([["1", 140.2], ["2", 132.9], ["3", 55.7]]),
+            np.array([["1", 140.2], ["2", 132.9], ["3", 55.7]], dtype=object),
         )
 
         # Index by multiple indices

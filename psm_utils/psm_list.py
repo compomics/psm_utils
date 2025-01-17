@@ -9,7 +9,7 @@ from pydantic import BaseModel
 from pyteomics import auxiliary, proforma
 from rich.pretty import pretty_repr
 
-from psm_utils.psm import PSM
+from psm_utils.psm import NUMPY_DTYPES, PSM
 
 
 class PSMList(BaseModel):
@@ -98,7 +98,14 @@ class PSMList(BaseModel):
             return PSMList(psm_list=self.psm_list[item])
         elif isinstance(item, str):
             # Return PSM property as array across full PSMList
-            return np.fromiter([psm[item] for psm in self.psm_list], dtype=object, count=len(self))
+            try:
+                return np.fromiter(
+                    (psm[item] for psm in self.psm_list), dtype=NUMPY_DTYPES[item], count=len(self)
+                )
+            except TypeError:
+                return np.fromiter(
+                    (psm[item] for psm in self.psm_list), dtype=object, count=len(self)
+                )
         elif _is_iterable_of_bools(item):
             # Return new PSMList with items that were True
             return PSMList(psm_list=[self.psm_list[i] for i in np.flatnonzero(item)])

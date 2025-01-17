@@ -100,11 +100,11 @@ class PSMList(BaseModel):
             # Return PSM property as array across full PSMList
             try:
                 return np.fromiter(
-                    [psm[item] for psm in self.psm_list], dtype=NUMPY_DTYPES[item], count=len(self)
+                    (psm[item] for psm in self.psm_list), dtype=NUMPY_DTYPES[item], count=len(self)
                 )
             except TypeError:
                 return np.fromiter(
-                    [psm[item] for psm in self.psm_list], dtype=object, count=len(self)
+                    (psm[item] for psm in self.psm_list), dtype=object, count=len(self)
                 )
         elif _is_iterable_of_bools(item):
             # Return new PSMList with items that were True

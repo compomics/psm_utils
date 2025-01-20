@@ -153,5 +153,5 @@ class PepXMLReader(ReaderBase):
                     for key in search_hit["search_score"]
                 }
             ),
-            rescoring_features=None,
+            rescoring_features=dict(),
         )

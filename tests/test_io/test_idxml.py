@@ -2,10 +2,14 @@
 
 import hashlib
 
+import pytest
+
 from psm_utils.io.idxml import IdXMLReader, IdXMLWriter
 from psm_utils.io.sage import SageTSVReader
 from psm_utils.peptidoform import Peptidoform
 from psm_utils.psm import PSM
+
+pyopenms = pytest.importorskip("pyopenms")
 
 
 class TestIdXMLReader:

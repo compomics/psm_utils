@@ -194,7 +194,7 @@ class IdXMLReader(ReaderBase):
             score=peptide_hit.getScore(),
             precursor_mz=peptide_id.getMZ(),
             retention_time=peptide_id.getRT(),
-            # NOTE: ion mobility will be supported by OpenMS in the future
+            ion_mobility=float(im) if (im := peptide_id.getMetaValue("IM")) is not None else None,
             protein_list=[
                 accession.decode() for accession in peptide_hit.extractProteinAccessionsSet()
             ],

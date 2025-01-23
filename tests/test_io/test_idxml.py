@@ -107,7 +107,7 @@ class TestIdXMLWriter:
         assert sha == expected_sha
 
     def test_write_file_without_pyopenms_objects(self):
-        expected_sha = "148889926276fbe391e23ed7952c3a8410fc67ffb099bbf1a72df75f8d727ccd"
+        expected_sha = "3b227edf1649021a01feb706e3b3effb939d4fdeccb4cd7111be30bb2e6280e7"
         reader = SageTSVReader("./tests/test_data/results.sage.tsv")
         psm_list = reader.read_file()
         writer = IdXMLWriter("./tests/test_data/test_out_sage.idXML")

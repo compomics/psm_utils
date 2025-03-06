@@ -246,6 +246,8 @@ class PercolatorTabWriter(WriterBase):
                     f"Could not infer Percolator Tab style from file extension `{suffix}`. "
                     "Please provide the `style` parameter."
                 )
+        else:
+            self.style = style
 
         if self.style == "pin":
             basic_features = ["PSMScore", "ChargeN"] if add_basic_features else []

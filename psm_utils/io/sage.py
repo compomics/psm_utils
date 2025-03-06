@@ -161,4 +161,4 @@ RESCORING_FEATURES = [
     "poisson",
     # "ms1_intensity",  # Removed in Sage v0.14
     "ms2_intensity",
-    ]
+]

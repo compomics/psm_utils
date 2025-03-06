@@ -57,6 +57,14 @@ class _SageReaderBase(ReaderBase, ABC):
                 rescoring_features[ft] = psm_dict[ft]
             except KeyError:
                 continue
+        
+        # If ion mobility is not 0.0 (not present), add it to the rescoring features     
+        if float(psm_dict['ion_mobility']):
+            rescoring_features.update({
+            'ion_mobility': float(psm_dict['ion_mobility']),
+            'predicted_mobility': float(psm_dict['predicted_mobility']),
+            'delta_mobility': float(psm_dict['delta_mobility'])
+            })
 
         return PSM(
             peptidoform=self._parse_peptidoform(
@@ -70,6 +78,7 @@ class _SageReaderBase(ReaderBase, ABC):
             score=float(psm_dict[self.score_column]),
             precursor_mz=self._parse_precursor_mz(psm_dict["expmass"], psm_dict["charge"]),
             retention_time=float(psm_dict["rt"]),
+            ion_mobility=float(psm_dict["ion_mobility"]) if float(psm_dict["ion_mobility"]) else None,
             protein_list=psm_dict["proteins"].split(";"),
             source="sage",
             rank=int(float(psm_dict["rank"])),
@@ -152,4 +161,4 @@ RESCORING_FEATURES = [
     "poisson",
     # "ms1_intensity",  # Removed in Sage v0.14
     "ms2_intensity",
-]
+    ]

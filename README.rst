@@ -34,9 +34,9 @@ engine results in Python.
    :alt: GitHub
    :target: https://www.apache.org/licenses/LICENSE-2.0
 
-.. image:: https://img.shields.io/twitter/follow/CompOmics?style=flat-square
-   :alt: Twitter
-   :target: https://twitter.com/compomics
+.. image:: https://img.shields.io/badge/follow-@compomics.com-blue?style=flat-square&logo=bluesky
+   :alt: Follow @compomics.com
+   :target: https://bsky.app/profile/compomics.com
 
 
 

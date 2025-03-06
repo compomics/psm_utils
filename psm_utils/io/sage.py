@@ -152,7 +152,6 @@ RESCORING_FEATURES = [
     "delta_rt_model",
     "aligned_rt",
     "predicted_rt",
-    "predicted_mobility",
     "matched_peaks",
     "longest_b",
     "longest_y",

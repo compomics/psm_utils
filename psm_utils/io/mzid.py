@@ -408,8 +408,6 @@ class MzidQuickReader(ReaderBase):
         self._pep_key = None
         self._im_key = None
 
-        self._source = self._infer_source()
-
         # some helper-dictionaries
         self.peptides_dict = {}
         self.peptide_evidences_dict = {}
@@ -450,7 +448,7 @@ class MzidQuickReader(ReaderBase):
 
     def _preparse_references(self) -> None:
         """pre-parses all information relevant for references"""
-        for _, element in etree.iterparse(str(self.filename), events=("end", ), tag=("{*}Peptide", "{*}PeptideEvidence", "{*}DBSequence", "{*}SearchDatabase", "{*}SpectraData")):
+        for _, element in etree.iterparse(str(self.filename), events=("end", ), tag=("{*}Peptide", "{*}PeptideEvidence", "{*}DBSequence", "{*}SearchDatabase", "{*}SpectraData", "{*}AnalysisSoftware")):
             tag = element.tag.rpartition("}")[2]
 
             if (tag == "Peptide"):
@@ -463,6 +461,8 @@ class MzidQuickReader(ReaderBase):
                 self.search_dbs_dict |= MzidQuickReader._parse_searchdb(element)
             elif (tag == "SpectraData"):
                 self.spectra_data_dict |= MzidQuickReader._parse_spectradata(element)
+            elif (tag == "AnalysisSoftware"):
+                self._source = MzidQuickReader._parse_analysissoftware(element)
             
             element.clear()
 
@@ -554,9 +554,10 @@ class MzidQuickReader(ReaderBase):
         # get cvParams and userParams (mapping: name -> value)
         for event, item in etree.iterwalk(dbseq_element, events=("start", "end",), tag=("{*}cvParam", "{*}userParam")):
             if event == "start":
-                param_attrs = MzidQuickReader._parse_elements_attributes(item)
-                if "name" in param_attrs.keys() and "value" in param_attrs.keys():
-                    attributes[param_attrs["name"]] = param_attrs["value"]
+                param_name, param_val = MzidQuickReader._parse_param_name_and_value(item)
+                if param_name != None:
+                    attributes[param_name] = param_val
+
             else:
                 item.clear()
 
@@ -635,9 +636,9 @@ class MzidQuickReader(ReaderBase):
                 if (tag == "SpectrumIdentificationItem"):
                     attributes["SpectrumIdentificationItem"].append(self._parse_sii(item))
                 elif (tag == "cvParam") or (tag == "userParam"):
-                    param_attrs = MzidQuickReader._parse_elements_attributes(item)
-                    if "name" in param_attrs.keys() and "value" in param_attrs.keys():
-                        attributes[param_attrs["name"]] = param_attrs["value"]
+                    param_name, param_val = MzidQuickReader._parse_param_name_and_value(item)
+                    if param_name != None:
+                        attributes[param_name] = param_val
             else:
                 item.clear()
         
@@ -678,14 +679,28 @@ class MzidQuickReader(ReaderBase):
                     pep_evidence_data = self._parse_peptide_evidence_ref(item)
                     attributes["PeptideEvidenceRef"].append(pep_evidence_data)
                 elif (tag == "cvParam") or (tag == "userParam"):
-                    param_attrs = MzidQuickReader._parse_elements_attributes(item)
-                    if "name" in param_attrs.keys() and "value" in param_attrs.keys():
-                        attributes[param_attrs["name"]] = param_attrs["value"]
+                    param_name, param_val = MzidQuickReader._parse_param_name_and_value(item)
+                    if param_name != None:
+                        attributes[param_name] = param_val
             else:
                 item.clear()
         
         return attributes
     
+    @staticmethod
+    def _parse_param_name_and_value(param_item: etree.Element) -> tuple[str, str | float]:
+        param_name = None
+        param_val = None
+        param_attrs = MzidQuickReader._parse_elements_attributes(param_item)
+        if "name" in param_attrs.keys() and "value" in param_attrs.keys():
+            param_name = param_attrs["name"]
+            try:
+                param_val = float(param_attrs["value"])
+            except ValueError:
+                param_val = str(param_attrs["value"])
+        
+        return param_name, param_val
+
     def _parse_peptide_evidence_ref(self, pepevidenceref_item: etree.Element) -> dict[str, dict]:
         pep_evidence_attrs = MzidQuickReader._parse_elements_attributes(pepevidenceref_item)
         pep_evidence_data = copy.deepcopy(self.peptide_evidences_dict[pep_evidence_attrs["peptideEvidence_ref"]])
@@ -705,21 +720,30 @@ class MzidQuickReader(ReaderBase):
 
         return pep_evidence_data
 
-    @staticmethod
-    def _get_xml_namespace(root_tag):
-        """Get the namespace of the xml root."""
-        m = re.match(r"\{.*\}", root_tag)
-        return m.group(0) if m else ""
 
-    def _infer_source(self):
-        """Get the source of the mzid file."""
-        mzid_xml = ET.parse(self.filename)
-        root = mzid_xml.getroot()
-        name_space = self._get_xml_namespace(root.tag)
-        try:
-            return root.find(f".//{name_space}AnalysisSoftware").attrib["name"]
-        except KeyError:
-            return None
+    @staticmethod
+    def _parse_analysissoftware(spectradata_element: etree.Element) -> str:
+        software_name = None
+
+        # parse the SearchDB's attributes
+        attributes = MzidQuickReader._parse_elements_attributes(spectradata_element)
+        specdata_id = attributes["id"]
+        del attributes["id"]
+
+        for event, item in etree.iterwalk(spectradata_element, events=("start", "end",), tag=("{*}SoftwareName")):
+            if event == "start":
+                # strip the namespace
+                tag = item.tag.rpartition("}")[2]
+
+                # just take the name of the first userParam or cvParam in the SoftwareName
+                for _, item in etree.iterwalk(item, events=("end",), tag=("{*}cvParam", "{*}userParam")):
+                    software_name = MzidQuickReader._parse_elements_attributes(item)["name"]
+                
+                # there can be other tags, not needed for now
+            else:
+                item.clear()
+        
+        return software_name
 
     @staticmethod
     def _parse_peptidoform(seq: str, modification_list: list[dict], charge: Union[int, None]):

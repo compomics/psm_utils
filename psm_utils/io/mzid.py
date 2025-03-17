@@ -424,7 +424,7 @@ class MzidQuickReader(ReaderBase):
         for event, element in etree.iterparse(str(self.filename), events=("end", ), tag=("{*}SpectrumIdentificationResult")):
             spectrum = self._parse_sir(element)
 
-            if first_sir == True:
+            if first_sir:
                 # Parse spectrum metadata
                 self._get_toplevel_non_metadata_keys(spectrum.keys())
 
@@ -555,7 +555,7 @@ class MzidQuickReader(ReaderBase):
         for event, item in etree.iterwalk(dbseq_element, events=("start", "end",), tag=("{*}cvParam", "{*}userParam")):
             if event == "start":
                 param_name, param_val = MzidQuickReader._parse_param_name_and_value(item)
-                if param_name != None:
+                if param_name is not None:
                     attributes[param_name] = param_val
 
             else:
@@ -637,7 +637,7 @@ class MzidQuickReader(ReaderBase):
                     attributes["SpectrumIdentificationItem"].append(self._parse_sii(item))
                 elif (tag == "cvParam") or (tag == "userParam"):
                     param_name, param_val = MzidQuickReader._parse_param_name_and_value(item)
-                    if param_name != None:
+                    if param_name is not None:
                         attributes[param_name] = param_val
             else:
                 item.clear()
@@ -680,7 +680,7 @@ class MzidQuickReader(ReaderBase):
                     attributes["PeptideEvidenceRef"].append(pep_evidence_data)
                 elif (tag == "cvParam") or (tag == "userParam"):
                     param_name, param_val = MzidQuickReader._parse_param_name_and_value(item)
-                    if param_name != None:
+                    if param_name is not None:
                         attributes[param_name] = param_val
             else:
                 item.clear()
@@ -724,20 +724,11 @@ class MzidQuickReader(ReaderBase):
     @staticmethod
     def _parse_analysissoftware(spectradata_element: etree.Element) -> str:
         software_name = None
-
-        # parse the SearchDB's attributes
-        attributes = MzidQuickReader._parse_elements_attributes(spectradata_element)
-        specdata_id = attributes["id"]
-        del attributes["id"]
-
         for event, item in etree.iterwalk(spectradata_element, events=("start", "end",), tag=("{*}SoftwareName")):
             if event == "start":
-                # strip the namespace
-                tag = item.tag.rpartition("}")[2]
-
                 # just take the name of the first userParam or cvParam in the SoftwareName
-                for _, item in etree.iterwalk(item, events=("end",), tag=("{*}cvParam", "{*}userParam")):
-                    software_name = MzidQuickReader._parse_elements_attributes(item)["name"]
+                for _, sub_item in etree.iterwalk(item, events=("end",), tag=("{*}cvParam", "{*}userParam")):
+                    software_name = MzidQuickReader._parse_elements_attributes(sub_item)["name"]
                 
                 # there can be other tags, not needed for now
             else:

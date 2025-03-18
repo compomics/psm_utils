@@ -469,27 +469,32 @@ class MzidQuickReader(ReaderBase):
     @staticmethod
     def _parse_peptide(peptide_element: etree.Element) -> dict[str, dict]:
         pep_id = None
-        sequence = None
-        modifications = []
+        attributes = {}
+        attributes["PeptideSequence"] = None
+        attributes["Modification"] = []
 
         # parse the Peptide's attributes
         for idx, item in peptide_element.items():
             if (idx == "id"):
                 pep_id = item
         
-        for event, item in etree.iterwalk(peptide_element, events=("start", "end"), tag=("{*}PeptideSequence", "{*}Modification")):
+        for event, item in etree.iterwalk(peptide_element, events=("start", "end"), tag=("{*}PeptideSequence", "{*}Modification", "{*}cvParam", "{*}userParam")):
             if event == "start":
                 # strip the namespace
                 tag = item.tag.rpartition("}")[2]
 
-                if (tag == "PeptideSequence"):
-                    sequence = item.text
-                elif (tag == "Modification"):
-                    modifications.append(MzidQuickReader._parse_modification(item))
+                if tag == "PeptideSequence":
+                    attributes["PeptideSequence"] = item.text
+                elif tag == "Modification":
+                    attributes["Modification"].append(MzidQuickReader._parse_modification(item))
+                elif tag == "cvParam" or tag == "userParam":
+                    param_name, param_val = MzidQuickReader._parse_param_name_and_value(item)
+                    if param_name is not None:
+                        attributes[param_name] = param_val
             else:
                 item.clear()
         
-        return {pep_id: {"PeptideSequence": sequence, "Modification" : modifications}}
+        return {pep_id: attributes}
     
     @staticmethod
     def _parse_modification(modification: etree.Element) -> dict[str, str]:

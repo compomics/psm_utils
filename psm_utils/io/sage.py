@@ -108,7 +108,7 @@ class _SageReaderBase(ReaderBase, ABC):
         Parse ion mobility from PSM dictionary.
         Returns None if not present.
         """
-        if "ion_mobility" in psm_dict: # Older versions of Sage, no ion mobility column
+        if "ion_mobility" in psm_dict: # Older versions of Sage have no ion mobility column
             if float(psm_dict["ion_mobility"]): # If ion mobility is not 0.0 (not present)
                 return float(psm_dict["ion_mobility"])
         return None

@@ -78,7 +78,7 @@ class _SageReaderBase(ReaderBase, ABC):
             score=float(psm_dict[self.score_column]),
             precursor_mz=self._parse_precursor_mz(psm_dict["expmass"], psm_dict["charge"]),
             retention_time=float(psm_dict["rt"]),
-            ion_mobility=float(psm_dict["ion_mobility"]) if float(psm_dict["ion_mobility"]) else None,
+            ion_mobility=self._parse_ion_mobility(psm_dict),
             protein_list=psm_dict["proteins"].split(";"),
             source="sage",
             rank=int(float(psm_dict["rank"])),
@@ -101,6 +101,17 @@ class _SageReaderBase(ReaderBase, ABC):
             return (expmass + (mass.nist_mass["H"][1][0] * charge)) / charge
         else:
             return None
+        
+    @staticmethod
+    def _parse_ion_mobility(psm_dict: dict) -> Optional[float]:
+        """
+        Parse ion mobility from PSM dictionary.
+        Returns None if not present.
+        """
+        if "ion_mobility" in psm_dict: # Older versions of Sage, no ion mobility column
+            if float(psm_dict["ion_mobility"]): # If ion mobility is not 0.0 (not present)
+                return float(psm_dict["ion_mobility"])
+        return None
 
     @classmethod
     def from_dataframe(cls, dataframe) -> PSMList:

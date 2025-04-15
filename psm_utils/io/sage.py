@@ -59,12 +59,13 @@ class _SageReaderBase(ReaderBase, ABC):
                 continue
         
         # If ion mobility is not 0.0 (not present), add it to the rescoring features     
-        if float(psm_dict['ion_mobility']):
-            rescoring_features.update({
-            'ion_mobility': float(psm_dict['ion_mobility']),
-            'predicted_mobility': float(psm_dict['predicted_mobility']),
-            'delta_mobility': float(psm_dict['delta_mobility'])
-            })
+        if "ion_mobility" in psm_dict: # Older versions of Sage have no ion mobility column
+            if float(psm_dict['ion_mobility']):
+                rescoring_features.update({
+                'ion_mobility': float(psm_dict['ion_mobility']),
+                'predicted_mobility': float(psm_dict['predicted_mobility']),
+                'delta_mobility': float(psm_dict['delta_mobility'])
+                })
 
         return PSM(
             peptidoform=self._parse_peptidoform(

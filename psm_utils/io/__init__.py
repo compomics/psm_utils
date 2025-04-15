@@ -62,6 +62,12 @@ FILETYPES = {
         "extension": ".mzid",
         "filename_pattern": r"^.*\.(?:(?:mzidentml)|(?:mzid))$",
     },
+    "mzid-quick": {
+        "reader": mzid.MzidQuickReader,
+        "writer": mzid.MzidWriter,
+        "extension": ".mzid",
+        "filename_pattern": r"^.*\.(?:(?:mzidentml)|(?:mzid))$",
+    },
     "peprec": {
         "reader": peptide_record.PeptideRecordReader,
         "writer": peptide_record.PeptideRecordWriter,

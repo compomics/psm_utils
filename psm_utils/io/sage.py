@@ -58,14 +58,8 @@ class _SageReaderBase(ReaderBase, ABC):
             except KeyError:
                 continue
         
-        # If ion mobility is not 0.0 (not present), add it to the rescoring features     
-        if "ion_mobility" in psm_dict: # Older versions of Sage have no ion mobility column
-            if float(psm_dict['ion_mobility']):
-                rescoring_features.update({
-                'ion_mobility': float(psm_dict['ion_mobility']),
-                'predicted_mobility': float(psm_dict['predicted_mobility']),
-                'delta_mobility': float(psm_dict['delta_mobility'])
-                })
+        ion_mobility_features = self._extract_ion_mobility_features(psm_dict)
+        rescoring_features.update(ion_mobility_features)
 
         return PSM(
             peptidoform=self._parse_peptidoform(
@@ -79,7 +73,7 @@ class _SageReaderBase(ReaderBase, ABC):
             score=float(psm_dict[self.score_column]),
             precursor_mz=self._parse_precursor_mz(psm_dict["expmass"], psm_dict["charge"]),
             retention_time=float(psm_dict["rt"]),
-            ion_mobility=self._parse_ion_mobility(psm_dict),
+            ion_mobility=rescoring_features.get("ion_mobility", None),
             protein_list=psm_dict["proteins"].split(";"),
             source="sage",
             rank=int(float(psm_dict["rank"])),
@@ -104,15 +98,22 @@ class _SageReaderBase(ReaderBase, ABC):
             return None
         
     @staticmethod
-    def _parse_ion_mobility(psm_dict: dict) -> Optional[float]:
+    def _extract_ion_mobility_features(psm_dict: dict) -> dict:
         """
-        Parse ion mobility from PSM dictionary.
-        Returns None if not present.
+        Extract ion mobility features from the PSM dictionary if present and non-zero.
+        Returns a dict with the relevant keys or an empty dict.
         """
-        if "ion_mobility" in psm_dict: # Older versions of Sage have no ion mobility column
-            if float(psm_dict["ion_mobility"]): # If ion mobility is not 0.0 (not present)
-                return float(psm_dict["ion_mobility"])
-        return None
+        try:
+            ion_mob = float(psm_dict["ion_mobility"])
+            if ion_mob:
+                return {
+                    "ion_mobility": ion_mob,
+                    "predicted_mobility": float(psm_dict["predicted_mobility"]),
+                    "delta_mobility": float(psm_dict["delta_mobility"]),
+                }
+        except (KeyError, ValueError):
+            pass
+        return {}
 
     @classmethod
     def from_dataframe(cls, dataframe) -> PSMList:

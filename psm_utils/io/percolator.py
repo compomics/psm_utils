@@ -16,6 +16,7 @@ Notes
 from __future__ import annotations
 
 import csv
+import gzip
 import logging
 import re
 from pathlib import Path
@@ -118,8 +119,12 @@ class PercolatorTabReader(ReaderBase):
 
     @staticmethod
     def _read_header(filename):
-        with open(filename, "rt") as f:
-            fieldnames = f.readline().strip().lower().split("\t")
+        if str(filename).endswith(".gz"):
+            with gzip.open(filename, "rt") as f:
+                fieldnames = f.readline().strip().lower().split("\t")
+        else:
+            with open(filename, "rt") as f:
+                fieldnames = f.readline().strip().lower().split("\t")
         return fieldnames
 
     @staticmethod
@@ -367,7 +372,12 @@ class PercolatorTabWriter(WriterBase):
     ) -> Tuple[List[str], Optional[int]]:
         """Parse existing Percolator Tab file to determine fieldnames and last ScanNr."""
         # Get fieldnames
-        with open(filename, "rt") as open_file:
+        if str(filename).endswith(".gz"):
+            open_func = gzip.open
+        else:
+            open_func = open
+            
+        with open_func(filename, "rt") as open_file:
             for line in open_file:
                 fieldnames = line.strip().split("\t")
                 break
@@ -382,7 +392,7 @@ class PercolatorTabWriter(WriterBase):
 
         # Get last ScanNr
         last_scannr = None
-        with open(filename, "rt") as open_file:
+        with open_func(filename, "rt") as open_file:
             # Read last line
             open_file.seek(0)
             last_line = None
@@ -409,7 +419,11 @@ class PercolatorTabWriter(WriterBase):
 class _PercolatorTabIO:
     def __init__(self, *args, protein_separator="|||", **kwargs) -> None:
         """File reader and writer for Percolator Tab files with fixed Proteins tab."""
-        self._open_file = open(*args, **kwargs)
+        filename = args[0]
+        if str(filename).endswith(".gz"):
+            self._open_file = gzip.open(*args, **kwargs)
+        else:
+            self._open_file = open(*args, **kwargs)
         self.protein_separator = protein_separator
 
     def __enter__(self, *args, **kwargs) -> _PercolatorTabIO:

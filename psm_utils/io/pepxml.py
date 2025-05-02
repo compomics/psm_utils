@@ -112,13 +112,28 @@ class PepXMLReader(ReaderBase):
 
     def _parse_psm(self, spectrum_query: dict, search_hit: dict) -> PSM:
         """Parse pepXML PSM to :py:class:`~psm_utils.psm.PSM`."""
+
+        psm_metadata = {
+                "num_matched_ions": str(search_hit["num_matched_ions"]),
+                "tot_num_ions": str(search_hit["tot_num_ions"]),
+                "num_missed_cleavages": str(search_hit["num_missed_cleavages"]),
+            }
+        psm_metadata.update(
+                {
+                    f"search_score_{key.lower()}": str(search_hit["search_score"][key])
+                    for key in search_hit["search_score"]
+                }
+            )
+
         return PSM(
             peptidoform=self._parse_peptidoform(
                 search_hit["peptide"],
                 search_hit["modifications"],
                 spectrum_query["assumed_charge"],
             ),
-            spectrum_id=spectrum_query["spectrum"],
+            spectrum_id=spectrum_query["spectrumNativeID"]
+            if "spectrumNativeID" in spectrum_query
+            else spectrum_query["spectrum"],
             run=None,
             collection=None,
             spectrum=None,
@@ -143,15 +158,6 @@ class PepXMLReader(ReaderBase):
                 "start_scan": str(spectrum_query["start_scan"]),
                 "end_scan": str(spectrum_query["end_scan"]),
             },
-            metadata={
-                "num_matched_ions": str(search_hit["num_matched_ions"]),
-                "tot_num_ions": str(search_hit["tot_num_ions"]),
-                "num_missed_cleavages": str(search_hit["num_missed_cleavages"]),
-            }.update(
-                {
-                    f"search_score_{key.lower()}": str(search_hit["search_score"][key])
-                    for key in search_hit["search_score"]
-                }
-            ),
+            metadata=psm_metadata,
             rescoring_features=dict(),
         )

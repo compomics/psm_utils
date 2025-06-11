@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 import re
-from typing import Iterable, List, Sequence
+from typing import Iterator, List, Sequence, cast
 
 import numpy as np
 import pandas as pd
@@ -83,13 +83,13 @@ class PSMList(BaseModel):
     def __add__(self, other):
         return PSMList(psm_list=self.psm_list + other.psm_list)
 
-    def __iter__(self) -> Iterable[PSM]:
+    def __iter__(self) -> Iterator[PSM]:  # type: ignore[override]
         return self.psm_list.__iter__()
 
     def __len__(self) -> int:
         return self.psm_list.__len__()
 
-    def __getitem__(self, item) -> PSM | list[PSM]:
+    def __getitem__(self, item) -> PSM | PSMList | np.ndarray:
         if isinstance(item, (int, np.integer)):
             # Return single PSM by index
             return self.psm_list[item]
@@ -127,16 +127,18 @@ class PSMList(BaseModel):
     @property
     def collections(self) -> list:
         """List of collections in :py:class:`PSMList`."""
-        if (self["collection"] != None).any():  # noqa: E711
-            return list(np.unique(self["collection"]))
+        collection_array = np.asarray(self["collection"])
+        if (collection_array != None).any():  # noqa: E711
+            return np.unique(collection_array).tolist()
         else:
             return [None]
 
     @property
     def runs(self) -> list:
         """List of runs in :py:class:`PSMList`."""
-        if (self["run"] != None).any():  # noqa: E711
-            return list(np.unique(self["run"]))
+        run_array = np.asarray(self["run"])
+        if (run_array != None).any():  # noqa: E711
+            return np.unique(run_array).tolist()
         else:
             return [None]
 
@@ -168,14 +170,14 @@ class PSMList(BaseModel):
         """Set identification ranks for all PSMs in :py:class:`PSMList`."""
         columns = ["collection", "run", "spectrum_id", "score"]
         self["rank"] = (
-            pd.DataFrame(self[columns], columns=columns)
+            pd.DataFrame(np.array([self[c] for c in columns]).transpose(), columns=columns)
             .sort_values("score", ascending=lower_score_better)
             .fillna(0)  # groupby does not play well with None values
             .groupby(["collection", "run", "spectrum_id"])
             .cumcount()
             .sort_index()
             + 1  # 1-based counting
-        )
+        ).to_list()
 
     def get_rank1_psms(self, *args, **kwargs) -> PSMList:
         """
@@ -184,9 +186,10 @@ class PSMList(BaseModel):
         First runs :py:meth:`~set_ranks` with ``*args`` and ``**kwargs`` if if any PSM
         has no rank yet.
         """
-        if None in self["rank"]:
+        rank_array = np.asarray(self["rank"])
+        if None in rank_array:
             self.set_ranks(*args, **kwargs)
-        return self[self["rank"] == 1]
+        return PSMList(psm_list=[self.psm_list[i] for i in np.flatnonzero(rank_array == 1)])
 
     def find_decoys(self, decoy_pattern: str) -> None:
         """
@@ -211,9 +214,12 @@ class PSMList(BaseModel):
         >>> psm_list.find_decoys(r"^DECOY_")
 
         """
-        decoy_pattern = re.compile(decoy_pattern)
+        pattern = re.compile(decoy_pattern)
         for psm in self:
-            psm.is_decoy = all([decoy_pattern.search(p) is not None for p in psm.protein_list])
+            if psm.protein_list is not None:
+                psm.is_decoy = all(pattern.search(p) is not None for p in psm.protein_list)
+            else:
+                psm.is_decoy = None
 
     def calculate_qvalues(self, reverse: bool = True, **kwargs) -> None:
         """
@@ -233,7 +239,7 @@ class PSMList(BaseModel):
 
         """
         for key in ["score", "is_decoy"]:
-            if (self[key] == None).any():  # noqa: E711 (self[key] is a Numpy array)
+            if (np.asarray(self[key]) == None).any():  # noqa: E711 (self[key] is a Numpy array)
                 raise ValueError(
                     f"Cannot calculate q-values if not all PSMs have `{key}` assigned."
                 )
@@ -294,16 +300,17 @@ class PSMList(BaseModel):
 
         """
         if isinstance(modification_rules, dict):
-            modification_rules = modification_rules.items()
-        modification_rules = [
+            modification_rules = list(modification_rules.items())
+
+        parsed_modification_rules = [
             proforma.ModificationRule(proforma.process_tag_tokens(mod), targets)
             for mod, targets in modification_rules
         ]
+
         for psm in self.psm_list:
-            if psm.peptidoform.properties["fixed_modifications"]:
-                psm.peptidoform.properties["fixed_modifications"].extend(modification_rules)
-            else:
-                psm.peptidoform.properties["fixed_modifications"] = modification_rules
+            psm.peptidoform.properties.setdefault("fixed_modifications", []).extend(  # type: ignore[union-attr]
+                cast(list, parsed_modification_rules)
+            )
 
     def apply_fixed_modifications(self):
         """

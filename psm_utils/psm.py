@@ -10,8 +10,8 @@ from psm_utils.peptidoform import Peptidoform
 class PSM(BaseModel):
     """Data class representing a peptide-spectrum match (PSM)."""
 
-    peptidoform: Union[Peptidoform, str]
-    spectrum_id: Union[str]
+    peptidoform: Union[Peptidoform, str]  # type: ignore
+    spectrum_id: str
     run: Optional[str] = None
     collection: Optional[str] = None
     spectrum: Optional[Any] = None
@@ -89,25 +89,30 @@ class PSM(BaseModel):
         super().__init__(**data)
         # Parse peptidoform
         if isinstance(self.peptidoform, str):
-            self.peptidoform = Peptidoform(self.peptidoform)
+            self.peptidoform: Peptidoform = Peptidoform(self.peptidoform)
         elif not isinstance(self.peptidoform, Peptidoform):
             raise TypeError(
                 f"Peptidoform or str expected for `peptidoform`, not `{type(self.peptidoform)}`."
             )
 
-    def __getitem__(self, item) -> any:
+    def __getitem__(self, item) -> Any:
         return getattr(self, item)
 
-    def __setitem__(self, item, value: any) -> None:
+    def __setitem__(self, item, value: Any) -> None:
         setattr(self, item, value)
 
     @property
     def precursor_mz_error(self) -> float:
         """Difference between observed and theoretical m/z in Da."""
         theoretical_mz = self.peptidoform.theoretical_mz
+        if theoretical_mz is None or self.precursor_mz is None:
+            raise ValueError(
+                "Cannot calculate precursor m/z error: "
+                "precursor m/z is not set or theoretical m/z cannot be calculated."
+            )
         return self.precursor_mz - theoretical_mz
 
-    def get_precursor_charge(self) -> int:
+    def get_precursor_charge(self) -> int | None:
         """Precursor charge, as embedded in :py:attr:`PSM.peptidoform`."""
         return self.peptidoform.precursor_charge
 

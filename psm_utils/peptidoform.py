@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from collections import defaultdict
-from typing import Iterable, List, Tuple, Union
+from typing import Iterable, List, Tuple, TypedDict, Union, cast
 
 import numpy as np
 from pyteomics import mass, proforma
@@ -29,8 +29,10 @@ class Peptidoform:
         ----------
         parsed_sequence : list
             List of tuples with residue and modifications for each location.
-        properties : dict[str, Any]
-            Dict with sequence-wide properties.
+        properties : :py:class:`PeptidoformProperties`
+            Dictionary with properties of the peptidoform, including N- and C-terminal
+            modifications, unlocalized modifications, labile modifications, fixed
+            modifications, and charge state.
 
         Examples
         --------
@@ -39,6 +41,10 @@ class Peptidoform:
         711.2567622919099
 
         """
+        self.parsed_sequence: List[Tuple[str, List[proforma.TagBase] | None]]
+        self.properties: PeptidoformProperties
+
+        # Parse ProForma
         if isinstance(proforma_sequence, str):
             try:
                 self.parsed_sequence, self.properties = proforma.parse(proforma_sequence)
@@ -66,13 +72,21 @@ class Peptidoform:
     def __hash__(self) -> int:
         return hash(self.proforma)
 
-    def __eq__(self, __o: Union[Peptidoform, str]) -> bool:
+    def __eq__(self, __o: object) -> bool:
         if isinstance(__o, str):
             return self.proforma == __o
-        elif isinstance(__o, Peptidoform):
+        elif isinstance(__o, Peptidoform):  # type: ignore[return]
             return self.proforma == __o.proforma
         else:
-            raise TypeError(f"Cannot compare {type(__o)} with Peptidoform.")
+            raise TypeError(f"Unsupported comparison type for Peptidoform: {type(__o)}")
+
+    def __lt__(self, __o: object) -> bool:
+        if isinstance(__o, str):
+            return self.proforma < __o
+        elif isinstance(__o, Peptidoform):
+            return self.proforma < __o.proforma
+        else:
+            raise TypeError(f"Unsupported comparison type for Peptidoform: {type(__o)}")
 
     def __iter__(self) -> Iterable[Tuple[str, Union[None, List[proforma.TagBase]]]]:
         return self.parsed_sequence.__iter__()
@@ -188,8 +202,9 @@ class Peptidoform:
         # Get compositions for fixed modifications by amino acid
         fixed_rules = {}
         for rule in self.properties["fixed_modifications"]:
-            for aa in rule.targets:
-                fixed_rules[aa] = rule.modification_tag.composition
+            if rule.targets is not None:
+                for aa in rule.targets:
+                    fixed_rules[aa] = rule.modification_tag.composition
 
         comp_list = []
 
@@ -220,6 +235,7 @@ class Peptidoform:
             # Localized modifications
             if tags:
                 for tag in tags:
+                    tag = cast(proforma.ModificationBase, tag)
                     try:
                         position_comp += tag.composition
                     except (AttributeError, KeyError) as e:
@@ -275,7 +291,7 @@ class Peptidoform:
         return comp
 
     @property
-    def sequential_theoretical_mass(self) -> float:
+    def sequential_theoretical_mass(self) -> list[float]:
         """
         Monoisotopic mass of both termini and each (modified) residue.
 
@@ -296,8 +312,9 @@ class Peptidoform:
         """
         fixed_rules = {}
         for rule in self.properties["fixed_modifications"]:
-            for aa in rule.targets:
-                fixed_rules[aa] = rule.modification_tag.mass
+            if rule.targets is not None:
+                for aa in rule.targets:
+                    fixed_rules[aa] = rule.modification_tag.mass
 
         mass_list = []
 
@@ -326,6 +343,7 @@ class Peptidoform:
             # Localized modifications
             if tags:
                 for tag in tags:
+                    tag = cast(proforma.ModificationBase, tag)
                     try:
                         position_mass += tag.mass
                     except (AttributeError, KeyError) as e:
@@ -496,15 +514,14 @@ class Peptidoform:
 
         """
         if isinstance(modification_rules, dict):
-            modification_rules = modification_rules.items()
-        modification_rules = [
+            modification_rules = list(modification_rules.items())
+
+        parsed_modification_rules = [
             proforma.ModificationRule(proforma.process_tag_tokens(mod), targets)
             for mod, targets in modification_rules
         ]
-        if self.properties["fixed_modifications"]:
-            self.properties["fixed_modifications"].extend(modification_rules)
-        else:
-            self.properties["fixed_modifications"] = modification_rules
+
+        self.properties.setdefault("fixed_modifications", []).extend(parsed_modification_rules)
 
     def apply_fixed_modifications(self):
         """
@@ -530,8 +547,9 @@ class Peptidoform:
             # Setup target_aa -> modification_list dictionary
             rule_dict = defaultdict(list)
             for rule in self.properties["fixed_modifications"]:
-                for target_aa in rule.targets:
-                    rule_dict[target_aa].append(rule.modification_tag)
+                if rule.targets is not None:
+                    for target_aa in rule.targets:
+                        rule_dict[target_aa].append(rule.modification_tag)
 
             # Apply modifications to sequence
             for i, (aa, site_mods) in enumerate(self.parsed_sequence):
@@ -551,6 +569,18 @@ class Peptidoform:
 
             # Remove fixed modifications
             self.properties["fixed_modifications"] = []
+
+
+class PeptidoformProperties(TypedDict):
+    """Property items of a :py:class:`Peptidoform`."""
+
+    n_term: list[proforma.ModificationBase] | None
+    c_term: list[proforma.ModificationBase] | None
+    unlocalized_modifications: list[proforma.ModificationBase]
+    labile_modifications: list[proforma.ModificationBase]
+    fixed_modifications: list[proforma.ModificationRule]
+    charge_state: proforma.ChargeState
+    isotopes: list[proforma.StableIsotope]
 
 
 def format_number_as_string(num):
